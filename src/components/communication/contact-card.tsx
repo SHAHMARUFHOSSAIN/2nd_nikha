@@ -5,24 +5,37 @@ import { Phone, MessageCircle, Mail, CheckCircle2, ShieldCheck, ExternalLink, Se
 import { Button } from '@/components/ui/button';
 
 export interface ContactCardProps {
+  contactDetails?: {
+    phone?: string;
+    whatsapp?: string;
+    email?: string;
+  };
+  isSender?: boolean;
   phone?: string;
   whatsapp?: string;
   email?: string;
-  senderName: string;
+  senderName?: string;
   isOwn?: boolean;
 }
 
 export function ContactCard({
+  contactDetails,
+  isSender,
   phone = '+880 1712-345678',
   whatsapp = '+880 1712-345678',
   email = 'contact@example.com',
-  senderName,
+  senderName = 'Match',
   isOwn = false,
 }: ContactCardProps) {
   const [showManage, setShowManage] = useState(false);
 
+  const actualPhone = contactDetails?.phone || phone;
+  const actualWhatsApp = contactDetails?.whatsapp || whatsapp;
+  const actualEmail = contactDetails?.email || email;
+  const actualIsOwn = isSender !== undefined ? isSender : isOwn;
+
   const handleWhatsAppClick = () => {
-    alert(`Opening WhatsApp deep link for ${whatsapp}... (Mock Action)`);
+    alert(`Opening WhatsApp deep link for ${actualWhatsApp}... (Mock Action)`);
   };
 
   return (
@@ -33,10 +46,10 @@ export function ContactCard({
             <ShieldCheck className="w-4 h-4" />
           </div>
           <span className="font-serif font-bold text-sm text-white">
-            {isOwn ? 'You Shared Contact Details' : `${senderName} Shared Contact Details`}
+            {actualIsOwn ? 'You Shared Contact Details' : `${senderName} Shared Contact Details`}
           </span>
         </div>
-        {isOwn && (
+        {actualIsOwn && (
           <button
             onClick={() => setShowManage(!showManage)}
             className="text-[10px] text-emerald-200 hover:text-white flex items-center gap-1 underline"
@@ -48,15 +61,15 @@ export function ContactCard({
       </div>
 
       <div className="space-y-2 text-xs bg-white/10 p-3 rounded-2xl backdrop-blur">
-        {whatsapp && (
+        {actualWhatsApp && (
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-stone-200">
               <MessageCircle className="w-4 h-4 text-emerald-300" /> WhatsApp:
             </span>
-            <strong className="font-mono text-white">{whatsapp}</strong>
+            <strong className="font-mono text-white">{actualWhatsApp}</strong>
           </div>
         )}
-        {phone && (
+        {actualPhone && (
           <div className="flex items-center justify-between pt-1 border-t border-white/10">
             <span className="flex items-center gap-1.5 text-stone-200">
               <Phone className="w-4 h-4 text-emerald-300" /> Phone:
