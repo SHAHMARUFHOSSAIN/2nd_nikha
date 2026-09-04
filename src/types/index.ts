@@ -107,6 +107,7 @@ export interface Interest {
 
 export interface Match {
   id: string;
+  matchId?: string;
   userOneId: string;
   userTwoId: string;
   profile: Profile;
