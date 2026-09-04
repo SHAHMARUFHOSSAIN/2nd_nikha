@@ -13,7 +13,7 @@ import { ShieldCheck, Lock, Mail, ArrowRight, Shield } from 'lucide-react';
 export default function AdminLoginPage() {
   const router = useRouter();
   const { setRole } = useAuth();
-  const [email, setEmail] = useState('admin@2ndchance.com');
+  const [email, setEmail] = useState('admin@2ndnikha.com');
   const [password, setPassword] = useState('admin123');
 
   const handleAdminSubmit = (e: React.FormEvent) => {
