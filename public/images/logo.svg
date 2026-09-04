@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 450" width="100%" height="100%">
+  <defs>
+    <!-- Glossy 3D Magenta Gradient -->
+    <linearGradient id="magenta3D" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff2a70" />
+      <stop offset="40%" stop-color="#e11d48" />
+      <stop offset="80%" stop-color="#be185d" />
+      <stop offset="100%" stop-color="#831843" />
+    </linearGradient>
+
+    <!-- Highlight Gradient -->
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadow Filter -->
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#881337" flood-opacity="0.35" />
+    </filter>
+
+    <filter id="textShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#4c0519" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Main 3D Logo Group -->
+  <g filter="url(#dropShadow)">
+    
+    <!-- Outer 3D Glossy "2" & Heart Ribbon Contour -->
+    <path d="M 120 180 
+             C 120 100, 200 60, 270 80 
+             C 340 100, 420 120, 430 200 
+             C 440 270, 360 340, 250 360 
+             C 160 340, 100 280, 140 260
+             C 210 230, 260 260, 330 220
+             C 380 190, 340 120, 270 120
+             C 210 120, 170 150, 170 180 Z" 
+          fill="url(#magenta3D)" stroke="#9d174d" stroke-width="4" />
+
+    <!-- Inner Heart White Canvas Background -->
+    <path d="M 270 125 
+             C 320 125, 390 150, 385 210 
+             C 380 260, 320 310, 270 330 
+             C 220 310, 180 260, 210 220 
+             C 230 190, 240 125, 270 125 Z" 
+          fill="#ffffff" stroke="#fecdd3" stroke-width="3" />
+
+    <!-- Man Silhouette (Left side inside heart) -->
+    <path d="M 225 280 
+             C 225 240, 240 220, 250 200
+             C 255 190, 250 170, 240 165
+             C 230 160, 225 170, 220 180
+             C 215 195, 210 210, 205 230
+             C 200 250, 200 280, 225 280 Z" 
+          fill="#be185d" />
+
+    <!-- Woman Silhouette with Hair Bun (Right side inside heart) -->
+    <path d="M 315 280 
+             C 315 240, 300 220, 290 200
+             C 285 190, 290 170, 300 165
+             C 310 160, 315 170, 320 180
+             C 325 175, 330 175, 332 182
+             C 335 190, 325 210, 325 230
+             C 325 250, 325 280, 315 280 Z" 
+          fill="#be185d" />
+
+    <!-- Small Floating Heart between faces -->
+    <path d="M 270 175
+             C 265 168, 255 168, 255 177
+             C 255 187, 270 197, 270 197
+             C 270 197, 285 187, 285 177
+             C 285 168, 275 168, 270 175 Z" 
+          fill="#e11d48" />
+
+  </g>
+
+  <!-- 3D Typography Logo Below -->
+  <g filter="url(#textShadow)" font-family="Arial, Helvetica, sans-serif" font-weight="900">
+    <!-- "2nd" in 3D White -->
+    <text x="80" y="410" font-size="72" fill="#ffffff" stroke="#e2e8f0" stroke-width="2">2nd</text>
+    
+    <!-- "Chance" in Glossy 3D Magenta -->
+    <text x="215" y="410" font-size="72" fill="url(#magenta3D)">Chance</text>
+  </g>
+</svg>

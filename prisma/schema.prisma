@@ -1,0 +1,200 @@
+// Prisma Schema for 2nd Chance Matrimonial Platform (MySQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  GUEST
+  FREE
+  PREMIUM
+  ADMIN
+}
+
+enum InterestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  CONTACT
+  SYSTEM
+}
+
+enum PaymentStatus {
+  VALIDATED
+  PENDING
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id              String       @id @default(uuid())
+  fullName        String
+  email           String       @unique
+  phone           String       @unique
+  passwordHash    String
+  userRole        Role         @default(FREE)
+  isVerified      Boolean      @default(false)
+  nidNumber       String?
+  nidDocumentUrl  String?
+  country         String       @default("Bangladesh")
+  countryFlag     String       @default("🇧🇩")
+  residencyStatus String?
+  
+  profile         Profile?
+  interestsSent   Interest[]   @relation("Sender")
+  interestsRecv   Interest[]   @relation("Receiver")
+  messagesSent    Message[]    @relation("MessageSender")
+  messagesRecv    Message[]    @relation("MessageReceiver")
+  payments        Payment[]
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("users")
+}
+
+model Profile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  age                Int
+  gender             String
+  height             String
+  maritalStatus      String
+  religion           String
+  motherTongue       String?  @default("Bengali")
+  location           String
+  education          String
+  institution        String?
+  profession         String
+  company            String?
+  bio                String   @db.Text
+  photoUrl           String   @db.Text
+  additionalPhotos   Json?    // Stored as JSON array of photo URLs
+  
+  familyType         String?  @default("Nuclear Family")
+  familyLocation     String?
+  parentsOccupation  String?
+  siblings           String?
+  lifestyle          Json?    // Stored as JSON array of lifestyle tags
+  
+  partnerPreferences Json?    // Stored as JSON object of partner preferences
+  matchPercentage    Int      @default(85)
+  matchReasons       Json?    // Stored as JSON array of match reasons
+  trustScore         Int      @default(95)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model Interest {
+  id              String         @id @default(uuid())
+  senderId        String
+  receiverId      String
+  sender          User           @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver        User           @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  status          InterestStatus @default(PENDING)
+  message         String?        @db.Text
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@map("interests")
+}
+
+model Message {
+  id              String      @id @default(uuid())
+  matchId         String
+  senderId        String
+  receiverId      String
+  sender          User        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver        User        @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  content         String      @db.Text
+  type            MessageType @default(TEXT)
+  status          String      @default("SENT") // SENT, DELIVERED, READ
+  mediaUrl        String?     @db.Text
+  contactDetails  Json?       // Stored phone/whatsapp/email object
+
+  createdAt       DateTime    @default(now())
+
+  @@map("messages")
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  userId           String
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  transactionId    String        @unique
+  amount           Float
+  currency         String        @default("BDT") // BDT or USD
+  paymentMethod    String        @default("bKash") // bKash, Nagad, Visa, Mastercard, AMEX
+  status           PaymentStatus @default(PENDING)
+  packageType      String        @default("MONTHLY") // WEEKLY, MONTHLY, ANNUAL
+  sslResponseRaw   Json?
+
+  createdAt        DateTime      @default(now())
+
+  @@map("payments")
+}
+
+// CMS Models for Admin Management
+model Article {
+  id           String   @id @default(uuid())
+  title        String
+  slug         String   @unique
+  content      String   @db.LongText
+  excerpt      String?  @db.Text
+  coverImage   String?  @db.Text
+  category     String   @default("Marriage Advice")
+  author       String   @default("Editorial Team")
+  isPublished  Boolean  @default(true)
+  publishedAt  DateTime @default(now())
+
+  @@map("articles")
+}
+
+model FAQ {
+  id           String   @id @default(uuid())
+  question     String
+  answer       String   @db.Text
+  category     String   @default("General")
+  order        Int      @default(0)
+
+  @@map("faqs")
+}
+
+model Banner {
+  id           String   @id @default(uuid())
+  title        String
+  subtitle     String?
+  imageUrl     String   @db.Text
+  targetUrl    String?
+  isActive     Boolean  @default(true)
+
+  @@map("banners")
+}
+
+model Setting {
+  id           String   @id @default(uuid())
+  key          String   @unique
+  value        String   @db.LongText
+
+  @@map("settings")
+}
