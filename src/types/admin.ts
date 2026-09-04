@@ -152,6 +152,7 @@ export interface CmsArticle {
   isFeatured: boolean;
   status: 'DRAFT' | 'PUBLISHED';
   publishedAt: string;
+  author?: string;
 }
 
 export interface CmsBanner {
