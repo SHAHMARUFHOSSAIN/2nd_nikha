@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import { MemberLayout } from '@/components/member/member-layout';
 import { useConnection } from '@/lib/connection-context';
 import { useCommunication } from '@/lib/communication-context';
@@ -21,6 +21,7 @@ interface SharedPhotosPageProps {
 }
 
 export default function SharedPhotosPage({ params }: SharedPhotosPageProps) {
+  const router = useRouter();
   const { matches } = useConnection();
   const { sharedPhotos, deletePhoto } = useCommunication();
 
