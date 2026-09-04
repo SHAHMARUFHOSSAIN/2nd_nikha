@@ -140,6 +140,7 @@ export interface Message {
   type: MessageType;
   status: MessageStatus;
   createdAt: string;
+  sentAt?: string;
   readAt?: string;
   mediaUrl?: string;
   contactDetails?: {
