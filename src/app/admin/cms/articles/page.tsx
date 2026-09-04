@@ -64,6 +64,11 @@ export default function AdminArticlesCmsPage() {
       category: category.trim(),
       author: author.trim() || 'Editorial Team',
       status: 'PUBLISHED',
+      tags: editingArticle?.tags || ['Matrimonial', category.trim()],
+      seoTitle: editingArticle?.seoTitle || title.trim(),
+      seoDescription: editingArticle?.seoDescription || excerpt.trim(),
+      isFeatured: editingArticle?.isFeatured ?? false,
+      publishedAt: editingArticle?.publishedAt || new Date().toISOString().split('T')[0],
       createdAt: editingArticle ? editingArticle.createdAt : new Date().toISOString().split('T')[0],
       updatedAt: new Date().toISOString().split('T')[0],
     };

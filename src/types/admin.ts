@@ -145,13 +145,13 @@ export interface CmsArticle {
   content: string;
   excerpt: string;
   category: string;
-  tags: string[];
+  tags?: string[];
   featuredImage: string;
-  seoTitle: string;
-  seoDescription: string;
-  isFeatured: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
+  isFeatured?: boolean;
   status: 'DRAFT' | 'PUBLISHED';
-  publishedAt: string;
+  publishedAt?: string;
   author?: string;
   createdAt?: string;
   updatedAt?: string;
