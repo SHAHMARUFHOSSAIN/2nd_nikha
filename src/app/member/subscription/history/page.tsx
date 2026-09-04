@@ -15,7 +15,7 @@ export default function PaymentHistoryPage() {
       case 'SUCCESS':
         return <Badge variant="success">SUCCESS</Badge>;
       case 'PENDING':
-        return <Badge variant="warning font-bold">PENDING</Badge>;
+        return <Badge variant="warning" className="font-bold">PENDING</Badge>;
       case 'FAILED':
         return <Badge variant="wine">FAILED</Badge>;
       case 'CANCELLED':

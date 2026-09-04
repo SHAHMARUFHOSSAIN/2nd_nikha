@@ -19,7 +19,8 @@ export type InterestStatus =
   | 'ACCEPTED'
   | 'REJECTED'
   | 'EXPIRED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  | 'PENDING';
 
 export type MatchStatus = 'ACTIVE' | 'BLOCKED' | 'ENDED';
 

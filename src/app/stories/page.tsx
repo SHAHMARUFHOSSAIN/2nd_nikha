@@ -7,7 +7,7 @@ import { BRAND_NAME } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: `Real Success Stories | ${BRAND_NAME}`,
-  description: 'Heartwarming real-world remarriage success stories from couples who found love and happiness on 2nd Chance.',
+  description: 'Heartwarming real-world remarriage success stories from couples who found love and happiness on 2nd Nikah.',
 };
 
 export default function StoriesPage() {
