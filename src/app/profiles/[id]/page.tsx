@@ -20,7 +20,6 @@ import {
   User,
   Home,
   Coffee,
-  Ring,
   Sparkles,
 } from 'lucide-react';
 

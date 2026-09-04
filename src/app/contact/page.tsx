@@ -8,7 +8,7 @@ import { Phone, Mail, MapPin, ShieldCheck, Clock } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: `Contact Us & Support | ${BRAND_NAME}`,
-  description: 'Reach out to 2nd Chance matrimonial support team, matchmakers, or office locations.',
+  description: 'Reach out to 2nd Nikah matrimonial support team, matchmakers, or office locations.',
 };
 
 export default function ContactPage() {
@@ -38,7 +38,7 @@ export default function ContactPage() {
               <Mail className="w-6 h-6" />
             </div>
             <h3 className="font-serif font-bold text-lg text-stone-900">Official Email</h3>
-            <p className="text-xs text-stone-500">support@2ndchancematrimonial.com</p>
+            <p className="text-xs text-stone-500">support@2ndnikha.com</p>
             <p className="text-[11px] text-pink-600 font-bold">Fast response within 2 hours</p>
           </div>
 
