@@ -5,7 +5,12 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { MemberSidebar } from './member-sidebar';
 import { MobileBottomNav } from './mobile-bottom-nav';
 
-export function MemberLayout({ children }: { children: React.ReactNode }) {
+export interface MemberLayoutProps {
+  children: React.ReactNode;
+  title?: string;
+}
+
+export function MemberLayout({ children }: MemberLayoutProps) {
   return (
     <ProtectedRoute>
       <div className="flex bg-stone-50/40 min-h-[calc(100vh-4rem)]">
