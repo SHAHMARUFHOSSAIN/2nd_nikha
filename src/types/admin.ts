@@ -153,6 +153,8 @@ export interface CmsArticle {
   status: 'DRAFT' | 'PUBLISHED';
   publishedAt: string;
   author?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CmsBanner {
