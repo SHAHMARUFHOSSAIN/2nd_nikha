@@ -5,6 +5,11 @@ import { Phone, MessageCircle, Mail, CheckCircle2, ShieldCheck, ExternalLink, Se
 import { Button } from '@/components/ui/button';
 
 export interface ContactCardProps {
+  contact?: {
+    phone?: string;
+    whatsapp?: string;
+    email?: string;
+  };
   contactDetails?: {
     phone?: string;
     whatsapp?: string;
@@ -19,6 +24,7 @@ export interface ContactCardProps {
 }
 
 export function ContactCard({
+  contact,
   contactDetails,
   isSender,
   phone = '+880 1712-345678',
@@ -29,9 +35,10 @@ export function ContactCard({
 }: ContactCardProps) {
   const [showManage, setShowManage] = useState(false);
 
-  const actualPhone = contactDetails?.phone || phone;
-  const actualWhatsApp = contactDetails?.whatsapp || whatsapp;
-  const actualEmail = contactDetails?.email || email;
+  const activeContact = contact || contactDetails;
+  const actualPhone = activeContact?.phone || phone;
+  const actualWhatsApp = activeContact?.whatsapp || whatsapp;
+  const actualEmail = activeContact?.email || email;
   const actualIsOwn = isSender !== undefined ? isSender : isOwn;
 
   const handleWhatsAppClick = () => {
