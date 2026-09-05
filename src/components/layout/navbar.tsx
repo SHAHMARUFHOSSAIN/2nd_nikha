@@ -37,14 +37,14 @@ import {
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoggedIn, userRole, logout } = useAuth();
+  const { isLoggedIn, userRole, logout, currentUser: authUser } = useAuth();
   const communication = useCommunication();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const currentUser = MOCK_PROFILES[0]; // Anika Rahman
+  const currentUser = authUser || MOCK_PROFILES[0];
   const totalUnread = (communication?.conversations || []).reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
   // Close dropdown on click outside
@@ -149,7 +149,7 @@ export function Navbar() {
                         <p className="font-serif font-bold text-sm text-stone-900">
                           {currentUser.fullName}
                         </p>
-                        <p className="text-xs text-stone-500 truncate">anika.rahman@example.com</p>
+                        <p className="text-xs text-stone-500 truncate">{currentUser.email || `${currentUser.fullName.toLowerCase().replace(/\s+/g, '.')}@2ndnikha.com`}</p>
                         <span className="inline-flex items-center gap-1 mt-1 bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                           👑 {userRole} Membership
                         </span>

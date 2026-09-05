@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { db, safeQuery } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -6,16 +7,35 @@ export const revalidate = 0;
 let inMemorySettings: Record<string, any> = {};
 
 export async function GET() {
-  return NextResponse.json(
-    { success: true, settings: inMemorySettings },
-    {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      },
-    }
-  );
+  try {
+    const dbSettings = await safeQuery(async () => {
+      const records = await db.setting.findMany();
+      const result: Record<string, any> = {};
+      for (const rec of records) {
+        try {
+          result[rec.key] = JSON.parse(rec.value);
+        } catch {
+          result[rec.key] = rec.value;
+        }
+      }
+      return result;
+    }, {}, 1000);
+
+    const mergedSettings = { ...inMemorySettings, ...dbSettings };
+
+    return NextResponse.json(
+      { success: true, settings: mergedSettings },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      }
+    );
+  } catch (err: any) {
+    return NextResponse.json({ success: true, settings: inMemorySettings });
+  }
 }
 
 export async function POST(req: Request) {
@@ -28,19 +48,15 @@ export async function POST(req: Request) {
         if (!catKey || catVal === undefined) continue;
         inMemorySettings[catKey] = catVal;
         results[catKey] = catVal;
-      }
-
-      import('@/lib/db').then(({ db }) => {
-        for (const [catKey, catVal] of Object.entries(body.settings)) {
+        try {
           const stringifiedVal = JSON.stringify(catVal);
-          db.setting.upsert({
+          await db.setting.upsert({
             where: { key: catKey },
             update: { value: stringifiedVal },
             create: { key: catKey, value: stringifiedVal },
-          }).catch(() => {});
-        }
-      }).catch(() => {});
-
+          });
+        } catch (e) {}
+      }
       return NextResponse.json({ success: true, settings: results });
     }
 
@@ -50,14 +66,14 @@ export async function POST(req: Request) {
     }
 
     inMemorySettings[category] = values;
-    import('@/lib/db').then(({ db }) => {
+    try {
       const stringifiedVal = JSON.stringify(values);
-      db.setting.upsert({
+      await db.setting.upsert({
         where: { key: category },
         update: { value: stringifiedVal },
         create: { key: category, value: stringifiedVal },
-      }).catch(() => {});
-    }).catch(() => {});
+      });
+    } catch (e) {}
 
     return NextResponse.json({ success: true, category, data: values });
   } catch (error: any) {

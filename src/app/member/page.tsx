@@ -25,8 +25,11 @@ import {
 import Image from 'next/image';
 
 export default function MemberDashboardPage() {
-  const { userRole } = useAuth();
+  const { userRole, currentUser: authUser } = useAuth();
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
+  const currentUser = authUser || MOCK_PROFILES[0];
+  const firstName = currentUser.fullName ? currentUser.fullName.split(' ')[0] : 'Member';
 
   // Mock Received Interests State
   const [receivedInterests, setReceivedInterests] = useState([
@@ -62,7 +65,7 @@ export default function MemberDashboardPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-serif font-bold text-stone-900 flex items-center gap-2">
-              <span>Welcome back, Anika</span>
+              <span>Welcome back, {firstName}</span>
               <Heart className="w-6 h-6 text-rose-500 fill-rose-500" />
             </h1>
             <p className="text-sm text-stone-600 mt-1">

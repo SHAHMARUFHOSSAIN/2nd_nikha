@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Conversation, Message, SharedPhoto, Profile } from '@/types';
 import { MOCK_CONVERSATIONS, MOCK_MESSAGES, MOCK_SHARED_PHOTOS } from '@/data/message-data';
 import { MOCK_PROFILES } from '@/data/mock-data';
+import { useAuth } from '@/lib/auth-context';
 
 const STORAGE_KEY_MESSAGES = '2ndchance_chat_messages';
 const STORAGE_KEY_CONVERSATIONS = '2ndchance_chat_conversations';
@@ -48,7 +49,8 @@ export function CommunicationProvider({ children }: { children: React.ReactNode 
   const [messages, setMessages] = useState<Record<string, Message[]>>(MOCK_MESSAGES);
   const [sharedPhotos, setSharedPhotos] = useState<Record<string, SharedPhoto[]>>(MOCK_SHARED_PHOTOS);
 
-  const currentUser = MOCK_PROFILES[0]; // Anika Rahman ('p-101')
+  const { currentUser: authUser } = useAuth();
+  const currentUser = authUser || MOCK_PROFILES[0];
 
   // Hydrate state from localStorage on initial client mount
   useEffect(() => {

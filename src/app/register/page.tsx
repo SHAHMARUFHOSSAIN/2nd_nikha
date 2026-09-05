@@ -28,7 +28,7 @@ import {
 
 export default function RegistrationWizardPage() {
   const router = useRouter();
-  const { setRole } = useAuth();
+  const { login } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
 
@@ -65,7 +65,7 @@ export default function RegistrationWizardPage() {
     lifestyle: 'Non-smoker',
     hobbies: 'Reading, Gardening, Music',
     // Step 6
-    bio: 'I am a resilient, warm-hearted professional and mother looking for an honest, emotionally mature companion for a lifelong second chapter.',
+    bio: 'I am a resilient, warm-hearted professional looking for an honest, emotionally mature companion for a lifelong second chapter.',
     // Step 7
     prefGender: 'Male',
     prefAgeRange: '32 - 42',
@@ -97,8 +97,49 @@ export default function RegistrationWizardPage() {
     if (currentStep < 9) {
       setCurrentStep((prev) => prev + 1);
     } else {
+      const avatarUrl = formData.gender === 'Male'
+        ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600'
+        : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600';
+
+      const newProfile = {
+        id: `p-${Date.now()}`,
+        fullName: formData.fullName || 'New Member',
+        email: formData.email,
+        phone: formData.phone,
+        age: formData.dob ? Math.max(18, new Date().getFullYear() - new Date(formData.dob).getFullYear()) : 28,
+        gender: formData.gender || 'Female',
+        height: formData.height || "5'5\"",
+        maritalStatus: formData.maritalStatus || 'Divorced',
+        religion: formData.religion || 'Islam',
+        motherTongue: formData.motherTongue || 'Bengali',
+        location: `${formData.city || 'Dhaka'}, ${formData.country || 'Bangladesh'}`,
+        city: formData.city || 'Dhaka',
+        country: formData.country || 'Bangladesh',
+        countryFlag: formData.country === 'Bangladesh' ? '🇧🇩' : '🌐',
+        education: formData.education || 'Graduate',
+        institution: formData.institution || 'University',
+        profession: formData.profession || 'Professional',
+        company: formData.company || 'Enterprise',
+        income: formData.income || '৳1,00,000 / month',
+        bio: formData.bio || 'Seeking a genuine, respectful life partner for remarriage.',
+        photoUrl: avatarUrl,
+        isVerified: false,
+        matchPercentage: 92,
+        trustScore: 88,
+        familyType: formData.familyType || 'Nuclear Family',
+        createdAt: new Date().toISOString().split('T')[0],
+      };
+
+      login(newProfile, 'FREE');
       setIsCompleted(true);
-      setRole('FREE');
+
+      try {
+        fetch('/api/members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newProfile),
+        }).catch(() => {});
+      } catch (e) {}
     }
   };
 

@@ -10,6 +10,8 @@ import { useAuth } from '@/lib/auth-context';
 import { BRAND_NAME, BRAND_TAGLINE } from '@/lib/constants';
 import { Heart, LogIn, ShieldAlert, CheckCircle2, ArrowRight, Crown } from 'lucide-react';
 
+import { MOCK_PROFILES } from '@/data/mock-data';
+
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
@@ -41,13 +43,18 @@ export default function LoginPage() {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      login('PREMIUM');
+      const foundProfile = MOCK_PROFILES.find(
+        (p) => p.email?.toLowerCase() === emailOrPhone.toLowerCase() || p.fullName.toLowerCase().includes(emailOrPhone.toLowerCase())
+      ) || MOCK_PROFILES[0];
+
+      login(foundProfile, 'PREMIUM');
       router.push('/member');
     }, 400);
   };
 
   const handleQuickDemoLogin = (role: 'PREMIUM' | 'FREE') => {
-    login(role);
+    const selectedProfile = role === 'PREMIUM' ? MOCK_PROFILES[0] : MOCK_PROFILES[1];
+    login(selectedProfile, role);
     router.push('/member');
   };
 

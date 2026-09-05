@@ -22,7 +22,11 @@ import { useAuth } from '@/lib/auth-context';
 
 export function MemberSidebar() {
   const pathname = usePathname();
-  const { userRole } = useAuth();
+  const { userRole, currentUser: authUser } = useAuth();
+  const currentUser = authUser || { fullName: 'Member' };
+  const initials = currentUser.fullName
+    ? currentUser.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'MB';
 
   const links = [
     { label: 'Dashboard', href: '/member', icon: LayoutDashboard },
@@ -38,12 +42,12 @@ export function MemberSidebar() {
       <div className="space-y-6">
         {/* Profile Card Header */}
         <div className="bg-rose-50/60 p-3.5 rounded-2xl border border-rose-100 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-rose-200 text-rose-800 font-serif font-bold flex items-center justify-center border border-rose-300">
-            AR
+          <div className="w-10 h-10 rounded-full bg-rose-200 text-rose-800 font-serif font-bold flex items-center justify-center border border-rose-300 shrink-0">
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="font-serif font-bold text-sm text-stone-900 truncate">
-              Anika Rahman
+              {currentUser.fullName}
             </h4>
             <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full inline-block">
               {userRole === 'PREMIUM' ? '👑 Premium Member' : '🌸 Free Member'}

@@ -7,6 +7,7 @@ import { MOCK_PAYMENTS } from '@/data/subscription-data';
 import { MOCK_PROFILES } from '@/data/mock-data';
 import { PaymentService } from './payment/payment-service';
 import { MEMBERSHIP_CONFIG } from './constants';
+import { useAuth } from './auth-context';
 
 interface ConnectionContextType {
   interests: Interest[];
@@ -66,7 +67,8 @@ export function ConnectionProvider({ children }: { children: React.ReactNode }) 
     },
   ]);
 
-  const currentUser = MOCK_PROFILES[0]; // Anika Rahman
+  const { currentUser: authUser } = useAuth();
+  const currentUser = authUser || MOCK_PROFILES[0];
 
   const closeMatchModal = () => setActiveMatchModal(null);
 
