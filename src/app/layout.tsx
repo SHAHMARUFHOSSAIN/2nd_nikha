@@ -9,6 +9,7 @@ import { ConnectionProvider } from '@/lib/connection-context';
 import { CommunicationProvider } from '@/lib/communication-context';
 import { AdminProvider } from '@/lib/admin-context';
 import { CurrencyProvider } from '@/lib/currency-context';
+import { getServerSettings } from '@/lib/server-settings';
 
 export const metadata: Metadata = {
   title: `${BRAND_NAME} - ${BRAND_TAGLINE} | Premium Matrimonial Platform`,
@@ -32,11 +33,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const initialSettings = await getServerSettings();
+
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <head>
@@ -81,7 +84,7 @@ export default function RootLayout({
         <AuthProvider>
           <ConnectionProvider>
             <CommunicationProvider>
-              <AdminProvider>
+              <AdminProvider initialSettings={initialSettings}>
                 <CurrencyProvider>
                   <Navbar />
                   <main className="flex-1">{children}</main>

@@ -173,7 +173,73 @@ const DEFAULT_SETTINGS = {
   },
 };
 
-export function AdminProvider({ children }: { children: React.ReactNode }) {
+const SETTINGS_META_KEY = '_settingsUpdatedAt';
+
+function savedAtOf(value: unknown): number {
+  if (value && typeof value === 'object' && typeof (value as any)[SETTINGS_META_KEY] === 'number') {
+    return (value as any)[SETTINGS_META_KEY] as number;
+  }
+  return 0;
+}
+
+function mergeSettingsByFreshness(local: Record<string, any>, remote: Record<string, any>): Record<string, any> {
+  const out: Record<string, any> = { ...(local || {}) };
+  const localTs = savedAtOf(local);
+  const remoteTs = savedAtOf(remote);
+
+  if (remoteTs > localTs) {
+    // Remote (DB/other source) is newer: remote wins, local fills gaps.
+    const merged: Record<string, any> = { ...(remote || {}) };
+    for (const [key, value] of Object.entries(local || {})) {
+      if (key === SETTINGS_META_KEY) continue;
+      if (merged[key] === undefined && value !== undefined) merged[key] = value;
+    }
+    return merged;
+  }
+
+  // Local/session is newer (or tied): local wins, remote fills gaps.
+  for (const [key, value] of Object.entries(remote || {})) {
+    if (key === SETTINGS_META_KEY) continue;
+    if (out[key] === undefined && value !== undefined) out[key] = value;
+  }
+  return out;
+}
+
+function normalizeBranding(branding: any): any {
+  if (branding && typeof branding === 'object') {
+    if (branding.heroImageUrl && branding.heroImageUrl.includes('unsplash.com')) {
+      branding.heroImageUrl = '';
+    }
+    if (!branding.logoUrl || branding.logoUrl === '/images/logo.png' || branding.logoUrl.startsWith('data:image/svg+xml;utf8')) {
+      branding.logoUrl = OFFICIAL_2ND_CHANCE_LOGO;
+    }
+  }
+  return branding;
+}
+
+function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
+  const copy = { ...(settings || {}) };
+  if (copy.branding) copy.branding = normalizeBranding({ ...copy.branding });
+  return copy;
+}
+
+function readLocalSettings(): Record<string, any> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const saved = localStorage.getItem('2ndchance_admin_settings');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object') {
+        return sanitizeSettings(parsed);
+      }
+    }
+  } catch (e) {
+    try { localStorage.removeItem('2ndchance_admin_settings'); } catch {}
+  }
+  return {};
+}
+
+export function AdminProvider({ children, initialSettings = {} }: { children: React.ReactNode; initialSettings?: Record<string, any> }) {
   const [members, setMembers] = useState<Profile[]>(MOCK_PROFILES);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(MOCK_ADMIN_USERS);
   const [verificationQueue, setVerificationQueue] = useState<VerificationQueueItem[]>(MOCK_VERIFICATION_QUEUE);
@@ -190,8 +256,17 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(MOCK_AUDIT_LOGS);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Initialize settings with DEFAULT_SETTINGS to ensure server and initial client render match perfectly (prevents hydration mismatch)
-  const [settings, setSettings] = useState<Record<string, any>>(DEFAULT_SETTINGS);
+  // Initialize settings synchronously: merge SSR-provided DB settings with the
+  // latest browser localStorage so the very first client render already shows
+  // admin-saved hero data (prevents the dummy-to-real flash and hydration mismatches).
+  const [settings, setSettings] = useState<Record<string, any>>(() => {
+    const base = { ...DEFAULT_SETTINGS, ...sanitizeSettings(initialSettings || {}) };
+    const local = readLocalSettings();
+    if (Object.keys(local).length > 0) {
+      return mergeSettingsByFreshness(base, sanitizeSettings(local));
+    }
+    return base;
+  });
 
   // Dynamic Browser Favicon Updater
   useEffect(() => {
@@ -216,19 +291,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        const savedSettings = localStorage.getItem('2ndchance_admin_settings');
-        if (savedSettings) {
-          const parsed = JSON.parse(savedSettings);
-          if (parsed.branding) {
-            if (parsed.branding.heroImageUrl && parsed.branding.heroImageUrl.includes('unsplash.com')) {
-              parsed.branding.heroImageUrl = '';
-            }
-            if (!parsed.branding.logoUrl || parsed.branding.logoUrl === '/images/logo.png' || parsed.branding.logoUrl.startsWith('data:image/svg+xml;utf8')) {
-              parsed.branding.logoUrl = OFFICIAL_2ND_CHANCE_LOGO;
-            }
-          }
-          setSettings(parsed);
-        }
         const savedMembers = localStorage.getItem('2ndchance_admin_members');
         if (savedMembers) {
           setMembers(JSON.parse(savedMembers));
@@ -238,7 +300,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         const savedBanners = localStorage.getItem('2ndchance_admin_banners');
         if (savedBanners) setCmsBanners(JSON.parse(savedBanners));
       } catch (e) {
-        localStorage.removeItem('2ndchance_admin_settings');
         localStorage.removeItem('2ndchance_admin_members');
       }
     }
@@ -271,12 +332,11 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           fetchWithTimeout('/api/banners'),
         ]);
 
-        if (settingsRes?.success && settingsRes?.settings && Object.keys(settingsRes.settings).length > 0) {
+        if (settingsRes?.success && settingsRes?.settings) {
           setSettings((prev) => {
-            const merged = { ...prev, ...settingsRes.settings };
-            if (merged.branding?.heroImageUrl && merged.branding.heroImageUrl.includes('unsplash.com')) {
-              merged.branding.heroImageUrl = '';
-            }
+            const remote = sanitizeSettings(settingsRes.settings);
+            if (Object.keys(remote).length === 0) return prev;
+            const merged = mergeSettingsByFreshness(prev, remote);
             if (typeof window !== 'undefined') {
               try { localStorage.setItem('2ndchance_admin_settings', JSON.stringify(merged)); } catch (e) {}
             }
@@ -619,10 +679,12 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateSettings = (category: string, values: Record<string, any>) => {
+    const savedAt = Date.now();
     setSettings((prev) => {
       const updated = {
         ...prev,
         [category]: { ...(prev[category] || {}), ...values },
+        [SETTINGS_META_KEY]: savedAt,
       };
       if (typeof window !== 'undefined') {
         try {
@@ -647,6 +709,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   };
 
   const batchUpdateSettings = (allUpdates: Record<string, any>) => {
+    const savedAt = Date.now();
     setSettings((prev) => {
       const updated = { ...prev };
       for (const [key, val] of Object.entries(allUpdates)) {
@@ -656,6 +719,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           updated[key] = val;
         }
       }
+      updated[SETTINGS_META_KEY] = savedAt;
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem('2ndchance_admin_settings', JSON.stringify(updated));
