@@ -22,7 +22,7 @@ interface ConnectionContextType {
   declineInterest: (interestId: string) => void;
   cancelInterest: (interestId: string) => void;
   blockUser: (userId: string) => void;
-  reportUser: (userId: string, reason: string) => void;
+  reportUser: (userId: string, reason: string, details?: string) => void;
   getInterestStatus: (profileId: string) => InterestStatus | 'NONE';
   isMatched: (profileId: string) => boolean;
   getMatchByProfileId: (profileId: string) => Match | undefined;
@@ -223,7 +223,7 @@ export function ConnectionProvider({ children }: { children: React.ReactNode }) 
     setBlockedUserIds((prev) => [...prev, userId]);
   };
 
-  const reportUser = (userId: string, reason: string) => {
+  const reportUser = (userId: string, reason: string, details?: string) => {
     setReportedUserIds((prev) => [...prev, userId]);
   };
 
