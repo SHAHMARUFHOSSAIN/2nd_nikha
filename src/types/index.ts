@@ -216,13 +216,22 @@ export interface SearchFilterOptions {
 
 export interface SuccessStory {
   id: string;
-  coupleNames: string;
-  headline: string;
-  storyText: string;
+  coupleNames?: string;
+  headline?: string;
+  storyText?: string;
   photoUrl: string;
-  marriageYear: string;
+  marriageYear?: string;
   location: string;
-  maritalHistory: string;
+  maritalHistory?: string;
+  husbandName?: string;
+  wifeName?: string;
+  husbandAge?: number;
+  wifeAge?: number;
+  husbandStatus?: string;
+  wifeStatus?: string;
+  marriageDate?: string;
+  quote?: string;
+  story?: string;
 }
 
 export interface MembershipPlan {
