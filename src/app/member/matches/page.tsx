@@ -35,47 +35,49 @@ export default function MatchesPage() {
 
         {matches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {matches.map((match) => (
-              <div
-                key={match.id}
-                className="bg-white rounded-3xl p-6 border border-rose-200 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
-              >
-                <div className="space-y-4">
-                  {/* Top Profile Banner */}
-                  <div className="flex items-start gap-4">
-                    <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-rose-50 shrink-0 border-2 border-rose-200 shadow-sm">
-                      <Image
-                        src={match.profile.photoUrl}
-                        alt={match.profile.fullName}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-serif font-bold text-xl text-stone-900 truncate">
-                          {match.profile.fullName}, {match.profile.age}
-                        </h3>
-                        {match.profile.isVerified && <VerifiedBadge showLabel labelText="Verified" />}
+            {matches.map((match) => {
+              const p = match?.profile || MOCK_PROFILES[0];
+              return (
+                <div
+                  key={match.id}
+                  className="bg-white rounded-3xl p-6 border border-rose-200 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
+                >
+                  <div className="space-y-4">
+                    {/* Top Profile Banner */}
+                    <div className="flex items-start gap-4">
+                      <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-rose-50 shrink-0 border-2 border-rose-200 shadow-sm">
+                        <Image
+                          src={p.photoUrl}
+                          alt={p.fullName}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-serif font-bold text-xl text-stone-900 truncate">
+                            {p.fullName}, {p.age}
+                          </h3>
+                          {p.isVerified && <VerifiedBadge showLabel labelText="Verified" />}
+                        </div>
 
-                      <div className="text-xs text-stone-600 space-y-0.5">
-                        <p className="flex items-center gap-1.5 truncate">
-                          <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                          <span>{match.profile.location}</span>
-                        </p>
-                        <p className="flex items-center gap-1.5 truncate">
-                          <Briefcase className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                          <span>{match.profile.profession}</span>
-                        </p>
-                      </div>
+                        <div className="text-xs text-stone-600 space-y-0.5">
+                          <p className="flex items-center gap-1.5 truncate">
+                            <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                            <span>{p.location}</span>
+                          </p>
+                          <p className="flex items-center gap-1.5 truncate">
+                            <Briefcase className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                            <span>{p.profession}</span>
+                          </p>
+                        </div>
 
-                      <div className="pt-1 flex items-center gap-2">
-                        <Badge variant="wine" size="sm">{match.profile.maritalStatus}</Badge>
-                        <Badge variant="outline" size="sm">{match.profile.religion}</Badge>
+                        <div className="pt-1 flex items-center gap-2">
+                          <Badge variant="wine" size="sm">{p.maritalStatus}</Badge>
+                          <Badge variant="outline" size="sm">{p.religion}</Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
                   {/* Compatibility & Matched Date */}
                   <div className="bg-rose-50/60 p-3.5 rounded-2xl border border-rose-100 space-y-2">
@@ -88,7 +90,7 @@ export default function MatchesPage() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] text-stone-700">
-                      {match.profile.matchReasons.slice(0, 4).map((reason, idx) => (
+                      {(p.matchReasons || []).slice(0, 4).map((reason, idx) => (
                         <div key={idx} className="flex items-center gap-1.5 truncate">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
                           <span className="truncate">{reason}</span>
@@ -100,7 +102,7 @@ export default function MatchesPage() {
 
                 {/* Actions */}
                 <div className="grid grid-cols-2 gap-3 pt-3 border-t border-stone-100">
-                  <Link href={`/profiles/${match.profile.id}`}>
+                  <Link href={`/profiles/${p.id}`}>
                     <Button variant="outline" size="sm" className="w-full justify-center">
                       View Profile
                     </Button>
@@ -118,7 +120,8 @@ export default function MatchesPage() {
                   </Link>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         ) : (
           <EmptyState

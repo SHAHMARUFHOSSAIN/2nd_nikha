@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -41,7 +41,7 @@ import { ShareContactModal } from '@/components/communication/share-contact-moda
 import { SharePhotoModal } from '@/components/communication/share-photo-modal';
 import { SafetyBanner } from '@/components/communication/safety-banner';
 
-export default function MessagesInboxPage() {
+function MessagesInboxContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlMatchId = searchParams ? searchParams.get('matchId') : null;
@@ -603,5 +603,13 @@ export default function MessagesInboxPage() {
         )}
       </div>
     </MemberLayout>
+  );
+}
+
+export default function MessagesInboxPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-stone-500">Loading messenger...</div>}>
+      <MessagesInboxContent />
+    </Suspense>
   );
 }
