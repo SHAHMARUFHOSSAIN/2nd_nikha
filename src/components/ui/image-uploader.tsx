@@ -40,17 +40,10 @@ export function ImageUploader({
       if (event.target?.result) {
         const rawDataUrl = event.target.result as string;
 
-        // If file is under 500KB, use raw data URL directly to ensure 100% exact original file quality & transparency
-        if (file.size < 500 * 1024) {
-          onChange(rawDataUrl);
-          return;
-        }
-
-        // For large files (>500KB), resize via Canvas while preserving PNG transparency
         const img = new window.Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
-          const maxDimension = 900;
+          const maxDimension = 800;
           let width = img.width;
           let height = img.height;
 
@@ -74,7 +67,7 @@ export function ImageUploader({
             const isPng = file.type === 'image/png' || rawDataUrl.startsWith('data:image/png');
             const compressedDataUrl = isPng
               ? canvas.toDataURL('image/png')
-              : canvas.toDataURL('image/webp', 0.8);
+              : canvas.toDataURL('image/jpeg', 0.82);
             onChange(compressedDataUrl);
           } else {
             onChange(rawDataUrl);

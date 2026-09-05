@@ -58,6 +58,9 @@ export function HeroSection() {
     router.push(`/search?gender=${iam}&maritalStatus=${lookingFor}&location=${encodeURIComponent(location)}`);
   };
 
+  const leftColSpan = heroImage ? 'lg:col-span-4' : 'lg:col-span-7';
+  const rightColSpan = heroImage ? 'lg:col-span-4' : 'lg:col-span-5';
+
   return (
     <div className="relative bg-gradient-to-b from-pink-100/90 via-rose-50/40 to-white pt-4 sm:pt-6 pb-12 sm:pb-20 overflow-hidden">
       {/* Subtle Background Accent Orbs */}
@@ -72,7 +75,7 @@ export function HeroSection() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
           
           {/* Left Column: Brand Headline & Introduction */}
-          <div className="lg:col-span-4 space-y-4 text-center lg:text-left">
+          <div className={`${leftColSpan} space-y-4 text-center lg:text-left`}>
             
             {/* Direct Dynamic Uploaded Hero 1st Image */}
             <div className="flex justify-center lg:justify-start">
@@ -146,7 +149,7 @@ export function HeroSection() {
           ) : null}
 
           {/* Right Column: AI Match Quick Search Card */}
-          <div className="lg:col-span-4 bg-white/95 backdrop-blur-xl border-2 border-pink-200 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+          <div className={`${rightColSpan} bg-white/95 backdrop-blur-xl border-2 border-pink-200 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4`}>
             <div className="border-b border-pink-100 pb-3 flex items-center justify-between">
               <div>
                 <h3 className="font-serif font-bold text-lg text-stone-900 flex items-center gap-2">

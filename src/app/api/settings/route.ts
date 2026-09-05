@@ -19,7 +19,7 @@ export async function GET() {
         }
       }
       return result;
-    }, {}, 1000);
+    }, {}, 3000);
 
     const mergedSettings = { ...inMemorySettings, ...dbSettings };
 
@@ -55,7 +55,9 @@ export async function POST(req: Request) {
             update: { value: stringifiedVal },
             create: { key: catKey, value: stringifiedVal },
           });
-        } catch (e) {}
+        } catch (e) {
+          console.error(`Failed to upsert setting key ${catKey} in DB:`, e);
+        }
       }
       return NextResponse.json({ success: true, settings: results });
     }
@@ -73,7 +75,9 @@ export async function POST(req: Request) {
         update: { value: stringifiedVal },
         create: { key: category, value: stringifiedVal },
       });
-    } catch (e) {}
+    } catch (e) {
+      console.error(`Failed to upsert category ${category} in DB:`, e);
+    }
 
     return NextResponse.json({ success: true, category, data: values });
   } catch (error: any) {
