@@ -12,6 +12,7 @@ import { VerifiedBadge } from '@/components/ui/verified-badge';
 import { CompatibilityScore } from '@/components/matching/compatibility-score';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Sparkles, MessageSquare, MapPin, Briefcase, Calendar, CheckCircle2 } from 'lucide-react';
+import { MOCK_PROFILES } from '@/data/mock-data';
 
 export default function MatchesPage() {
   const router = useRouter();
