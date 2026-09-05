@@ -86,6 +86,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(ROLE_STORAGE_KEY, 'GUEST');
       localStorage.removeItem(USER_STORAGE_KEY);
       localStorage.removeItem('2ndchance_user_session');
+      localStorage.removeItem('2ndchance_chat_messages');
+      localStorage.removeItem('2ndchance_chat_conversations');
+      localStorage.removeItem('2ndchance_chat_shared_photos');
     }
   };
 

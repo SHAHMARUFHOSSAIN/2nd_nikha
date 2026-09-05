@@ -30,9 +30,9 @@ interface CommunicationContextType {
 }
 
 const CommunicationContext = createContext<CommunicationContextType>({
-  conversations: MOCK_CONVERSATIONS,
-  messages: MOCK_MESSAGES,
-  sharedPhotos: MOCK_SHARED_PHOTOS,
+  conversations: [],
+  messages: {},
+  sharedPhotos: {},
   totalUnreadCount: 0,
   sendMessage: () => {},
   editMessage: () => {},
@@ -45,9 +45,9 @@ const CommunicationContext = createContext<CommunicationContextType>({
 });
 
 export function CommunicationProvider({ children }: { children: React.ReactNode }) {
-  const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
-  const [messages, setMessages] = useState<Record<string, Message[]>>(MOCK_MESSAGES);
-  const [sharedPhotos, setSharedPhotos] = useState<Record<string, SharedPhoto[]>>(MOCK_SHARED_PHOTOS);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [sharedPhotos, setSharedPhotos] = useState<Record<string, SharedPhoto[]>>({});
 
   const { currentUser: authUser } = useAuth();
   const currentUser = authUser || MOCK_PROFILES[0];
@@ -396,9 +396,9 @@ export function CommunicationProvider({ children }: { children: React.ReactNode 
   return (
     <CommunicationContext.Provider
       value={{
-        conversations: Array.isArray(conversations) ? conversations : MOCK_CONVERSATIONS,
-        messages: messages || MOCK_MESSAGES,
-        sharedPhotos: sharedPhotos || MOCK_SHARED_PHOTOS,
+        conversations: Array.isArray(conversations) ? conversations : [],
+        messages: messages || {},
+        sharedPhotos: sharedPhotos || {},
         totalUnreadCount,
         sendMessage,
         editMessage,

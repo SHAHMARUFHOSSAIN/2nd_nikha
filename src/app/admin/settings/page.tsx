@@ -20,9 +20,9 @@ export default function AdminSettingsPage() {
 
   const [logoUrl, setLogoUrl] = useState(initialLogo);
   const [faviconUrl, setFaviconUrl] = useState(settings.branding?.faviconUrl || '/favicon.ico');
-  const [heroTitle, setHeroTitle] = useState(settings.branding?.heroTitle || 'Every heart deserves a 2nd chance');
+  const [heroTitle, setHeroTitle] = useState(settings.branding?.heroTitle || 'Every heart deserves a second Nikha');
   const [heroSubtitle, setHeroSubtitle] = useState(settings.branding?.heroSubtitle || 'Designed specifically for divorced, widowed, single parents, and mature singles in Bangladesh & global NRB expats.');
-  const [heroImageUrl, setHeroImageUrl] = useState(settings.branding?.heroImageUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800');
+  const [heroImageUrl, setHeroImageUrl] = useState(settings.branding?.heroImageUrl || '');
 
   // Dynamic Country CMS CRUD State
   const defaultCountries = [
@@ -53,7 +53,7 @@ export default function AdminSettingsPage() {
         if (settings.branding.faviconUrl) setFaviconUrl(settings.branding.faviconUrl);
         if (settings.branding.heroTitle) setHeroTitle(settings.branding.heroTitle);
         if (settings.branding.heroSubtitle) setHeroSubtitle(settings.branding.heroSubtitle);
-        if (settings.branding.heroImageUrl) setHeroImageUrl(settings.branding.heroImageUrl);
+        if (settings.branding.heroImageUrl !== undefined) setHeroImageUrl(settings.branding.heroImageUrl);
       }
       if (settings.general) {
         if (settings.general.siteName) setSiteName(settings.general.siteName);

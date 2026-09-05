@@ -50,22 +50,14 @@ const ConnectionContext = createContext<ConnectionContextType>({
 });
 
 export function ConnectionProvider({ children }: { children: React.ReactNode }) {
-  const [interests, setInterests] = useState<Interest[]>(MOCK_INTERESTS);
-  const [matches, setMatches] = useState<Match[]>(MOCK_MATCHES);
+  const [interests, setInterests] = useState<Interest[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
   const [reportedUserIds, setReportedUserIds] = useState<string[]>([]);
   const [activeMatchModal, setActiveMatchModal] = useState<Match | null>(null);
   const [notifications, setNotifications] = useState<
     { id: string; title: string; message: string; date: string; read: boolean }[]
-  >([
-    {
-      id: 'notif-1',
-      title: 'Interest Received',
-      message: 'Tanvir Ahmed sent you an express interest request.',
-      date: '10 mins ago',
-      read: false,
-    },
-  ]);
+  >([]);
 
   const { currentUser: authUser } = useAuth();
   const currentUser = authUser || MOCK_PROFILES[0];
@@ -232,8 +224,8 @@ export function ConnectionProvider({ children }: { children: React.ReactNode }) 
   return (
     <ConnectionContext.Provider
       value={{
-        interests: Array.isArray(interests) ? interests : MOCK_INTERESTS,
-        matches: Array.isArray(matches) ? matches : MOCK_MATCHES,
+        interests: Array.isArray(interests) ? interests : [],
+        matches: Array.isArray(matches) ? matches : [],
         blockedUserIds,
         reportedUserIds,
         activeMatchModal,

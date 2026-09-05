@@ -122,7 +122,7 @@ const AdminContext = createContext<AdminContextType>({
       faviconUrl: '/favicon.ico',
       heroTitle: 'Every heart deserves a second Nikha',
       heroSubtitle: 'A trusted matrimonial sanctuary designed for divorced, widowed, single parents, and mature singles seeking a genuine, lifelong companion.',
-      heroImageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800',
+      heroImageUrl: '',
     },
   },
   addMember: () => {},
@@ -169,7 +169,7 @@ const DEFAULT_SETTINGS = {
     faviconUrl: '/favicon.ico',
     heroTitle: 'Every heart deserves a second Nikha',
     heroSubtitle: 'Designed specifically for divorced, widowed, single parents, and mature singles in Bangladesh & global NRB expats.',
-    heroImageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800',
+    heroImageUrl: '',
   },
 };
 

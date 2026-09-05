@@ -17,7 +17,7 @@ export function HeroSection() {
   const [location, setLocation] = useState('Dhaka, Bangladesh');
 
   // Read dynamic branding CMS from Admin Settings
-  let heroImage = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800';
+  let heroImage = '';
   let heroTitle = 'Every heart deserves a second Nikha';
   let heroSubtitle = 'A trusted matrimonial sanctuary designed for divorced, widowed, single parents, and mature singles seeking a genuine, lifelong companion.';
   let brandLogoUrl = OFFICIAL_2ND_CHANCE_LOGO;
@@ -133,18 +133,17 @@ export function HeroSection() {
           </div>
 
           {/* Center Column: Dynamic Uploaded Hero 2nd Image (Clean Direct Image Style - Extra Large Display) */}
-          <div className="lg:col-span-4 flex justify-center my-4 lg:my-0">
-            <div className="relative w-full max-w-[340px] sm:max-w-[480px] lg:max-w-[560px] h-[320px] sm:h-[460px] lg:h-[520px] filter drop-shadow-2xl hover:scale-105 transition-transform cursor-pointer">
-              <img
-                src={heroImage || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800'}
-                alt="Hero 2nd Image"
-                className="w-full h-full object-contain object-center"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800';
-                }}
-              />
+          {heroImage ? (
+            <div className="lg:col-span-4 flex justify-center my-4 lg:my-0">
+              <div className="relative w-full max-w-[340px] sm:max-w-[480px] lg:max-w-[560px] h-[320px] sm:h-[460px] lg:h-[520px] filter drop-shadow-2xl hover:scale-105 transition-transform cursor-pointer">
+                <img
+                  src={heroImage}
+                  alt="Hero 2nd Image"
+                  className="w-full h-full object-contain object-center"
+                />
+              </div>
             </div>
-          </div>
+          ) : null}
 
           {/* Right Column: AI Match Quick Search Card */}
           <div className="lg:col-span-4 bg-white/95 backdrop-blur-xl border-2 border-pink-200 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
