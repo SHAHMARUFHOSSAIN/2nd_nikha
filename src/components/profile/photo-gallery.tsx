@@ -66,9 +66,9 @@ export function PhotoGallery({
                 Photo Gallery Protected
               </p>
               <p className="text-xs text-rose-100 leading-relaxed">
-                {photoPrivacy === 'PRIVATE'
-                  ? `${fullName.split(' ')[0]} has set their photo gallery to Private.`
-                  : photoPrivacy === 'PREMIUM_ONLY'
+                {activePrivacy === 'PRIVATE'
+                  ? `${activeName.split(' ')[0]} has set their photo gallery to Private.`
+                  : activePrivacy === 'PREMIUM_ONLY'
                   ? 'Private photos are visible exclusively to active Premium members.'
                   : 'Photos unlocked upon mutual interest acceptance.'}
               </p>
