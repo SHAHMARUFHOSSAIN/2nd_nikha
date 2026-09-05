@@ -153,6 +153,7 @@ export interface Message {
 export interface Conversation {
   id: string;
   matchId: string;
+  partnerId?: string;
   participantIds: string[];
   lastMessage: string;
   lastMessageAt: string;
