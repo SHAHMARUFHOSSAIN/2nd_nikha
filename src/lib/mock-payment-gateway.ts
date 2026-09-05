@@ -4,7 +4,7 @@ import {
   PaymentInitResult,
   PaymentVerificationResult,
   PaymentResult,
-} from './gateway-interface';
+} from './payment/gateway-interface';
 import { PaymentTransaction, PaymentStatus } from '@/types';
 
 const STORAGE_KEY = '2ndchance_mock_transactions';
