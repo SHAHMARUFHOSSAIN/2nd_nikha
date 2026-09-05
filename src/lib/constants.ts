@@ -1,7 +1,7 @@
 import { NavItem, MembershipPlan } from '@/types';
 
-export const BRAND_NAME = '2nd Nikah';
-export const BRAND_TAGLINE = 'Every Heart Deserves a Second Nikah';
+export const BRAND_NAME = '2nd Nikha';
+export const BRAND_TAGLINE = 'Every Heart Deserves a Second Nikha';
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/' },

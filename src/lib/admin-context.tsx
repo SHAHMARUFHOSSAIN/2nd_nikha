@@ -115,12 +115,12 @@ const AdminContext = createContext<AdminContextType>({
   auditLogs: MOCK_AUDIT_LOGS,
   isLoaded: false,
   settings: {
-    general: { siteName: '2nd Nikah Matrimonial', supportEmail: 'support@2ndnikha.com' },
+    general: { siteName: '2nd Nikha Matrimonial', supportEmail: 'support@2ndnikha.com' },
     payment: { activeGateway: 'MOCK', currency: 'BDT', sslCommerzMode: 'SANDBOX' },
     branding: {
       logoUrl: OFFICIAL_2ND_CHANCE_LOGO,
       faviconUrl: '/favicon.ico',
-      heroTitle: 'Every heart deserves a second Nikah',
+      heroTitle: 'Every heart deserves a second Nikha',
       heroSubtitle: 'A trusted matrimonial sanctuary designed for divorced, widowed, single parents, and mature singles seeking a genuine, lifelong companion.',
       heroImageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800',
     },
@@ -162,12 +162,12 @@ const AdminContext = createContext<AdminContextType>({
 });
 
 const DEFAULT_SETTINGS = {
-  general: { siteName: '2nd Nikah Matrimonial', supportEmail: 'support@2ndnikha.com' },
+  general: { siteName: '2nd Nikha Matrimonial', supportEmail: 'support@2ndnikha.com' },
   payment: { activeGateway: 'MOCK', currency: 'BDT', sslCommerzMode: 'SANDBOX' },
   branding: {
     logoUrl: OFFICIAL_2ND_CHANCE_LOGO,
     faviconUrl: '/favicon.ico',
-    heroTitle: 'Every heart deserves a second Nikah',
+    heroTitle: 'Every heart deserves a second Nikha',
     heroSubtitle: 'Designed specifically for divorced, widowed, single parents, and mature singles in Bangladesh & global NRB expats.',
     heroImageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800',
   },

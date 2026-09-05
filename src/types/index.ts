@@ -47,6 +47,8 @@ export interface PartnerPreference {
 export interface Profile {
   id: string;
   fullName: string;
+  email?: string;
+  phone?: string;
   age: number;
   gender: Gender;
   maritalStatus: MaritalStatus;

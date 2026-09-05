@@ -18,7 +18,7 @@ export function HeroSection() {
 
   // Read dynamic branding CMS from Admin Settings
   let heroImage = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800';
-  let heroTitle = 'Every heart deserves a second Nikah';
+  let heroTitle = 'Every heart deserves a second Nikha';
   let heroSubtitle = 'A trusted matrimonial sanctuary designed for divorced, widowed, single parents, and mature singles seeking a genuine, lifelong companion.';
   let brandLogoUrl = OFFICIAL_2ND_CHANCE_LOGO;
 
@@ -35,7 +35,7 @@ export function HeroSection() {
   } catch (e) {}
 
   const renderHeroTitle = (title: string) => {
-    if (!title) return 'Every heart deserves a second Nikah';
+    if (!title) return 'Every heart deserves a second Nikha';
     const match = title.match(/(2nd\s*nikah|2nd\s*nikha|second\s*nikah|2nd\s*chance)/i);
     if (match && match.index !== undefined) {
       const idx = match.index;

@@ -44,7 +44,7 @@ export function BrandLogo({ size = 'md', showTagline = false, variant = 'light' 
       <div className="flex flex-col">
         <div className="flex items-baseline font-serif font-extrabold tracking-tight">
           <span className={textColor2nd}>2nd</span>
-          <span className="text-pink-600 ml-1">Nikah</span>
+          <span className="text-pink-600 ml-1">Nikha</span>
         </div>
 
         {showTagline && (
