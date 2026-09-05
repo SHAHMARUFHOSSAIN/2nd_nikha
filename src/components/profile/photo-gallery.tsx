@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { PhotoPrivacy } from '@/types';
+import { Profile, PhotoPrivacy } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { Lock, Eye, ShieldAlert, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,28 +10,36 @@ import { Badge } from '@/components/ui/badge';
 import { MembershipPreviewModal } from '@/components/sections/membership-preview-modal';
 
 export interface PhotoGalleryProps {
-  primaryPhoto: string;
+  profile?: Profile;
+  primaryPhoto?: string;
   additionalPhotos?: string[];
-  photoPrivacy: PhotoPrivacy;
-  fullName: string;
+  photoPrivacy?: PhotoPrivacy;
+  fullName?: string;
 }
 
 export function PhotoGallery({
+  profile,
   primaryPhoto,
   additionalPhotos = [],
   photoPrivacy,
   fullName,
 }: PhotoGalleryProps) {
   const { userRole } = useAuth();
-  const [selectedPhoto, setSelectedPhoto] = useState(primaryPhoto);
+  
+  const activePrimary = profile?.photoUrl || primaryPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800';
+  const activeAdditional = profile?.additionalPhotos || additionalPhotos;
+  const activePrivacy = profile?.photoPrivacy || photoPrivacy || 'PUBLIC';
+  const activeName = profile?.fullName || fullName || 'Member';
+
+  const [selectedPhoto, setSelectedPhoto] = useState(activePrimary);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   const isLocked =
-    photoPrivacy === 'PRIVATE' ||
-    (photoPrivacy === 'PREMIUM_ONLY' && userRole !== 'PREMIUM') ||
-    (photoPrivacy === 'MATCH_ONLY' && userRole === 'GUEST');
+    activePrivacy === 'PRIVATE' ||
+    (activePrivacy === 'PREMIUM_ONLY' && userRole !== 'PREMIUM') ||
+    (activePrivacy === 'MATCH_ONLY' && userRole === 'GUEST');
 
-  const allPhotos = [primaryPhoto, ...additionalPhotos];
+  const allPhotos = [activePrimary, ...activeAdditional];
 
   return (
     <div className="space-y-4">
@@ -39,7 +47,7 @@ export function PhotoGallery({
       <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden bg-rose-50 border-2 border-rose-100 shadow-md">
         <Image
           src={selectedPhoto}
-          alt={fullName}
+          alt={activeName}
           fill
           className={`object-cover transition-all duration-500 ${
             isLocked ? 'blur-xl scale-110 opacity-70' : 'blur-0 scale-100'
