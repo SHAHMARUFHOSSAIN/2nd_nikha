@@ -120,6 +120,8 @@ export function CommunicationProvider({ children }: { children: React.ReactNode 
         lastMessage: `Assalamu Alaikum! I expressed interest in your profile.`,
         lastMessageAt: timeStr,
         unreadCount: 0,
+        participantIds: ['p-101', profile.id],
+        status: 'ACTIVE',
       };
 
       const updatedConvs = [newConv, ...prevConvs];

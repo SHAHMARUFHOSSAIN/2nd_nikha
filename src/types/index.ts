@@ -154,11 +154,11 @@ export interface Conversation {
   id: string;
   matchId: string;
   partnerId?: string;
-  participantIds: string[];
+  participantIds?: string[];
   lastMessage: string;
   lastMessageAt: string;
   unreadCount: number;
-  status: 'ACTIVE' | 'BLOCKED' | 'ENDED';
+  status?: 'ACTIVE' | 'BLOCKED' | 'ENDED';
   profile: Profile;
 }
 
