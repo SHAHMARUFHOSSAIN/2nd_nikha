@@ -40,7 +40,7 @@ export default function BlogPage() {
               <div className="pt-4 border-t border-stone-100 flex items-center justify-between text-xs text-stone-400 font-medium">
                 <div className="flex items-center gap-2">
                   <User className="w-3.5 h-3.5 text-pink-500" />
-                  <span>{art.author}</span>
+                  <span>{art.author || 'Editorial Team'}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5 text-pink-500" />
