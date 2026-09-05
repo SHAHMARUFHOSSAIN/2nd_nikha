@@ -12,8 +12,11 @@ import { MOCK_PROFILES } from '@/data/mock-data';
 import { Heart, Edit, Save, CheckCircle2, Lock, ShieldCheck, Upload } from 'lucide-react';
 import Image from 'next/image';
 
+import { useAuth } from '@/lib/auth-context';
+
 export default function MemberProfilePage() {
-  const profile = MOCK_PROFILES[0]; // Anika Rahman
+  const { currentUser: authUser, login, userRole } = useAuth();
+  const profile = authUser || MOCK_PROFILES[0];
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
@@ -30,7 +33,17 @@ export default function MemberProfilePage() {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setPhotoUrl(event.target.result as string);
+          const newUrl = event.target.result as string;
+          setPhotoUrl(newUrl);
+          const updated = { ...profile, photoUrl: newUrl };
+          login(updated, userRole);
+          try {
+            fetch('/api/members', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updated),
+            }).catch(() => {});
+          } catch (err) {}
           setSavedNotice(true);
           setTimeout(() => setSavedNotice(false), 3000);
         }
@@ -41,6 +54,22 @@ export default function MemberProfilePage() {
 
   const handleSave = () => {
     setIsEditing(false);
+    const updated = {
+      ...profile,
+      photoUrl,
+      bio,
+      profession,
+      education,
+      city,
+    };
+    login(updated, userRole);
+    try {
+      fetch('/api/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      }).catch(() => {});
+    } catch (err) {}
     setSavedNotice(true);
     setTimeout(() => setSavedNotice(false), 3000);
   };

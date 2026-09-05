@@ -219,8 +219,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         const savedSettings = localStorage.getItem('2ndchance_admin_settings');
         if (savedSettings) {
           const parsed = JSON.parse(savedSettings);
-          if (parsed.branding && (!parsed.branding.logoUrl || parsed.branding.logoUrl === '/images/logo.png' || parsed.branding.logoUrl.startsWith('data:image/svg+xml;utf8'))) {
-            parsed.branding.logoUrl = OFFICIAL_2ND_CHANCE_LOGO;
+          if (parsed.branding) {
+            if (parsed.branding.heroImageUrl && parsed.branding.heroImageUrl.includes('unsplash.com')) {
+              parsed.branding.heroImageUrl = '';
+            }
+            if (!parsed.branding.logoUrl || parsed.branding.logoUrl === '/images/logo.png' || parsed.branding.logoUrl.startsWith('data:image/svg+xml;utf8')) {
+              parsed.branding.logoUrl = OFFICIAL_2ND_CHANCE_LOGO;
+            }
           }
           setSettings(parsed);
         }
@@ -268,13 +273,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
         if (settingsRes?.success && settingsRes?.settings && Object.keys(settingsRes.settings).length > 0) {
           setSettings((prev) => {
-            const merged = { ...prev };
-            for (const [k, v] of Object.entries(settingsRes.settings)) {
-              if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
-                merged[k] = { ...(prev[k] || {}), ...v };
-              } else {
-                merged[k] = v;
-              }
+            const merged = { ...prev, ...settingsRes.settings };
+            if (merged.branding?.heroImageUrl && merged.branding.heroImageUrl.includes('unsplash.com')) {
+              merged.branding.heroImageUrl = '';
             }
             if (typeof window !== 'undefined') {
               try { localStorage.setItem('2ndchance_admin_settings', JSON.stringify(merged)); } catch (e) {}

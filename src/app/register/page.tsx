@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { ImageUploader } from '@/components/ui/image-uploader';
 import { MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, BRAND_NAME } from '@/lib/constants';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -74,6 +75,7 @@ export default function RegistrationWizardPage() {
     prefEducation: 'Graduate degree',
     prefMaritalStatus: 'Divorced, Widowed, Single Parent',
     // Step 8
+    photoUrl: '',
     photoPrivacy: 'PUBLIC',
   });
 
@@ -97,9 +99,9 @@ export default function RegistrationWizardPage() {
     if (currentStep < 9) {
       setCurrentStep((prev) => prev + 1);
     } else {
-      const avatarUrl = formData.gender === 'Male'
+      const avatarUrl = formData.photoUrl || (formData.gender === 'Male'
         ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600'
-        : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600';
+        : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600');
 
       const newProfile = {
         id: `p-${Date.now()}`,
@@ -541,17 +543,14 @@ export default function RegistrationWizardPage() {
                 <h2 className="text-xl font-serif font-bold text-stone-900">
                   Step 8: Photos & Privacy Settings
                 </h2>
-                <div className="border-2 border-dashed border-rose-200 rounded-3xl p-8 text-center space-y-3 bg-rose-50/30">
-                  <Upload className="w-10 h-10 text-rose-400 mx-auto" />
-                  <p className="font-semibold text-stone-900 text-sm">
-                    Upload Profile Picture (Mock Uploader)
-                  </p>
-                  <p className="text-xs text-stone-500 max-w-xs mx-auto">
-                    JPEG, PNG images up to 5MB. High quality professional portraits get higher match responses.
-                  </p>
-                  <Button variant="outline" size="sm" type="button">
-                    Browse File
-                  </Button>
+                
+                <div className="p-4 bg-rose-50/40 rounded-3xl border border-rose-100">
+                  <ImageUploader
+                    label="Upload Profile Picture (From Computer / Mobile Phone)"
+                    helperText="JPG, PNG, WEBP files up to 10MB. High quality portraits get higher match responses."
+                    value={formData.photoUrl}
+                    onChange={(val) => updateField('photoUrl', val)}
+                  />
                 </div>
 
                 <Select
