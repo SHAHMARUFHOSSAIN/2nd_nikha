@@ -78,15 +78,24 @@ function PaymentSuccessContent() {
             </div>
           </div>
 
-          <div className="pt-2">
-            <Link href="/member">
+          <div className="pt-2 flex flex-col gap-2">
+            <Link href="/register?paid=true">
               <Button
                 variant="wine"
                 size="lg"
-                className="w-full justify-center shadow-lg shadow-rose-900/20"
-                rightIcon={<ArrowRight className="w-4 h-4" />}
+                className="w-full justify-center shadow-lg shadow-rose-900/20 font-bold"
+                rightIcon={<ArrowRight className="w-4 h-4 text-white" />}
               >
-                Go to Dashboard & View Matches
+                Complete Profile Registration & View Matches
+              </Button>
+            </Link>
+            <Link href="/member">
+              <Button
+                variant="outline"
+                size="md"
+                className="w-full justify-center text-xs text-stone-600 hover:text-stone-900"
+              >
+                Already Registered? Go to Dashboard
               </Button>
             </Link>
           </div>

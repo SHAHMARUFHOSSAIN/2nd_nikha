@@ -55,7 +55,7 @@ export function HeroSection() {
 
   const handleQuickSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(`/search?gender=${iam}&maritalStatus=${lookingFor}&location=${encodeURIComponent(location)}`);
+    router.push(`/register?gender=${iam}&maritalStatus=${encodeURIComponent(lookingFor)}&location=${encodeURIComponent(location)}`);
   };
 
   const leftColSpan = heroImage ? 'lg:col-span-4' : 'lg:col-span-7';

@@ -1,18 +1,23 @@
 import { PaymentGateway } from './gateway-interface';
 import { mockGatewayInstance } from './mock-payment-gateway';
+import { payStationGatewayInstance } from './paystation-payment-gateway';
 
 /**
  * Payment Gateway Factory
- * Gateway-agnostic factory returning the active payment gateway instance.
- * Default is MockPaymentGateway. Easily replaceable with SSLCommerzPaymentGateway when credentials become available.
+ * Dynamic gateway factory returning the active payment gateway instance.
+ * Supports PayStation BD, SSLCommerz, and Mock Gateway.
  */
-export function getPaymentGateway(): PaymentGateway {
-  const gatewayType = process.env.NEXT_PUBLIC_PAYMENT_GATEWAY || 'mock';
+export function getPaymentGateway(configuredGateway?: string): PaymentGateway {
+  const activeType = (configuredGateway || process.env.NEXT_PUBLIC_PAYMENT_GATEWAY || 'paystation').toLowerCase();
 
-  if (gatewayType === 'sslcommerz') {
-    // Future: return new SSLCommerzPaymentGateway();
+  if (activeType === 'paystation' || activeType === 'ps') {
+    return payStationGatewayInstance;
+  }
+
+  if (activeType === 'sslcommerz') {
     return mockGatewayInstance;
   }
 
-  return mockGatewayInstance;
+  return payStationGatewayInstance;
 }
+

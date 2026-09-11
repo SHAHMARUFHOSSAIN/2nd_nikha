@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   MessageSquare,
+  MessageCircle,
   Search,
   CheckCircle2,
   Heart,
@@ -35,8 +36,11 @@ import {
   Info,
   ThumbsUp,
   Shield,
+  Ban,
+  ShieldAlert,
 } from 'lucide-react';
 import { ContactCard } from '@/components/communication/contact-card';
+import { useAuth } from '@/lib/auth-context';
 import { ShareContactModal } from '@/components/communication/share-contact-modal';
 import { SharePhotoModal } from '@/components/communication/share-photo-modal';
 import { SafetyBanner } from '@/components/communication/safety-banner';
@@ -46,6 +50,7 @@ function MessagesInboxContent() {
   const searchParams = useSearchParams();
   const urlMatchId = searchParams ? searchParams.get('matchId') : null;
 
+  const { currentUser } = useAuth();
   const communication = useCommunication();
   const connection = useConnection();
 
@@ -56,6 +61,8 @@ function MessagesInboxContent() {
   const deleteMessage = communication?.deleteMessage;
   const sharePhotoInChat = communication?.sharePhotoInChat;
   const markAsRead = communication?.markAsRead;
+  const toggleBlockConversation = communication?.toggleBlockConversation;
+  const deleteConversation = communication?.deleteConversation;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(
@@ -71,8 +78,12 @@ function MessagesInboxContent() {
     if (urlMatchId) {
       setSelectedMatchId(urlMatchId);
       setMobileActiveView('CHAT');
+    } else if (conversations.length > 0) {
+      if (!selectedMatchId || !conversations.some((c) => c.matchId === selectedMatchId)) {
+        setSelectedMatchId(conversations[0].matchId);
+      }
     }
-  }, [urlMatchId]);
+  }, [urlMatchId, conversations, selectedMatchId]);
 
   const [inputMessage, setInputMessage] = useState('');
   const [selectedImageFileUrl, setSelectedImageFileUrl] = useState<string | null>(null);
@@ -98,16 +109,37 @@ function MessagesInboxContent() {
   const activeConv = conversations.find((c) => c.matchId === selectedMatchId) || conversations[0];
   const activeMessages = activeConv ? messagesMap[activeConv.matchId] || [] : [];
 
-  // Smooth inner-container scrolling without shaking/wobbling the page layout
+  const isUserScrolledUp = useRef(false);
+
+  const handleChatScroll = () => {
+    if (!chatContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    isUserScrolledUp.current = distanceFromBottom > 100;
+  };
+
   const scrollToBottomInner = () => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   };
 
+  // Scroll to bottom when conversation or view changes
   useEffect(() => {
-    scrollToBottomInner();
-  }, [activeMessages, selectedMatchId, mobileActiveView]);
+    isUserScrolledUp.current = false;
+    setTimeout(scrollToBottomInner, 50);
+  }, [selectedMatchId, mobileActiveView]);
+
+  // Scroll to bottom when NEW message is added (only if user hasn't scrolled up to read history)
+  const prevMsgCountRef = useRef(activeMessages.length);
+  useEffect(() => {
+    if (activeMessages.length > prevMsgCountRef.current) {
+      if (!isUserScrolledUp.current) {
+        setTimeout(scrollToBottomInner, 50);
+      }
+    }
+    prevMsgCountRef.current = activeMessages.length;
+  }, [activeMessages.length]);
 
   // Auto mark active conversation as read upon viewing (only if unread)
   useEffect(() => {
@@ -167,9 +199,9 @@ function MessagesInboxContent() {
     <MemberLayout title="Messenger Inbox">
       <div className="space-y-4 max-w-7xl mx-auto">
         
-        {/* Messenger Container Box */}
+        {/* Messenger Container Box (Stable WhatsApp / Messenger Web Single-Page Layout) */}
         {conversations.length > 0 ? (
-          <div className="bg-white rounded-3xl border border-stone-200/90 shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 h-[75vh] sm:h-[80vh] min-h-[520px]">
+          <div className="bg-white rounded-3xl border border-stone-200/90 shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 h-[calc(100vh-140px)] min-h-[520px] max-h-[850px]">
             
             {/* Left: Messenger Chats Sidebar */}
             <div className={`lg:col-span-4 border-r border-stone-200/80 flex-col justify-between bg-stone-50/60 h-full overflow-hidden ${
@@ -219,13 +251,13 @@ function MessagesInboxContent() {
                           markAsRead(conv.matchId);
                         }
                       }}
-                      className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 relative ${
+                      className={`group p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 relative ${
                         isSelected
                           ? 'bg-pink-50/80 border border-pink-200 shadow-xs'
                           : 'bg-transparent hover:bg-white/80 border border-transparent'
                       }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         
                         {/* Messenger Avatar with Online Green Dot */}
                         <div className="relative w-12 h-12 rounded-full overflow-hidden bg-pink-100 border border-stone-200 shrink-0">
@@ -235,19 +267,28 @@ function MessagesInboxContent() {
                             fill
                             className="object-cover object-top"
                           />
-                          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shadow-xs" />
+                          <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white shadow-xs ${
+                            conv.status === 'BLOCKED' ? 'bg-rose-500' : 'bg-emerald-500'
+                          }`} />
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <h4 className={`font-sans text-xs sm:text-sm truncate ${
-                            isUnread ? 'font-extrabold text-stone-900' : 'font-bold text-stone-800'
-                          }`}>
-                            {conv?.profile?.fullName || 'Candidate'}
-                          </h4>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className={`font-sans text-xs sm:text-sm truncate ${
+                              isUnread ? 'font-extrabold text-stone-900' : 'font-bold text-stone-800'
+                            }`}>
+                              {conv?.profile?.fullName || 'Candidate'}
+                            </h4>
+                            {conv.status === 'BLOCKED' && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-700 font-bold shrink-0">
+                                Blocked
+                              </span>
+                            )}
+                          </div>
                           <p className={`text-xs truncate mt-0.5 ${
                             isUnread ? 'font-bold text-pink-700' : 'text-stone-500'
                           }`}>
-                            {conv.lastMessage}
+                            {conv.lastSenderId && currentUser && (conv.lastSenderId === currentUser.id || conv.lastSenderId === currentUser.email) ? 'You: ' : ''}{conv.lastMessage}
                           </p>
                         </div>
                       </div>
@@ -256,9 +297,27 @@ function MessagesInboxContent() {
                         <span className="text-[10px] text-stone-400 font-mono">
                           {conv.lastMessageAt}
                         </span>
-                        {isUnread && (
-                          <span className="w-2.5 h-2.5 rounded-full bg-pink-600 animate-pulse shadow-xs" />
-                        )}
+                        <div className="flex items-center gap-1">
+                          {isUnread && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-pink-600 animate-pulse shadow-xs" />
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (deleteConversation) {
+                                deleteConversation(conv.matchId);
+                                if (selectedMatchId === conv.matchId) {
+                                  setSelectedMatchId(null);
+                                }
+                              }
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                            title="Delete Conversation"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -268,22 +327,24 @@ function MessagesInboxContent() {
             </div>
 
             {/* Right: Messenger Chat Window */}
-            <div className={`lg:col-span-8 flex-col justify-between bg-white h-full overflow-hidden ${
-              mobileActiveView === 'CHAT' ? 'flex' : 'hidden lg:flex'
+            <div className={`flex-col justify-between bg-white overflow-hidden ${
+              mobileActiveView === 'CHAT'
+                ? 'fixed inset-0 z-[100] flex h-[100dvh] w-screen lg:static lg:z-auto lg:h-full lg:w-auto lg:col-span-8 lg:flex'
+                : 'hidden lg:flex lg:col-span-8 h-full'
             }`}>
               {activeConv ? (
                 <>
                   {/* Messenger Top Header */}
-                  <div className="p-3.5 sm:p-4 border-b border-stone-200/80 flex items-center justify-between bg-white shadow-2xs shrink-0 z-10">
+                  <div className="p-3 sm:p-4 border-b border-stone-200/80 flex items-center justify-between bg-white shadow-2xs shrink-0 z-10">
                     <div className="flex items-center gap-2 sm:gap-3">
                       
                       {/* Mobile Back Button (Chats List) */}
                       <button
                         onClick={() => setMobileActiveView('LIST')}
-                        className="lg:hidden p-1.5 rounded-xl bg-stone-100 hover:bg-pink-100 text-stone-700 hover:text-pink-800 transition-all border border-stone-200"
+                        className="lg:hidden p-1.5 rounded-full hover:bg-stone-100 active:bg-stone-200 text-stone-700 transition-all border border-stone-200 shadow-2xs"
                         title="Back to Chats"
                       >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-6 h-6 text-stone-800" />
                       </button>
 
                       <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden bg-pink-50 border border-stone-200 shrink-0">
@@ -311,6 +372,7 @@ function MessagesInboxContent() {
                         variant="outline"
                         size="sm"
                         onClick={() => setIsSharePhotoOpen(true)}
+                        disabled={activeConv.status === 'BLOCKED'}
                         className="rounded-full text-[11px] sm:text-xs border-pink-200 text-pink-800 hover:bg-pink-50 px-2.5 sm:px-3"
                         leftIcon={<Camera className="w-3.5 h-3.5 text-pink-600" />}
                       >
@@ -322,12 +384,57 @@ function MessagesInboxContent() {
                         variant="wine"
                         size="sm"
                         onClick={() => setIsShareContactOpen(true)}
-                        className="rounded-full text-[11px] sm:text-xs shadow-sm px-2.5 sm:px-3"
-                        leftIcon={<Phone className="w-3.5 h-3.5 text-white" />}
+                        disabled={activeConv.status === 'BLOCKED'}
+                        className="rounded-full text-[11px] sm:text-xs shadow-sm px-2.5 sm:px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold"
+                        leftIcon={<MessageCircle className="w-3.5 h-3.5 text-white" />}
                       >
-                        <span className="hidden sm:inline">Share Contact</span>
-                        <span className="sm:hidden">Contact</span>
+                        <span className="hidden sm:inline">Request WhatsApp</span>
+                        <span className="sm:hidden">WhatsApp</span>
                       </Button>
+
+                      {/* Block / Unblock Action Button: Only blocker can unblock; blocked recipient cannot unblock */}
+                      {activeConv.status === 'BLOCKED' ? (
+                        currentUser && activeConv.blockedBy && (activeConv.blockedBy === currentUser.id || activeConv.blockedBy === currentUser.email) ? (
+                          <Button
+                            variant="wine"
+                            size="sm"
+                            onClick={() => toggleBlockConversation && toggleBlockConversation(activeConv.matchId)}
+                            className="rounded-full text-[11px] sm:text-xs px-2.5 sm:px-3 bg-rose-700 hover:bg-rose-800 text-white font-bold"
+                            leftIcon={<ShieldCheck className="w-3.5 h-3.5" />}
+                          >
+                            <span>Unblock</span>
+                          </Button>
+                        ) : (
+                          <span className="text-[11px] px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 font-bold flex items-center gap-1">
+                            <Ban className="w-3 h-3 text-rose-600" />
+                            <span>Blocked</span>
+                          </span>
+                        )
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleBlockConversation && toggleBlockConversation(activeConv.matchId)}
+                          className="rounded-full text-[11px] sm:text-xs px-2.5 sm:px-3 border-stone-300 text-rose-700 hover:bg-rose-50"
+                          leftIcon={<Ban className="w-3.5 h-3.5 text-rose-600" />}
+                        >
+                          <span>Block</span>
+                        </Button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (deleteConversation) {
+                            deleteConversation(activeConv.matchId);
+                            setSelectedMatchId(null);
+                          }
+                        }}
+                        className="p-1.5 rounded-full text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                        title="Delete Conversation"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
 
@@ -339,6 +446,7 @@ function MessagesInboxContent() {
                   {/* Chat Messages Body Area (Messenger Bubbles) */}
                   <div
                     ref={chatContainerRef}
+                    onScroll={handleChatScroll}
                     className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 bg-stone-50/40"
                   >
                     {activeMessages.length === 0 ? (
@@ -353,7 +461,10 @@ function MessagesInboxContent() {
                       </div>
                     ) : (
                       activeMessages.map((msg) => {
-                        const isMine = msg.senderId === 'p-101';
+                        const isMine =
+                          currentUser !== null &&
+                          (msg.senderId === currentUser.id ||
+                            (currentUser.email && msg.senderId === currentUser.email));
                         const isEditingThis = editingMessageId === msg.id;
 
                         const isPhotoMsg =
@@ -440,8 +551,13 @@ function MessagesInboxContent() {
                                   )}
                                 </div>
                               ) : msg.type === 'CONTACT' || msg.contactDetails ? (
-                                <div className="max-w-sm">
-                                  <ContactCard contact={msg.contactDetails || { phone: msg.content }} />
+                                <div className="max-w-md">
+                                  <ContactCard
+                                    matchId={activeConv.matchId}
+                                    messageId={msg.id}
+                                    contactDetails={msg.contactDetails}
+                                    isSender={isMine}
+                                  />
                                 </div>
                               ) : (
                                 <div
@@ -456,8 +572,10 @@ function MessagesInboxContent() {
                               )}
                             </div>
 
-                            <span className="text-[9px] text-stone-400 font-mono mt-1 px-1">
-                              {msg.createdAt || msg.sentAt}
+                            <span className="text-[9px] text-stone-400 font-mono mt-1 px-1 flex items-center gap-1">
+                              <span className="font-semibold">{isMine ? 'You' : activeConv?.profile?.fullName?.split(' ')[0] || 'Member'}</span>
+                              <span>•</span>
+                              <span>{msg.createdAt || msg.sentAt}</span>
                             </span>
                           </div>
                         );
@@ -483,86 +601,109 @@ function MessagesInboxContent() {
                     </div>
                   )}
 
-                  {/* Messenger Bottom Input Bar */}
-                  <form
-                    onSubmit={(e) => handleSendTextMessage(e)}
-                    className="p-3 sm:p-3.5 border-t border-stone-200/80 bg-white flex items-center gap-2 relative shrink-0"
-                  >
-                    {/* Emoji Picker Popover */}
-                    {showEmojiPicker && (
-                      <div
-                        ref={emojiPickerRef}
-                        className="absolute bottom-16 left-4 bg-white p-3 rounded-2xl border border-pink-200 shadow-2xl grid grid-cols-6 gap-2 z-50 animate-in fade-in slide-in-from-bottom-2"
-                      >
-                        {EMOJI_LIST.map((emoji) => (
-                          <button
-                            key={emoji}
-                            type="button"
-                            onClick={() => {
-                              setInputMessage((prev) => prev + emoji);
-                            }}
-                            className="text-lg p-1.5 hover:bg-pink-50 rounded-xl transition-all"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
+                  {/* Messenger Bottom Input Bar or Blocked Banner */}
+                  {activeConv.status === 'BLOCKED' ? (
+                    <div className="p-4 bg-rose-50 border-t border-rose-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left shrink-0">
+                      <div className="flex items-center gap-2 text-rose-800 text-xs font-semibold">
+                        <Ban className="w-4 h-4 text-rose-600 shrink-0" />
+                        <span>
+                          {currentUser && activeConv.blockedBy && (activeConv.blockedBy === currentUser.id || activeConv.blockedBy === currentUser.email)
+                            ? `You have blocked ${activeConv.profile.fullName}. Unblock to resume messaging.`
+                            : `You cannot send messages or reply to this conversation because you have been blocked by ${activeConv.profile.fullName}.`}
+                        </span>
                       </div>
-                    )}
-
-                    <input
-                      type="file"
-                      ref={directFileInputRef}
-                      onChange={handleFileSelectPreview}
-                      accept="image/*"
-                      className="hidden"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => directFileInputRef.current?.click()}
-                      className="p-2 rounded-full text-stone-500 hover:text-pink-600 hover:bg-pink-50 transition-colors"
-                      title="Attach Photo"
+                      {currentUser && activeConv.blockedBy && (activeConv.blockedBy === currentUser.id || activeConv.blockedBy === currentUser.email) && (
+                        <Button
+                          variant="wine"
+                          size="sm"
+                          onClick={() => toggleBlockConversation && toggleBlockConversation(activeConv.matchId)}
+                          className="rounded-full text-xs shrink-0 bg-rose-700 hover:bg-rose-800 text-white font-bold"
+                        >
+                          Unblock Member
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <form
+                      onSubmit={(e) => handleSendTextMessage(e)}
+                      className="p-3 sm:p-3.5 pb-safe border-t border-stone-200/80 bg-white flex items-center gap-2 relative shrink-0"
                     >
-                      <Paperclip className="w-5 h-5" />
-                    </button>
+                      {/* Emoji Picker Popover */}
+                      {showEmojiPicker && (
+                        <div
+                          ref={emojiPickerRef}
+                          className="absolute bottom-16 left-4 bg-white p-3 rounded-2xl border border-pink-200 shadow-2xl grid grid-cols-6 gap-2 z-50 animate-in fade-in slide-in-from-bottom-2"
+                        >
+                          {EMOJI_LIST.map((emoji) => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => {
+                                setInputMessage((prev) => prev + emoji);
+                              }}
+                              className="text-lg p-1.5 hover:bg-pink-50 rounded-xl transition-all"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
 
-                    <button
-                      type="button"
-                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      className="p-2 rounded-full text-stone-500 hover:text-pink-600 hover:bg-pink-50 transition-colors"
-                      title="Insert Emoji"
-                    >
-                      <Smile className="w-5 h-5" />
-                    </button>
+                      <input
+                        type="file"
+                        ref={directFileInputRef}
+                        onChange={handleFileSelectPreview}
+                        accept="image/*"
+                        className="hidden"
+                      />
 
-                    <input
-                      type="text"
-                      placeholder={`Aa`}
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      className="flex-1 bg-stone-100 border border-transparent rounded-full px-4 py-2 text-xs text-stone-900 focus:outline-none focus:bg-white focus:border-pink-500 transition-all"
-                    />
-
-                    {inputMessage.trim() ? (
-                      <Button
-                        type="submit"
-                        variant="wine"
-                        size="sm"
-                        className="rounded-full w-8 h-8 p-0 flex items-center justify-center shrink-0 shadow-md shadow-pink-900/20"
-                      >
-                        <Send className="w-4 h-4 text-white" />
-                      </Button>
-                    ) : (
                       <button
                         type="button"
-                        onClick={() => handleSendTextMessage(undefined, '❤️')}
-                        className="p-1.5 text-pink-600 hover:scale-110 transition-transform"
-                        title="Send Heart Reaction"
+                        onClick={() => directFileInputRef.current?.click()}
+                        className="p-2 rounded-full text-stone-500 hover:text-pink-600 hover:bg-pink-50 transition-colors"
+                        title="Attach Photo"
                       >
-                        <Heart className="w-5 h-5 fill-pink-600 text-pink-600" />
+                        <Paperclip className="w-5 h-5" />
                       </button>
-                    )}
-                  </form>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                        className="p-2 rounded-full text-stone-500 hover:text-pink-600 hover:bg-pink-50 transition-colors"
+                        title="Insert Emoji"
+                      >
+                        <Smile className="w-5 h-5" />
+                      </button>
+
+                      <input
+                        type="text"
+                        placeholder={`Aa`}
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        className="flex-1 bg-stone-100 border border-transparent rounded-full px-4 py-2 text-xs text-stone-900 focus:outline-none focus:bg-white focus:border-pink-500 transition-all"
+                      />
+
+                      {inputMessage.trim() ? (
+                        <Button
+                          type="submit"
+                          variant="wine"
+                          size="sm"
+                          className="rounded-full w-8 h-8 p-0 flex items-center justify-center shrink-0 shadow-md shadow-pink-900/20"
+                        >
+                          <Send className="w-4 h-4 text-white" />
+                        </Button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSendTextMessage(undefined, '❤️')}
+                          className="p-1.5 text-pink-600 hover:scale-110 transition-transform"
+                          title="Send Heart Reaction"
+                        >
+                          <Heart className="w-5 h-5 fill-pink-600 text-pink-600" />
+                        </button>
+                      )}
+                    </form>
+                  )}
                 </>
               ) : (
                 <div className="flex-1 flex items-center justify-center p-8 text-center text-stone-400">
@@ -588,6 +729,7 @@ function MessagesInboxContent() {
             isOpen={isShareContactOpen}
             onClose={() => setIsShareContactOpen(false)}
             receiverName={activeConv.profile.fullName}
+            receiverId={activeConv.profile.id}
             matchId={activeConv.matchId}
           />
         )}
@@ -598,6 +740,7 @@ function MessagesInboxContent() {
             isOpen={isSharePhotoOpen}
             onClose={() => setIsSharePhotoOpen(false)}
             receiverName={activeConv.profile.fullName}
+            receiverId={activeConv.profile.id}
             matchId={activeConv.matchId}
           />
         )}

@@ -12,8 +12,12 @@ export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'countries' | 'membership' | 'payment' | 'notifications' | 'security' | 'privacy'>('general');
   const [siteName, setSiteName] = useState(settings.general?.siteName || '2nd Chance Matrimonial');
   const [supportEmail, setSupportEmail] = useState(settings.general?.supportEmail || 'support@2ndchance.com');
-  const [gateway, setGateway] = useState(settings.payment?.activeGateway || 'MOCK');
+  const [gateway, setGateway] = useState(settings.payment?.activeGateway || 'PAYSTATION');
   const [currency, setCurrency] = useState(settings.payment?.currency || 'BDT');
+  const [paystationMerchantId, setPaystationMerchantId] = useState(settings.payment?.paystationMerchantId || 'PS_2NDNIKHA_LIVE');
+  const [paystationApiKey, setPaystationApiKey] = useState(settings.payment?.paystationApiKey || '');
+  const [paystationSecretKey, setPaystationSecretKey] = useState(settings.payment?.paystationSecretKey || '');
+  const [paystationMode, setPaystationMode] = useState(settings.payment?.paystationMode || 'sandbox');
 
   // Hero CMS Fields
   const initialLogo = settings.branding?.logoUrl || OFFICIAL_2ND_CHANCE_LOGO;
@@ -62,6 +66,10 @@ export default function AdminSettingsPage() {
       if (settings.payment) {
         if (settings.payment.activeGateway) setGateway(settings.payment.activeGateway);
         if (settings.payment.currency) setCurrency(settings.payment.currency);
+        if (settings.payment.paystationMerchantId) setPaystationMerchantId(settings.payment.paystationMerchantId);
+        if (settings.payment.paystationApiKey) setPaystationApiKey(settings.payment.paystationApiKey);
+        if (settings.payment.paystationSecretKey) setPaystationSecretKey(settings.payment.paystationSecretKey);
+        if (settings.payment.paystationMode) setPaystationMode(settings.payment.paystationMode);
       }
       if (settings.countries && Array.isArray(settings.countries) && settings.countries.length > 0) {
         setCountryList(settings.countries);
@@ -124,12 +132,19 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     batchUpdateSettings({
       general: { siteName, supportEmail },
-      payment: { activeGateway: gateway, currency },
+      payment: {
+        activeGateway: gateway,
+        currency,
+        paystationMerchantId,
+        paystationApiKey,
+        paystationSecretKey,
+        paystationMode,
+      },
       branding: { logoUrl, faviconUrl, heroTitle, heroSubtitle, heroImageUrl },
       countries: countryList,
     });
     isDirty.current = false;
-    setNotice(`Hero 1st Image (Logo), Hero 2nd Image, Favicon, Hero Text, and platform settings saved successfully.`);
+    setNotice(`PayStation Gateway credentials, Hero CMS, and platform settings saved successfully.`);
   };
 
   return (
@@ -411,19 +426,71 @@ export default function AdminSettingsPage() {
               <label className="font-bold text-stone-300">Active Payment Gateway:</label>
               <select
                 value={gateway}
-                onChange={(e) => setGateway(e.target.value)}
-                className="w-full bg-stone-950 border border-stone-800 rounded-2xl p-3 text-xs text-stone-200"
+                onChange={(e) => { isDirty.current = true; setGateway(e.target.value); }}
+                className="w-full bg-stone-950 border border-stone-800 rounded-2xl p-3 text-xs text-stone-200 font-bold"
               >
-                <option value="MOCK">Mock Payment Gateway (Development/Testing)</option>
-                <option value="SSLCOMMERZ">SSLCommerz (Production - Sandbox / Live)</option>
+                <option value="PAYSTATION">PayStation BD (Primary Production / Sandbox Gateway)</option>
+                <option value="SSLCOMMERZ">SSLCommerz (Alternative Merchant Gateway)</option>
+                <option value="MOCK">Mock Gateway (Testing & Local Development)</option>
               </select>
             </div>
+
+            <div className="p-4 bg-stone-950 rounded-2xl border border-purple-900/60 space-y-3">
+              <h4 className="font-bold text-purple-300 flex items-center gap-1.5">
+                <CreditCard className="w-4 h-4 text-purple-400" />
+                <span>PayStation Payment Gateway Configuration (PayStation BD)</span>
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-stone-400 font-bold block mb-1">PayStation Merchant ID:</label>
+                  <input
+                    type="text"
+                    value={paystationMerchantId}
+                    onChange={(e) => { isDirty.current = true; setPaystationMerchantId(e.target.value); }}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-200 font-mono"
+                    placeholder="e.g. PS_2NDNIKHA_LIVE"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-stone-400 font-bold block mb-1">PayStation Gateway Mode:</label>
+                  <select
+                    value={paystationMode}
+                    onChange={(e) => { isDirty.current = true; setPaystationMode(e.target.value); }}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-200"
+                  >
+                    <option value="sandbox">Sandbox (Testing / Demo Mode)</option>
+                    <option value="live">Live (Production Settlement to Bank)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-stone-400 font-bold block mb-1">PayStation API Key:</label>
+                  <input
+                    type="password"
+                    value={paystationApiKey}
+                    onChange={(e) => { isDirty.current = true; setPaystationApiKey(e.target.value); }}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-200 font-mono"
+                    placeholder="••••••••••••••••"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-stone-400 font-bold block mb-1">PayStation Secret Key:</label>
+                  <input
+                    type="password"
+                    value={paystationSecretKey}
+                    onChange={(e) => { isDirty.current = true; setPaystationSecretKey(e.target.value); }}
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-200 font-mono"
+                    placeholder="••••••••••••••••"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-1">
               <label className="font-bold text-stone-300">Default Currency:</label>
               <input
                 type="text"
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
+                onChange={(e) => { isDirty.current = true; setCurrency(e.target.value); }}
                 className="w-full bg-stone-950 border border-stone-800 rounded-2xl p-3 text-xs text-stone-200"
               />
             </div>

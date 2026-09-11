@@ -36,19 +36,19 @@ export function BrandLogo({ size = 'md', showTagline = false, variant = 'light' 
       <div className={`relative ${dimensions.iconSize} shrink-0`}>
         <img
           src={customLogoUrl}
-          alt="2nd Nikah Matrimonial Logo"
+          alt="2ndNikah Matrimonial Logo"
           className="w-full h-full object-contain group-hover:scale-105 transition-transform"
         />
       </div>
 
-      <div className="flex flex-col">
+      <div className="flex flex-col leading-none">
         <div className="flex items-baseline font-serif font-extrabold tracking-tight">
           <span className={textColor2nd}>2nd</span>
-          <span className="text-pink-600 ml-1">Nikha</span>
+          <span className="text-pink-600 ml-0.5">Nikah</span>
         </div>
 
         {showTagline && (
-          <span className="text-[10px] font-medium text-pink-700 font-sans tracking-wide">
+          <span className="text-[10px] font-bold text-pink-700 font-sans tracking-wide mt-0.5">
             Matrimonial Sanctuary
           </span>
         )}

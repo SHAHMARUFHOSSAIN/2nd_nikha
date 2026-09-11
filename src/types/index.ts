@@ -149,6 +149,13 @@ export interface Message {
     phone?: string;
     whatsapp?: string;
     email?: string;
+    status?: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+    requesterId?: string;
+    requesterName?: string;
+    requesterWhatsapp?: string;
+    recipientId?: string;
+    recipientName?: string;
+    recipientWhatsapp?: string;
   };
 }
 
@@ -159,8 +166,10 @@ export interface Conversation {
   participantIds?: string[];
   lastMessage: string;
   lastMessageAt: string;
+  lastSenderId?: string;
   unreadCount: number;
   status?: 'ACTIVE' | 'BLOCKED' | 'ENDED';
+  blockedBy?: string;
   profile: Profile;
 }
 

@@ -10,6 +10,7 @@ import { Profile } from '@/types';
 import { MEMBERSHIP_CONFIG } from '@/lib/constants';
 import { formatCurrency } from '@/lib/utils';
 import { Heart, ShieldCheck, Sparkles, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useCurrency } from '@/lib/currency-context';
 
 export interface SendInterestModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export function SendInterestModal({
   onSuccess,
 }: SendInterestModalProps) {
   const router = useRouter();
+  const { formatAmount } = useCurrency();
   const { sendInterestRequest, getInterestStatus } = useConnection();
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -47,21 +49,22 @@ export function SendInterestModal({
     } else if (result.message) {
       setNotice(result.message);
     }
+    if (onConfirm) onConfirm();
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="sm">
-      <div className="text-center space-y-5 py-2">
-        <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
-          <Heart className="w-8 h-8 fill-rose-600" />
+      <div className="space-y-4 py-2 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto shadow-inner border border-rose-200">
+          <Heart className="w-7 h-7 fill-rose-600 text-rose-600" />
         </div>
 
         <div className="space-y-1">
           <h3 className="font-serif font-bold text-xl text-stone-900">
-            Express Interest in {targetProfile.fullName.split(' ')[0]}
+            Express Interest Confirmation
           </h3>
-          <p className="text-xs text-stone-600 leading-relaxed">
-            Send an express interest request to start your journey towards a mutual connection.
+          <p className="text-xs text-stone-600 max-w-xs mx-auto leading-relaxed">
+            Sending interest lets <strong>{targetProfile.fullName}</strong> know you wish to connect for marriage.
           </p>
         </div>
 
@@ -71,9 +74,9 @@ export function SendInterestModal({
           </div>
         )}
 
-        {/* Candidate Summary Card */}
-        <div className="bg-rose-50/60 p-4 rounded-2xl border border-rose-100 flex items-center gap-3 text-left">
-          <div className="relative w-14 h-14 rounded-2xl overflow-hidden border-2 border-white shadow-sm shrink-0 bg-white">
+        {/* Profile Card Summary */}
+        <div className="p-3 bg-rose-50/60 rounded-2xl border border-rose-100 flex items-center gap-3 text-left">
+          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-white border border-rose-200 shrink-0">
             <Image
               src={targetProfile.photoUrl}
               alt={targetProfile.fullName}
@@ -99,7 +102,7 @@ export function SendInterestModal({
           <div className="flex justify-between">
             <span>Interest Activation Fee:</span>
             <strong className="text-rose-800 font-bold">
-              {formatCurrency(MEMBERSHIP_CONFIG.PREMIUM_MONTHLY_BDT, 'BDT')}
+              {formatAmount(MEMBERSHIP_CONFIG.PREMIUM_MONTHLY_BDT, 6.99)}
             </strong>
           </div>
           <p className="text-[10px] text-stone-400 text-left">

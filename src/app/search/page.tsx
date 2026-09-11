@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { FeaturedProfiles } from '@/components/sections/featured-profiles';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 import { BRAND_NAME } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -10,8 +11,10 @@ export const metadata: Metadata = {
 
 export default function SearchPage() {
   return (
-    <div className="min-h-screen py-6">
-      <FeaturedProfiles />
-    </div>
+    <ProtectedRoute>
+      <div className="min-h-screen py-6">
+        <FeaturedProfiles />
+      </div>
+    </ProtectedRoute>
   );
 }

@@ -11,6 +11,8 @@ import { MapPin, Briefcase, GraduationCap, Heart, Users, Sparkles, Lock, Globe }
 import { ProfileDetailModal } from '@/components/profile/profile-detail-modal';
 import { useCommunication } from '@/lib/communication-context';
 
+import { useAuth } from '@/lib/auth-context';
+
 export interface ProfileCardProps {
   profile: Profile;
   onOpenUpgradeModal?: () => void;
@@ -19,7 +21,13 @@ export interface ProfileCardProps {
 export function ProfileCard({ profile, onOpenUpgradeModal }: ProfileCardProps) {
   const router = useRouter();
   const communication = useCommunication();
+  const { currentUser } = useAuth();
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const isOwnProfile =
+    currentUser !== null &&
+    (currentUser.id === profile.id ||
+      (currentUser.email && profile.email && currentUser.email.toLowerCase() === profile.email.toLowerCase()));
 
   const getMaritalBadgeVariant = (status: Profile['maritalStatus']) => {
     switch (status) {
@@ -35,6 +43,10 @@ export function ProfileCard({ profile, onOpenUpgradeModal }: ProfileCardProps) {
   };
 
   const handleExpressInterest = () => {
+    if (isOwnProfile) {
+      router.push('/member/dashboard');
+      return;
+    }
     if (communication?.startConversationWithProfile) {
       const targetMatchId = communication.startConversationWithProfile(profile);
       router.push(`/member/messages?matchId=${targetMatchId}`);
@@ -143,14 +155,25 @@ export function ProfileCard({ profile, onOpenUpgradeModal }: ProfileCardProps) {
               View Full Profile
             </Button>
 
-            <Button
-              variant="wine"
-              size="sm"
-              className="flex-1 rounded-2xl shadow-sm text-xs justify-center"
-              onClick={handleExpressInterest}
-            >
-              Express Interest
-            </Button>
+            {isOwnProfile ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex-1 rounded-2xl bg-stone-100 text-stone-600 border border-stone-200 text-xs justify-center font-bold"
+                onClick={() => router.push('/member/dashboard')}
+              >
+                Your Profile
+              </Button>
+            ) : (
+              <Button
+                variant="wine"
+                size="sm"
+                className="flex-1 rounded-2xl shadow-sm text-xs justify-center"
+                onClick={handleExpressInterest}
+              >
+                Express Interest
+              </Button>
+            )}
           </div>
         </div>
       </div>

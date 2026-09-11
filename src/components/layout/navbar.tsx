@@ -63,8 +63,10 @@ export function Navbar() {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Hide public navbar inside Admin Portal
-  if (pathname.startsWith('/admin')) {
+  const isPaidMember = isLoggedIn && (userRole === 'PREMIUM' || userRole === 'ADMIN');
+
+  // Hide public navbar on landing gateway (when not a paid member), register (/register), login (/login), and Admin Portal
+  if ((pathname === '/' && !isPaidMember) || pathname === '/register' || pathname === '/login' || pathname.startsWith('/admin')) {
     return null;
   }
 
@@ -228,6 +230,7 @@ export function Navbar() {
                           onClick={() => {
                             setUserDropdownOpen(false);
                             logout();
+                            router.push('/login');
                           }}
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-stone-600 hover:text-red-700 hover:bg-red-50 transition-colors text-left font-medium"
                         >

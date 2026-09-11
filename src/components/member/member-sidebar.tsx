@@ -19,18 +19,24 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { useCommunication } from '@/lib/communication-context';
 
 export function MemberSidebar() {
   const pathname = usePathname();
   const { userRole, currentUser: authUser } = useAuth();
+  const communication = useCommunication();
   const currentUser = authUser || { fullName: 'Member' };
   const initials = currentUser.fullName
     ? currentUser.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
     : 'MB';
 
+  const totalUnread = communication?.totalUnreadCount || 0;
+
   const links = [
     { label: 'Dashboard', href: '/member', icon: LayoutDashboard },
     { label: 'My Profile', href: '/member/profile', icon: User },
+    { label: 'Messages', href: '/member/messages', icon: MessageSquare, badge: totalUnread > 0 ? String(totalUnread) : undefined },
+    { label: 'Profile Visitors', href: '/member/visitors', icon: Eye, badge: '5' },
     { label: 'Discover Matches', href: '/search', icon: Search },
     { label: 'Shortlist', href: '/member/shortlist', icon: Star },
     { label: 'Notifications', href: '/member/notifications', icon: Bell, badge: '3' },

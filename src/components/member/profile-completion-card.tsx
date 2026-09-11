@@ -5,17 +5,29 @@ import Link from 'next/link';
 
 export interface ProfileCompletionCardProps {
   percentage?: number;
+  user?: any;
 }
 
-export function ProfileCompletionCard({ percentage = 78 }: ProfileCompletionCardProps) {
+export function ProfileCompletionCard({ percentage: overridePercentage, user }: ProfileCompletionCardProps) {
+  const hasBasicInfo = Boolean(user?.fullName && user?.age);
+  const hasEdu = Boolean(user?.education || user?.profession);
+  const hasBio = Boolean(user?.bio || user?.aboutMe || user?.fullName);
+  const hasPhotos = Boolean(user?.photoUrl || (user?.photos && user.photos.length > 1));
+  const hasPrefs = Boolean(user?.partnerPreferences || user?.maritalStatus);
+  const hasNid = Boolean(user?.isNidVerified || user?.isVerified || user?.nidStatus === 'VERIFIED');
+
   const steps = [
-    { label: 'Basic Information', completed: true },
-    { label: 'Education & Career', completed: true },
-    { label: 'About Me Bio', completed: true },
-    { label: 'Add Additional Photos', completed: false },
-    { label: 'Complete Partner Preferences', completed: false },
-    { label: 'Verify National Identity (NID)', completed: false },
+    { label: 'Basic Information', completed: hasBasicInfo },
+    { label: 'Education & Career', completed: hasEdu },
+    { label: 'About Me Bio', completed: hasBio },
+    { label: 'Add Additional Photos', completed: hasPhotos },
+    { label: 'Complete Partner Preferences', completed: hasPrefs },
+    { label: 'Verify National Identity (NID)', completed: hasNid },
   ];
+
+  const completedCount = steps.filter((s) => s.completed).length;
+  const computedPercentage = Math.round((completedCount / steps.length) * 100);
+  const percentage = overridePercentage ?? (user ? computedPercentage : 78);
 
   return (
     <div className="bg-gradient-to-br from-rose-50/90 via-white to-pink-50/50 rounded-3xl p-6 border border-rose-200 shadow-sm space-y-4">

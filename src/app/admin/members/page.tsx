@@ -25,16 +25,16 @@ import {
 } from 'lucide-react';
 
 export default function AdminMembersDirectoryPage() {
-  const { addAuditLog } = useAdmin();
+  const { members, updateMember, addAuditLog } = useAdmin();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [verificationFilter, setVerificationFilter] = useState<string>('ALL');
   const [membershipFilter, setMembershipFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [locationFilter, setLocationFilter] = useState<string>('ALL');
-
-  const [membersList, setMembersList] = useState<Profile[]>(MOCK_PROFILES);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const membersList = members || MOCK_PROFILES;
 
   // Filtered members list
   const filteredMembers = membersList.filter((member) => {
@@ -58,9 +58,7 @@ export default function AdminMembersDirectoryPage() {
   });
 
   const handleVerifyMember = (id: string, name: string) => {
-    setMembersList((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, isVerified: true } : m))
-    );
+    updateMember(id, { isVerified: true });
     addAuditLog('MEMBER_VERIFIED', `Profile ${name} (${id})`, 'Verified NID document manually');
     setNotice(`Member ${name} has been verified successfully.`);
   };

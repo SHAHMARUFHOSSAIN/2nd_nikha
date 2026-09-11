@@ -4,10 +4,26 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth-context';
 import { LayoutDashboard, Search, Star, Bell, User, Settings } from 'lucide-react';
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const { userRole, isLoggedIn } = useAuth();
+
+  // Hide mobile bottom nav on landing page, register, login, membership, admin, or for non-premium users
+  if (
+    pathname === '/' ||
+    pathname === '/register' ||
+    pathname === '/login' ||
+    pathname.startsWith('/membership') ||
+    pathname.startsWith('/checkout') ||
+    pathname.startsWith('/admin') ||
+    !isLoggedIn ||
+    userRole !== 'PREMIUM'
+  ) {
+    return null;
+  }
 
   const links = [
     { label: 'Dashboard', href: '/member', icon: LayoutDashboard },

@@ -59,7 +59,7 @@ export function Modal({
   const modalContent = (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex justify-center items-start overflow-y-auto p-2 sm:p-4 lg:p-6 bg-stone-950/70 backdrop-blur-sm transition-opacity animate-in fade-in"
+      className="fixed inset-0 z-[999] flex justify-center items-start overflow-y-auto p-2 sm:p-4 lg:p-6 bg-stone-950/70 backdrop-blur-sm transition-opacity animate-in fade-in"
     >
       {/* Backdrop Backdrop Overlay Click */}
       <div

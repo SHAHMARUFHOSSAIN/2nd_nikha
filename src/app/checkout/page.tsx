@@ -22,6 +22,7 @@ function CheckoutContent() {
 
   // Read URL query params or default to monthly plan
   const planIdParam = searchParams.get('plan') || 'monthly';
+  const priceUSDParam = searchParams.get('priceUSD');
   
   // Match plan from live Admin Context state
   const targetPlan = membershipPlans?.find((p) => p.id === planIdParam || p.billingPeriod?.toLowerCase().includes(planIdParam.toLowerCase())) 
@@ -29,7 +30,7 @@ function CheckoutContent() {
 
   const planName = targetPlan ? targetPlan.name : (planIdParam === 'weekly' ? 'Weekly Pass' : 'Monthly Pass');
   const bdtPrice = targetPlan ? targetPlan.price : (planIdParam === 'weekly' ? 99 : 299);
-  const usdPrice = planIdParam === 'weekly' ? 0.99 : 2.99;
+  const usdPrice = priceUSDParam ? parseFloat(priceUSDParam) : (planIdParam === 'weekly' ? 2.99 : 6.99);
 
   const currentPriceFormatted = formatAmount(bdtPrice, usdPrice);
   const numericAmountToCharge = getNumericAmount(bdtPrice, usdPrice);
@@ -43,6 +44,32 @@ function CheckoutContent() {
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsHandoffOpen(true);
+
+    const customerDetails = {
+      fullName: customerInfo.fullName,
+      email: customerInfo.email,
+      phone: customerInfo.phone,
+    };
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('2ndchance_checkout_customer', JSON.stringify(customerDetails));
+        const existingTxns = JSON.parse(localStorage.getItem('2ndchance_admin_payments') || '[]');
+        const newTxn = {
+          id: `TXN-PS-${Date.now()}`,
+          customerName: customerInfo.fullName,
+          customerEmail: customerInfo.email,
+          customerPhone: customerInfo.phone,
+          planId: planIdParam,
+          amount: numericAmountToCharge,
+          currency: currency,
+          gateway: 'PayStation Gateway',
+          status: 'PAID',
+          createdAt: new Date().toISOString(),
+        };
+        localStorage.setItem('2ndchance_admin_payments', JSON.stringify([newTxn, ...existingTxns]));
+      } catch (e) {}
+    }
 
     const session = await PaymentService.initiatePayment({
       userId: 'p-101',
@@ -116,14 +143,14 @@ function CheckoutContent() {
                 <div className="flex items-center justify-between font-bold text-pink-900">
                   <span className="flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>SSLCommerz Gateway ({selectedCountry.flag} {currency})</span>
+                    <span>PayStation Payment Gateway ({selectedCountry.flag} {currency})</span>
                   </span>
                   <span className="font-mono text-xs">{currentPriceFormatted}</span>
                 </div>
                 <p className="text-[11px] text-stone-500 leading-relaxed">
                   {currency === 'BDT'
                     ? 'Supports bKash, Nagad, Rocket, Upay, Visa, Mastercard, AMEX and Bangladeshi Bank Internet Banking.'
-                    : 'Supports International Visa, Mastercard, AMEX cards. Funds settle directly to your Bangladeshi Bank Account via SSLCommerz.'}
+                    : 'Supports International Visa, Mastercard, AMEX cards. Funds settle directly to your Bangladeshi Bank Account via PayStation.'}
                 </p>
               </div>
 
@@ -134,7 +161,7 @@ function CheckoutContent() {
                 className="w-full justify-center shadow-lg shadow-pink-900/20"
                 rightIcon={<ArrowRight className="w-4 h-4 text-white" />}
               >
-                Pay {currentPriceFormatted} via SSLCommerz
+                Pay {currentPriceFormatted} via PayStation Gateway
               </Button>
             </form>
           </div>
@@ -160,7 +187,7 @@ function CheckoutContent() {
                   <span className="font-mono">{currentPriceFormatted}</span>
                 </div>
                 <div className="flex justify-between text-stone-600">
-                  <span>SSL Gateway Fee</span>
+                  <span>PayStation Processing Fee</span>
                   <span className="text-emerald-600 font-semibold">FREE</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold text-stone-900 pt-2 border-t border-stone-100">
@@ -173,7 +200,7 @@ function CheckoutContent() {
 
               <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-[11px] text-stone-500 space-y-1">
                 <p className="font-bold text-stone-700">🏦 Settlement Notice:</p>
-                <p>All BDT & USD payments are securely processed by SSLCommerz and deposited to your Bangladeshi Bank Account.</p>
+                <p>All BDT & USD payments are securely processed by PayStation Payment Gateway and deposited to your Bangladeshi Bank Account.</p>
               </div>
             </div>
           </div>
@@ -183,6 +210,8 @@ function CheckoutContent() {
       <SSLCommerzHandoffModal
         isOpen={isHandoffOpen}
         onClose={() => setIsHandoffOpen(false)}
+        amount={numericAmountToCharge}
+        currency={currency}
       />
     </Container>
   );

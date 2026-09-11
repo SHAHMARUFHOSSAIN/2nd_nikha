@@ -11,7 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Filter, Sparkles, SlidersHorizontal, RotateCcw, ShieldCheck, Heart, User, MapPin, Briefcase, Globe, ChevronDown, ChevronUp } from 'lucide-react';
 import { MembershipPreviewModal } from '@/components/sections/membership-preview-modal';
 
+import { useAuth } from '@/lib/auth-context';
+
 export function FeaturedProfiles() {
+  const { currentUser } = useAuth();
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
@@ -26,6 +29,14 @@ export function FeaturedProfiles() {
   // Compact Global & Local Filter States
   const [countryFilter, setCountryFilter] = useState<string>('All');
   const [genderFilter, setGenderFilter] = useState<string>('All');
+
+  React.useEffect(() => {
+    if (currentUser?.gender) {
+      const g = currentUser.gender.toLowerCase();
+      if (g === 'female') setGenderFilter('Male');
+      else if (g === 'male') setGenderFilter('Female');
+    }
+  }, [currentUser]);
   const [maritalStatusFilter, setMaritalStatusFilter] = useState<string>('All');
   const [cityFilter, setCityFilter] = useState<string>('All');
   const [religionFilter, setReligionFilter] = useState<string>('All');
@@ -68,6 +79,10 @@ export function FeaturedProfiles() {
 
   // Dynamic Filtering Logic (Global Country + City + Marital + Verification)
   const filteredProfiles = profilesList.filter((p) => {
+    if (currentUser) {
+      if (p.id === currentUser.id) return false;
+      if (p.email && currentUser.email && p.email.toLowerCase() === currentUser.email.toLowerCase()) return false;
+    }
     if (countryFilter !== 'All' && p.country !== countryFilter) return false;
     if (genderFilter !== 'All' && p.gender !== genderFilter) return false;
     if (maritalStatusFilter !== 'All' && p.maritalStatus !== maritalStatusFilter) return false;

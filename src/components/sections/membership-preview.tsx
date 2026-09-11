@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { MEMBERSHIP_PLANS as FALLBACK_PLANS } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Check, X, Sparkles, ArrowRight, ShieldCheck, Lock } from 'lucide-react';
 import { MembershipPreviewModal } from './membership-preview-modal';
 import { useAdmin } from '@/lib/admin-context';
 import { useCurrency } from '@/lib/currency-context';
@@ -16,6 +16,8 @@ import { CurrencySwitcher } from '@/components/ui/currency-switcher';
 
 export function MembershipPreview() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isRequiredNotice = searchParams.get('reason') === 'subscription_required' || searchParams.get('required') === 'true';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { membershipPlans } = useAdmin();
   const { formatAmount, selectedCountry } = useCurrency();
@@ -29,7 +31,7 @@ export function MembershipPreview() {
           ? '7 days full premium access to send interests, unlock chat & contacts.'
           : '30 days full premium access with priority search placement & 24/7 VIP support.',
         priceBDT: p.price,
-        priceUSD: p.id === 'weekly' || p.billingPeriod === '1 Week' ? 0.99 : 2.99,
+        priceUSD: p.id === 'weekly' || p.billingPeriod === '1 Week' ? 2.99 : 6.99,
         billingCycle: p.billingPeriod === '1 Week' ? 'week' : 'month',
         isPopular: p.id === 'monthly' || p.billingPeriod === '1 Month',
         badge: p.id === 'monthly' || p.billingPeriod === '1 Month' ? 'Best Value For Remarriage' : 'Quick Access',
@@ -55,8 +57,20 @@ export function MembershipPreview() {
   return (
     <section id="membership" className="py-16 sm:py-20 bg-white relative">
       <Container size="xl">
+        {isRequiredNotice && (
+          <div className="mb-8 p-5 bg-amber-500/10 border-2 border-amber-500/80 text-amber-900 rounded-3xl text-center space-y-1 shadow-lg animate-in fade-in">
+            <div className="flex items-center justify-center gap-2 font-serif font-bold text-base text-amber-900">
+              <Lock className="w-5 h-5 text-amber-700" />
+              <span>Subscription Pass Required to Access 2nd Nikha Features</span>
+            </div>
+            <p className="text-xs text-amber-800 max-w-xl mx-auto font-medium">
+              To view member profiles, smart AI matches, send interest, or chat with matches, please choose a Weekly or Monthly Subscription Pass below.
+            </p>
+          </div>
+        )}
+
         <SectionHeading
-          eyebrow="Transparent SSLCommerz Membership"
+          eyebrow="Transparent PayStation Membership"
           title="Simple & Fair Pricing For Genuine Remarriage Connections"
           highlightWord="Simple & Fair"
           subtitle="Select Weekly Pass or Monthly Pass. Bangladeshi members pay in BDT via bKash/Nagad; International members pay in USD via Visa/Mastercard/AMEX."
@@ -143,7 +157,7 @@ export function MembershipPreview() {
                   size="lg"
                   className="w-full justify-center shadow-lg shadow-pink-900/20"
                   rightIcon={<ArrowRight className="w-4 h-4" />}
-                  onClick={() => handleSelectPlan(plan.id, plan.priceBDT, plan.priceUSD || 0.99)}
+                  onClick={() => handleSelectPlan(plan.id, plan.priceBDT, plan.priceUSD || (plan.id === 'weekly' ? 2.99 : 6.99))}
                 >
                   Pay {formatAmount(plan.priceBDT, plan.priceUSD)} via SSLCommerz
                 </Button>

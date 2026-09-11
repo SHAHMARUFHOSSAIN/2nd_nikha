@@ -3,11 +3,13 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MOCK_PROFILES } from '@/data/mock-data';
+import { useAdmin } from '@/lib/admin-context';
 import { Crown, CheckCircle2 } from 'lucide-react';
 
 export default function AdminSubscribersPage() {
-  const premiumProfiles = MOCK_PROFILES.filter((p) => p.membershipTier === 'Premium');
+  const { members } = useAdmin();
+  const allMembers = members || MOCK_PROFILES;
+  const premiumProfiles = allMembers.filter((p) => p.membershipTier === 'Premium');
 
   return (
     <div className="space-y-6">

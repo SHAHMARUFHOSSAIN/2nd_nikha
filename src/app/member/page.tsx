@@ -22,14 +22,25 @@ import {
   ArrowRight,
   Clock,
 } from 'lucide-react';
+import { useConnection } from '@/lib/connection-context';
 import Image from 'next/image';
 
 export default function MemberDashboardPage() {
   const { userRole, currentUser: authUser } = useAuth();
+  const connection = useConnection();
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   const currentUser = authUser || MOCK_PROFILES[0];
   const firstName = currentUser.fullName ? currentUser.fullName.split(' ')[0] : 'Member';
+
+  const connectionInterests = connection?.interests || [];
+  const receivedInterestsCount = connectionInterests.filter(
+    (i) => currentUser && (i.receiverId === currentUser.id || i.receiverId === currentUser.email)
+  ).length || 8;
+
+  const sentInterestsCount = connectionInterests.filter(
+    (i) => currentUser && (i.senderId === currentUser.id || i.senderId === currentUser.email)
+  ).length || 12;
 
   // Mock Received Interests State
   const [receivedInterests, setReceivedInterests] = useState([
@@ -96,7 +107,7 @@ export default function MemberDashboardPage() {
         {/* Profile Strength & Verification Alert */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8">
-            <ProfileCompletionCard percentage={78} />
+            <ProfileCompletionCard user={currentUser} />
           </div>
 
           <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-rose-100/90 shadow-sm flex flex-col justify-between space-y-4">
@@ -106,15 +117,17 @@ export default function MemberDashboardPage() {
                 <span>Identity Verification Status</span>
               </div>
               <h3 className="font-serif font-bold text-lg text-stone-900">
-                NID Verified Member
+                {currentUser?.isNidVerified || currentUser?.isVerified ? 'NID Verified Member' : 'Standard Member'}
               </h3>
               <p className="text-xs text-stone-600 leading-relaxed">
-                Your National ID has been successfully verified. A green checkmark badge is displayed on your public profile.
+                {currentUser?.isNidVerified || currentUser?.isVerified
+                  ? 'Your National ID has been successfully verified. A green checkmark badge is displayed on your public profile.'
+                  : 'Verify your NID document to gain verified badge status and boost match response by 3x.'}
               </p>
             </div>
 
             <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
-              <span className="font-semibold text-emerald-700">✓ Trust Score: 98%</span>
+              <span className="font-semibold text-emerald-700">✓ Trust Score: {currentUser?.isNidVerified || currentUser?.isVerified ? '98%' : '75%'}</span>
               <Link href="/member/settings" className="text-rose-700 font-bold hover:underline">
                 View Badge Details
               </Link>
@@ -136,7 +149,7 @@ export default function MemberDashboardPage() {
             <div className="p-2 rounded-xl bg-pink-50 w-fit text-pink-600 mb-2">
               <Heart className="w-5 h-5" />
             </div>
-            <span className="text-3xl font-serif font-bold text-stone-900">8</span>
+            <span className="text-3xl font-serif font-bold text-stone-900">{receivedInterestsCount}</span>
             <p className="text-xs text-stone-500 font-medium">Received Interests</p>
           </div>
 
@@ -144,7 +157,7 @@ export default function MemberDashboardPage() {
             <div className="p-2 rounded-xl bg-amber-50 w-fit text-amber-600 mb-2">
               <Users className="w-5 h-5" />
             </div>
-            <span className="text-3xl font-serif font-bold text-stone-900">12</span>
+            <span className="text-3xl font-serif font-bold text-stone-900">{sentInterestsCount}</span>
             <p className="text-xs text-stone-500 font-medium">Sent Interests</p>
           </div>
 

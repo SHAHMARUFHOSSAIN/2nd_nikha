@@ -11,7 +11,10 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { MembershipPreviewModal } from '@/components/sections/membership-preview-modal';
 
+import { useAuth } from '@/lib/auth-context';
+
 export function HomeFeaturedProfiles() {
+  const { currentUser } = useAuth();
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
@@ -22,6 +25,14 @@ export function HomeFeaturedProfiles() {
       profilesList = admin.members;
     }
   } catch (e) {}
+
+  if (currentUser) {
+    profilesList = profilesList.filter(
+      (p) =>
+        p.id !== currentUser.id &&
+        (!p.email || !currentUser.email || p.email.toLowerCase() !== currentUser.email.toLowerCase())
+    );
+  }
 
   const categories = ['All', 'Divorced', 'Widowed', 'Single Parent', 'Never Married'];
 

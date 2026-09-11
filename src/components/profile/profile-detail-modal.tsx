@@ -47,10 +47,15 @@ export function ProfileDetailModal({
   onOpenUpgradeModal,
 }: ProfileDetailModalProps) {
   const router = useRouter();
-  const { isShortlisted, toggleShortlist } = useAuth();
+  const { currentUser, isShortlisted, toggleShortlist } = useAuth();
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
 
   if (!profile) return null;
+
+  const isOwnProfile =
+    currentUser !== null &&
+    (currentUser.id === profile.id ||
+      (currentUser.email && profile.email && currentUser.email.toLowerCase() === profile.email.toLowerCase()));
 
   const allPhotos = [profile.photoUrl, ...(profile.additionalPhotos || [])];
   const currentPhoto = allPhotos[activePhotoIndex] || profile.photoUrl;
@@ -355,33 +360,51 @@ export function ProfileDetailModal({
               <div className="space-y-1 text-center">
                 <Heart className="w-6 h-6 text-pink-500 fill-pink-500 mx-auto animate-pulse" />
                 <h4 className="font-serif font-bold text-base text-white">
-                  Connect with {profile.fullName.split(' ')[0]}
+                  {isOwnProfile ? 'Your Active Account Profile' : `Connect with ${profile.fullName.split(' ')[0]}`}
                 </h4>
                 <p className="text-[11px] text-stone-400">
-                  Send Express Interest or initiate private Messenger chat.
+                  {isOwnProfile
+                    ? 'This is your own verified profile. Manage details in your Dashboard.'
+                    : 'Send Express Interest or initiate private Messenger chat.'}
                 </p>
               </div>
 
               <div className="space-y-2 pt-2">
-                <Button
-                  variant="wine"
-                  size="md"
-                  className="w-full justify-center rounded-xl shadow-md text-xs font-bold"
-                  leftIcon={<Heart className="w-4 h-4 fill-white" />}
-                  onClick={handleExpressInterest}
-                >
-                  Express Interest & Start Chat
-                </Button>
+                {isOwnProfile ? (
+                  <Button
+                    variant="wine"
+                    size="md"
+                    className="w-full justify-center rounded-xl shadow-md text-xs font-bold"
+                    onClick={() => {
+                      onClose();
+                      router.push('/member/dashboard');
+                    }}
+                  >
+                    Go to My Member Dashboard
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="wine"
+                      size="md"
+                      className="w-full justify-center rounded-xl shadow-md text-xs font-bold"
+                      leftIcon={<Heart className="w-4 h-4 fill-white" />}
+                      onClick={handleExpressInterest}
+                    >
+                      Express Interest & Start Chat
+                    </Button>
 
-                <Button
-                  variant="outline"
-                  size="md"
-                  className="w-full justify-center rounded-xl border-stone-700 text-stone-200 hover:bg-stone-800 text-xs"
-                  leftIcon={<MessageSquare className="w-4 h-4 text-pink-400" />}
-                  onClick={handleExpressInterest}
-                >
-                  Open Messenger Inbox
-                </Button>
+                    <Button
+                      variant="outline"
+                      size="md"
+                      className="w-full justify-center rounded-xl border-stone-700 text-stone-200 hover:bg-stone-800 text-xs"
+                      leftIcon={<MessageSquare className="w-4 h-4 text-pink-400" />}
+                      onClick={handleExpressInterest}
+                    >
+                      Open Messenger Inbox
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 

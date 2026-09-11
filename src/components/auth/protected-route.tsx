@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 
 export interface ProtectedRouteProps {
@@ -9,14 +10,26 @@ export interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { userRole, setRole } = useAuth();
+  const router = useRouter();
+  const { userRole, isLoggedIn } = useAuth();
 
-  // Auto-login as active member if currently guest so member pages always open smoothly
   useEffect(() => {
-    if (userRole === 'GUEST') {
-      setRole('PREMIUM');
+    if (userRole === 'GUEST' || !isLoggedIn) {
+      router.push('/login');
+    } else if (userRole === 'FREE') {
+      router.push('/membership?reason=subscription_required');
     }
-  }, [userRole, setRole]);
+  }, [userRole, isLoggedIn, router]);
+
+  if (userRole === 'GUEST' || userRole === 'FREE' || !isLoggedIn) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-10 h-10 rounded-full border-2 border-rose-600 border-t-transparent animate-spin mb-4" />
+        <p className="text-xs text-stone-500 font-medium">Checking subscription pass status...</p>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }
+

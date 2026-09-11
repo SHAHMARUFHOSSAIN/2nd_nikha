@@ -9,6 +9,8 @@ import { MEMBERSHIP_CONFIG, MEMBERSHIP_PLANS } from '@/lib/constants';
 import { formatCurrency } from '@/lib/utils';
 import { Lock, Sparkles, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAdmin } from '@/lib/admin-context';
+import { useCurrency } from '@/lib/currency-context';
+import { CurrencySwitcher } from '@/components/ui/currency-switcher';
 
 export interface MembershipPreviewModalProps {
   isOpen: boolean;
@@ -21,24 +23,28 @@ export function MembershipPreviewModal({
 }: MembershipPreviewModalProps) {
   const router = useRouter();
   const { membershipPlans } = useAdmin();
+  const { formatAmount } = useCurrency();
 
   // Read live price configured by Admin
   const livePrice = (membershipPlans && membershipPlans[0]?.price)
     ? membershipPlans[0].price
     : MEMBERSHIP_CONFIG.PREMIUM_MONTHLY_BDT;
 
-  const premiumPlan = MEMBERSHIP_PLANS.find((p) => p.id === 'premium_monthly');
+  const premiumPlan = MEMBERSHIP_PLANS.find((p) => p.id === 'monthly' || p.id === 'premium_monthly');
 
   const handleUpgradeClick = () => {
     onClose();
-    router.push('/checkout');
+    router.push(`/checkout?plan=monthly&priceBDT=${livePrice}&priceUSD=6.99`);
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="xl">
       <div className="space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-2 relative">
+          <div className="absolute top-0 right-0">
+            <CurrencySwitcher variant="pricing" />
+          </div>
           <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-600 via-pink-700 to-rose-800 text-white flex items-center justify-center mx-auto shadow-lg">
             <Lock className="w-6 h-6" />
           </div>
@@ -57,7 +63,7 @@ export function MembershipPreviewModal({
           </Badge>
           <div className="flex items-baseline justify-center gap-1.5 my-2">
             <span className="text-4xl font-serif font-extrabold text-stone-900">
-              {formatCurrency(livePrice, 'BDT')}
+              {formatAmount(livePrice, 6.99)}
             </span>
             <span className="text-stone-500 font-medium text-sm">/ month</span>
           </div>

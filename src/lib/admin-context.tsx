@@ -268,24 +268,33 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
     return base;
   });
 
-  // Dynamic Browser Favicon Updater
+  // Dynamic Browser Favicon Updater (React-safe DOM mutation)
   useEffect(() => {
     if (typeof window !== 'undefined' && settings?.branding?.faviconUrl) {
       try {
         const faviconUrl = settings.branding.faviconUrl;
-        const iconLinks = document.querySelectorAll("link[rel*='icon']");
-        iconLinks.forEach((l) => l.parentNode?.removeChild(l));
-
-        const newLink = document.createElement('link');
-        newLink.rel = 'icon';
-        if (faviconUrl.startsWith('data:image/png')) newLink.type = 'image/png';
-        else if (faviconUrl.startsWith('data:image/svg')) newLink.type = 'image/svg+xml';
-        else if (faviconUrl.startsWith('data:image/x-icon') || faviconUrl.endsWith('.ico')) newLink.type = 'image/x-icon';
-        newLink.href = faviconUrl;
-        document.getElementsByTagName('head')[0].appendChild(newLink);
+        const existingLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+        if (existingLink) {
+          existingLink.href = faviconUrl;
+        } else {
+          const newLink = document.createElement('link');
+          newLink.rel = 'icon';
+          newLink.href = faviconUrl;
+          document.head.appendChild(newLink);
+        }
       } catch (e) {}
     }
   }, [settings?.branding?.faviconUrl]);
+
+function mergeWithMockProfiles(list: Profile[]): Profile[] {
+  const result = [...list];
+  for (const mock of MOCK_PROFILES) {
+    if (!result.some((m) => m.id === mock.id || (m.email && mock.email && m.email.toLowerCase() === mock.email.toLowerCase()))) {
+      result.push(mock);
+    }
+  }
+  return result;
+}
 
   // Hydrate settings, members, articles, banners safely on client after mount
   useEffect(() => {
@@ -293,7 +302,8 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
       try {
         const savedMembers = localStorage.getItem('2ndchance_admin_members');
         if (savedMembers) {
-          setMembers(JSON.parse(savedMembers));
+          const parsed = JSON.parse(savedMembers);
+          setMembers(mergeWithMockProfiles(parsed));
         }
         const savedArticles = localStorage.getItem('2ndchance_admin_articles');
         if (savedArticles) setCmsArticles(JSON.parse(savedArticles));
@@ -345,9 +355,10 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
         }
 
         if (membersRes?.success && membersRes?.members && membersRes.members.length > 0) {
-          setMembers(membersRes.members);
+          const merged = mergeWithMockProfiles(membersRes.members);
+          setMembers(merged);
           if (typeof window !== 'undefined') {
-            try { localStorage.setItem('2ndchance_admin_members', JSON.stringify(membersRes.members)); } catch (e) {}
+            try { localStorage.setItem('2ndchance_admin_members', JSON.stringify(merged)); } catch (e) {}
           }
         }
 

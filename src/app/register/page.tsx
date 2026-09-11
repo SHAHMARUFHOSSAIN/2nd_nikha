@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Container } from '@/components/layout/container';
@@ -27,9 +27,12 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
+import { useAdmin } from '@/lib/admin-context';
+
 export default function RegistrationWizardPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, userRole } = useAuth();
+  const { addMember } = useAdmin();
   const [currentStep, setCurrentStep] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
 
@@ -76,11 +79,97 @@ export default function RegistrationWizardPage() {
     prefMaritalStatus: 'Divorced, Widowed, Single Parent',
     // Step 8
     photoUrl: '',
+    photos: ['', '', '', ''],
     photoPrivacy: 'PUBLIC',
   });
 
+  const updatePhotoSlot = (index: number, val: string) => {
+    setStepError(null);
+    setFormData((prev) => {
+      const currentList = Array.isArray(prev.photos) ? [...prev.photos] : ['', '', '', ''];
+      currentList[index] = val;
+      const firstValid = currentList.find((p) => Boolean(p && p.trim())) || val;
+      return {
+        ...prev,
+        photos: currentList,
+        photoUrl: firstValid,
+      };
+    });
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedCustomerStr = localStorage.getItem('2ndchance_checkout_customer');
+        if (savedCustomerStr) {
+          const cust = JSON.parse(savedCustomerStr);
+          setFormData((prev) => ({
+            ...prev,
+            fullName: cust.fullName || prev.fullName,
+            email: cust.email || prev.email,
+            phone: cust.phone || prev.phone,
+          }));
+        }
+      } catch (e) {}
+    }
+  }, []);
+
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [termsAgreed, setTermsAgreed] = useState(false);
+
   const updateField = (field: string, val: string) => {
+    setStepError(null);
     setFormData((prev) => ({ ...prev, [field]: val }));
+  };
+
+  const validateCurrentStep = (): boolean => {
+    setStepError(null);
+    if (currentStep === 1) {
+      if (!formData.fullName.trim()) { setStepError('Full Name is required for profile creation.'); return false; }
+      if (!formData.email.trim() || !formData.email.includes('@')) { setStepError('A valid Email Address is required.'); return false; }
+      if (!formData.phone.trim() || formData.phone.length < 10) { setStepError('A valid Phone Number is required.'); return false; }
+      if (!formData.password || formData.password.length < 6) { setStepError('Password must be at least 6 characters.'); return false; }
+    }
+    if (currentStep === 2) {
+      if (!formData.dob) { setStepError('Date of Birth is required.'); return false; }
+      if (!formData.motherTongue.trim()) { setStepError('Mother Tongue is required.'); return false; }
+      if (!formData.country.trim()) { setStepError('Country is required.'); return false; }
+      if (!formData.city.trim()) { setStepError('City / Location is required.'); return false; }
+    }
+    if (currentStep === 3) {
+      if (formData.hasChildren === 'Yes' && !formData.childrenLivingWith.trim()) {
+        setStepError('Please specify Children Custody details.'); return false;
+      }
+      if (!formData.familyLocation.trim()) { setStepError('Family Location is required.'); return false; }
+    }
+    if (currentStep === 4) {
+      if (!formData.education.trim()) { setStepError('Highest Qualification is required.'); return false; }
+      if (!formData.institution.trim()) { setStepError('Institution / University is required.'); return false; }
+      if (!formData.profession.trim()) { setStepError('Profession is required.'); return false; }
+      if (!formData.company.trim()) { setStepError('Company / Employer name is required.'); return false; }
+    }
+    if (currentStep === 5) {
+      if (!formData.languages.trim()) { setStepError('Languages spoken is required.'); return false; }
+      if (!formData.hobbies.trim()) { setStepError('Hobbies & Interests are required.'); return false; }
+    }
+    if (currentStep === 6) {
+      if (!formData.bio.trim() || formData.bio.trim().length < 15) {
+        setStepError('Please write a brief bio about yourself (at least 15 characters).'); return false;
+      }
+    }
+    // Step 8: Photos are optional & skippable
+    if (currentStep === 9) {
+      if (!termsAgreed) {
+        const isBD = formData.country.toLowerCase() === 'bangladesh' || formData.country.toLowerCase() === 'bd';
+        setStepError(
+          isBD
+            ? 'রেজিস্ট্রেশন সম্পূর্ণ করতে হলে আপনাকে অবশ্যই শর্তাবলি পড়ে টিকচিহ্ন (✓) প্রদান করে সম্মত হতে হবে।'
+            : 'You must read and check the agreement box before completing registration.'
+        );
+        return false;
+      }
+    }
+    return true;
   };
 
   const steps = [
@@ -96,10 +185,13 @@ export default function RegistrationWizardPage() {
   ];
 
   const handleNext = () => {
+    if (!validateCurrentStep()) return;
+
     if (currentStep < 9) {
       setCurrentStep((prev) => prev + 1);
     } else {
-      const avatarUrl = formData.photoUrl || (formData.gender === 'Male'
+      const validPhotosList = (formData.photos || []).filter((p) => Boolean(p && p.trim()));
+      const avatarUrl = validPhotosList[0] || formData.photoUrl || (formData.gender === 'Male'
         ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600'
         : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600');
 
@@ -125,6 +217,7 @@ export default function RegistrationWizardPage() {
         income: formData.income || '৳1,00,000 / month',
         bio: formData.bio || 'Seeking a genuine, respectful life partner for remarriage.',
         photoUrl: avatarUrl,
+        photos: validPhotosList.length > 0 ? validPhotosList : [avatarUrl],
         isVerified: false,
         matchPercentage: 92,
         trustScore: 88,
@@ -132,7 +225,11 @@ export default function RegistrationWizardPage() {
         createdAt: new Date().toISOString().split('T')[0],
       };
 
-      login(newProfile, 'FREE');
+      const isPaidUser = userRole === 'PREMIUM';
+      login(newProfile, isPaidUser ? 'PREMIUM' : 'FREE');
+      try {
+        addMember(newProfile);
+      } catch (e) {}
       setIsCompleted(true);
 
       try {
@@ -150,6 +247,7 @@ export default function RegistrationWizardPage() {
   };
 
   if (isCompleted) {
+    const isPaid = userRole === 'PREMIUM';
     return (
       <div className="min-h-[80vh] flex items-center justify-center py-12 bg-rose-50/30">
         <Container size="sm">
@@ -159,34 +257,53 @@ export default function RegistrationWizardPage() {
             </div>
 
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                isPaid ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'
+              }`}>
                 <Sparkles className="w-3.5 h-3.5" />
-                Profile Created Successfully
+                {isPaid ? 'Profile Complete & Subscription Active ❤️' : 'Step 9 Complete — Account Pass Required'}
               </span>
               <h1 className="text-3xl font-serif font-bold text-stone-900">
-                Your Profile is Ready!
+                Welcome to 2nd Nikha, {formData.fullName || 'Member'}!
               </h1>
               <p className="text-sm text-stone-600 max-w-md mx-auto leading-relaxed">
-                Welcome to 2nd Chance, <strong>{formData.fullName || 'Member'}</strong>! Complete your National ID verification to build total trust with potential matches.
+                {isPaid
+                  ? 'Your profile setup is complete and your Subscription Pass is active! You now have full access to matches and features.'
+                  : 'Your profile has been created! To activate your profile, view matches, send interests, and use messenger features, please select a subscription pass below.'}
               </p>
             </div>
 
-            <div className="bg-rose-50/60 p-4 rounded-2xl border border-rose-100 text-xs text-stone-700 text-left space-y-1.5">
-              <p className="font-bold text-rose-800 uppercase tracking-wider">What happens next?</p>
-              <p>• Your profile is now live for browsing by verified members.</p>
-              <p>• You can browse matches and receive interest notifications.</p>
-              <p>• Upgrade to Premium anytime to express direct interest.</p>
-            </div>
+            {isPaid ? (
+              <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200 text-xs text-stone-700 text-left space-y-1.5">
+                <p className="font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                  <span>Full Access Unlocked</span>
+                </p>
+                <p>• Unlimited AI Matches, Verified Profiles & Photo Access.</p>
+                <p>• Direct Messaging & WhatsApp contact sharing.</p>
+                <p>• Priority 24/7 Match Assistance.</p>
+              </div>
+            ) : (
+              <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 text-xs text-stone-700 text-left space-y-1.5">
+                <p className="font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <Lock className="w-4 h-4 text-amber-700" />
+                  <span>Mandatory Pass Activation</span>
+                </p>
+                <p>• A subscription pass is required to access the member portal and features.</p>
+                <p>• Instant access to AI Matches, Verified Profiles, and Mutual Chatting.</p>
+                <p>• Flexible payment options via PayStation (bKash, Nagad, Cards).</p>
+              </div>
+            )}
 
             <div className="pt-2">
               <Button
                 variant="wine"
                 size="lg"
-                onClick={() => router.push('/member')}
-                className="w-full justify-center shadow-lg shadow-rose-900/20"
-                rightIcon={<ArrowRight className="w-5 h-5" />}
+                onClick={() => router.push(isPaid ? '/member' : '/membership?required=true')}
+                className="w-full justify-center shadow-lg shadow-rose-900/20 font-bold"
+                rightIcon={<ArrowRight className="w-5 h-5 text-white" />}
               >
-                Go to My Member Dashboard
+                {isPaid ? 'Go to My Member Dashboard & View Matches' : 'Choose Subscription Pass & Activate Account'}
               </Button>
             </div>
           </div>
@@ -242,6 +359,13 @@ export default function RegistrationWizardPage() {
 
           {/* Wizard Card Body */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-rose-100/90 shadow-xl space-y-6">
+            {stepError && (
+              <div className="p-3.5 bg-red-50 text-red-800 border border-red-200 rounded-2xl text-xs flex items-center gap-2.5 font-medium animate-in fade-in">
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{stepError}</span>
+              </div>
+            )}
+
             {/* Step 1: Account */}
             {currentStep === 1 && (
               <div className="space-y-4 animate-in fade-in">
@@ -537,20 +661,44 @@ export default function RegistrationWizardPage() {
               </div>
             )}
 
-            {/* Step 8: Photos */}
+            {/* Step 8: Photos & Gallery */}
             {currentStep === 8 && (
-              <div className="space-y-4 animate-in fade-in">
-                <h2 className="text-xl font-serif font-bold text-stone-900">
-                  Step 8: Photos & Privacy Settings
-                </h2>
-                
-                <div className="p-4 bg-rose-50/40 rounded-3xl border border-rose-100">
-                  <ImageUploader
-                    label="Upload Profile Picture (From Computer / Mobile Phone)"
-                    helperText="JPG, PNG, WEBP files up to 10MB. High quality portraits get higher match responses."
-                    value={formData.photoUrl}
-                    onChange={(val) => updateField('photoUrl', val)}
-                  />
+              <div className="space-y-5 animate-in fade-in">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-3">
+                  <div>
+                    <h2 className="text-xl font-serif font-bold text-stone-900">
+                      Step 8: Photos & Privacy Settings (Up to 4 Photos)
+                    </h2>
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      Upload up to 4 photos for your public profile. You can also skip this step and add photos later.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setStepError(null);
+                      setCurrentStep(9);
+                    }}
+                    className="self-start sm:self-auto rounded-full text-xs border-amber-300 bg-amber-50 text-amber-900 font-bold hover:bg-amber-100"
+                  >
+                    Skip Photo Upload →
+                  </Button>
+                </div>
+
+                {/* 4 Photo Upload Slots Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[0, 1, 2, 3].map((slotIdx) => (
+                    <div key={slotIdx} className="p-3 bg-rose-50/40 rounded-2xl border border-rose-100 space-y-2">
+                      <ImageUploader
+                        label={`Photo ${slotIdx + 1} ${slotIdx === 0 ? '(Main Profile Photo)' : '(Gallery Photo)'}`}
+                        helperText={slotIdx === 0 ? 'Primary photo displayed on profile cards.' : 'Additional photo for gallery.'}
+                        value={formData.photos?.[slotIdx] || (slotIdx === 0 ? formData.photoUrl : '')}
+                        onChange={(val) => updatePhotoSlot(slotIdx, val)}
+                      />
+                    </div>
+                  ))}
                 </div>
 
                 <Select
@@ -567,37 +715,170 @@ export default function RegistrationWizardPage() {
               </div>
             )}
 
-            {/* Step 9: Review & Submit */}
+            {/* Step 9: Terms Declaration & Final Agreement */}
             {currentStep === 9 && (
-              <div className="space-y-4 animate-in fade-in">
-                <h2 className="text-xl font-serif font-bold text-stone-900">
-                  Step 9: Review Your Profile Before Publishing
-                </h2>
+              <div className="space-y-5 animate-in fade-in">
+                <div>
+                  <h2 className="text-xl font-serif font-bold text-stone-900">
+                    Step 9: Terms Declaration & User Consent
+                  </h2>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    Please review your profile details and read our declaration before final registration.
+                  </p>
+                </div>
 
-                <div className="space-y-3 bg-stone-50 p-4 rounded-2xl border border-stone-200 text-xs text-stone-700">
-                  <div className="flex justify-between border-b border-stone-200 pb-2">
+                {/* Profile Summary Card */}
+                <div className="space-y-2 bg-stone-50 p-4 rounded-3xl border border-stone-200 text-xs text-stone-700">
+                  <div className="flex justify-between border-b border-stone-200 pb-1.5">
                     <span className="font-bold text-stone-900">Full Name:</span>
                     <span>{formData.fullName}</span>
                   </div>
-                  <div className="flex justify-between border-b border-stone-200 pb-2">
-                    <span className="font-bold text-stone-900">Marital Status:</span>
+                  <div className="flex justify-between border-b border-stone-200 pb-1.5">
+                    <span className="font-bold text-stone-900">Marital Status & Religion:</span>
                     <span>{formData.maritalStatus} ({formData.religion})</span>
                   </div>
-                  <div className="flex justify-between border-b border-stone-200 pb-2">
+                  <div className="flex justify-between border-b border-stone-200 pb-1.5">
                     <span className="font-bold text-stone-900">Profession & Education:</span>
                     <span>{formData.profession} ({formData.education})</span>
                   </div>
-                  <div className="flex justify-between border-b border-stone-200 pb-2">
+                  <div className="flex justify-between border-b border-stone-200 pb-1.5">
                     <span className="font-bold text-stone-900">Location:</span>
                     <span>{formData.city}, {formData.country}</span>
                   </div>
                   <div>
                     <span className="font-bold text-stone-900 block mb-1">About Me:</span>
-                    <p className="italic bg-white p-2 rounded border border-stone-200">
+                    <p className="italic bg-white p-2.5 rounded-2xl border border-stone-200 leading-relaxed text-stone-800">
                       "{formData.bio}"
                     </p>
                   </div>
                 </div>
+
+                {/* Terms & Legal Declaration Box (Bengali for Bangladesh, English for International) */}
+                {formData.country.toLowerCase() === 'bangladesh' || formData.country.toLowerCase() === 'bd' ? (
+                  /* BENGALI LEGAL DECLARATION & CONSENT FOR BANGLADESH */
+                  <div className="space-y-3 bg-emerald-50/50 p-4 sm:p-5 rounded-3xl border border-emerald-200 text-xs text-stone-800">
+                    <div className="flex items-center gap-2 text-emerald-900 font-serif font-bold text-base border-b border-emerald-200 pb-2">
+                      <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0" />
+                      <span>গুরুত্বপূর্ণ ঘোষণা ও ব্যবহারকারীর সম্মতি</span>
+                    </div>
+
+                    <div className="max-h-[260px] overflow-y-auto space-y-3 pr-2 leading-relaxed text-stone-700 text-xs">
+                      <p>
+                        <strong>2ndNikah.com</strong> একটি অনলাইন ম্যাট্রিমনি প্ল্যাটফর্ম, যার উদ্দেশ্য হলো বিবাহের উদ্দেশ্যে প্রাপ্তবয়স্ক ব্যক্তিদের মধ্যে পরিচিত হওয়ার একটি মাধ্যম প্রদান করা। 2ndNikah.com কোনো বিবাহের নিশ্চয়তা প্রদান করে না এবং ব্যবহারকারীদের ব্যক্তিগত সিদ্ধান্তের জন্য দায়ী নয়।
+                      </p>
+
+                      <p>
+                        প্রত্যেক ব্যবহারকারী নিজের সিদ্ধান্ত, যোগাযোগ ও কার্যকলাপের জন্য নিজেই দায়ী থাকবেন। কোনো ব্যক্তির সঙ্গে যোগাযোগ, সম্পর্ক বা বিবাহের সিদ্ধান্ত নেওয়ার আগে তার পরিচয়, বৈবাহিক অবস্থা, পারিবারিক ও অন্যান্য গুরুত্বপূর্ণ তথ্য যথাযথভাবে যাচাই করুন। প্রয়োজনে নিজের অভিভাবক, পরিবারের সদস্য বা বিশ্বস্ত ব্যক্তিদের সঙ্গে পরামর্শ করে সিদ্ধান্ত নিন।
+                      </p>
+
+                      <p>
+                        ব্যবহারকারীদের দেওয়া তথ্য সম্পূর্ণ সঠিক বা নির্ভুল—এমন কোনো নিশ্চয়তা 2ndNikah.com প্রদান করে না। তাই অন্য কোনো ব্যবহারকারীর তথ্যের ওপর নির্ভর করার আগে নিজ দায়িত্বে যাচাই করুন।
+                      </p>
+
+                      <p>
+                        ব্যবহারকারীদের মধ্যকার ব্যক্তিগত যোগাযোগ, সাক্ষাৎ, বিবাহ, আর্থিক লেনদেন, উপহার, অর্থ প্রদান, প্রতারণা, ব্যক্তিগত বিরোধ, ক্ষতি বা অন্য কোনো কার্যকলাপের জন্য প্রযোজ্য আইন যতটুকু অনুমতি দেয়, তার সীমার মধ্যে 2ndNikah.com কর্তৃপক্ষ কোনো দায়ভার গ্রহণ করে না।
+                      </p>
+
+                      <p>
+                        কোনো ব্যবহারকারী অশালীন, অনৈতিক, প্রতারণামূলক, হয়রানিমূলক বা বেআইনি কোনো কাজে লিপ্ত হলে তার সম্পূর্ণ দায়ভার সংশ্লিষ্ট ব্যবহারকারীর নিজের। 2ndNikah.com এ ধরনের কার্যকলাপের বিরুদ্ধে প্রয়োজনীয় ব্যবস্থা নেওয়ার অধিকার সংরক্ষণ করে এবং প্রযোজ্য আইন অনুযায়ী সংশ্লিষ্ট কর্তৃপক্ষের সঙ্গে সহযোগিতা করতে পারে।
+                      </p>
+
+                      <div className="p-3 bg-amber-50/90 rounded-2xl border border-amber-200 space-y-2 text-stone-800">
+                        <h4 className="font-serif font-bold text-amber-900 text-sm flex items-center gap-1.5">
+                          <span>🕌</span>
+                          <span>ইসলামী সতর্কতা</span>
+                        </h4>
+                        <p>
+                          এই প্ল্যাটফর্মটি হালালভাবে বিবাহের উদ্দেশ্যে পরিচিত হওয়ার একটি মাধ্যম মাত্র। প্রত্যেক মুসলিম ব্যবহারকারীকে আল্লাহর প্রতি জবাবদিহিতার কথা স্মরণ রেখে শালীনতা, সততা ও ইসলামী আদব-আখলাক বজায় রেখে প্ল্যাটফর্মটি ব্যবহার করার জন্য অনুরোধ করা হচ্ছে।
+                        </p>
+                        <p>
+                          কোনো ব্যবহারকারী যদি এই প্ল্যাটফর্মের মাধ্যমে পরিচিত হয়ে অশালীনতা, প্রতারণা, অবৈধ সম্পর্ক, অন্যায় বা অন্য কোনো অনৈতিক কাজে নিজেকে জড়িয়ে ফেলেন, তবে সেই কাজের দায়ভার সম্পূর্ণভাবে সংশ্লিষ্ট ব্যক্তির নিজের।
+                        </p>
+                        <p className="font-semibold text-amber-950">
+                          এ ধরনের ব্যক্তিগত কাজ, সিদ্ধান্ত বা গুনাহের জন্য 2ndNikah.com কর্তৃপক্ষ দুনিয়া ও আখিরাতে কোনো দায়ভার গ্রহণ করবে না।
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-white rounded-2xl border border-emerald-200 space-y-1">
+                        <h4 className="font-serif font-bold text-emerald-900 text-xs">ব্যবহারকারীর সম্মতি</h4>
+                        <p className="text-[11px] text-stone-700">
+                          “Accept & Continue” বাটনে ক্লিক করার মাধ্যমে আমি ঘোষণা করছি যে আমি উপরোক্ত বিষয়গুলো পড়েছি, বুঝেছি এবং সম্মত হয়েছি। আমি বুঝতে পারছি যে 2ndNikah.com শুধুমাত্র বিবাহের উদ্দেশ্যে পরিচিত হওয়ার একটি মাধ্যম এবং আমার নিজের সিদ্ধান্ত ও কার্যকলাপের দায়ভার আমার নিজের।
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* ENGLISH LEGAL DECLARATION & CONSENT FOR INTERNATIONAL VISITORS */
+                  <div className="space-y-3 bg-emerald-50/50 p-4 sm:p-5 rounded-3xl border border-emerald-200 text-xs text-stone-800">
+                    <div className="flex items-center gap-2 text-emerald-900 font-serif font-bold text-base border-b border-emerald-200 pb-2">
+                      <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0" />
+                      <span>Important Notice & User Consent</span>
+                    </div>
+
+                    <div className="max-h-[260px] overflow-y-auto space-y-3 pr-2 leading-relaxed text-stone-700 text-xs">
+                      <p>
+                        <strong>2ndNikah.com</strong> is an online matrimonial platform intended to provide a means for adults to connect with one another for the purpose of marriage. 2ndNikah.com does not guarantee marriage and is not responsible for users’ personal decisions or actions.
+                      </p>
+
+                      <p>
+                        Each user is solely responsible for their own decisions, communications, and activities. Before communicating with, developing a relationship with, or considering marriage with another person, you are strongly advised to independently verify their identity, marital status, family background, and other relevant information. Where appropriate, consult your parents, guardians, family members, or other trusted individuals before making any decision.
+                      </p>
+
+                      <p>
+                        2ndNikah.com does not guarantee that information provided by users is complete, accurate, authentic, or up to date. Therefore, users must independently verify any information before relying upon it or making decisions based on it.
+                      </p>
+
+                      <p>
+                        To the maximum extent permitted by applicable law, 2ndNikah.com and its management shall not be held responsible or liable for personal communications, meetings, relationships, marriages, financial transactions, gifts, payments, fraud, personal disputes, losses, damages, or any other activities or interactions between users.
+                      </p>
+
+                      <p>
+                        If any user engages in indecent, immoral, fraudulent, harassing, unlawful, or otherwise inappropriate activities, the responsibility and consequences shall rest entirely with that user. 2ndNikah.com reserves the right to take appropriate action against such activities and, where required by applicable law, cooperate with the relevant authorities.
+                      </p>
+
+                      <div className="p-3 bg-amber-50/90 rounded-2xl border border-amber-200 space-y-2 text-stone-800">
+                        <h4 className="font-serif font-bold text-amber-900 text-sm flex items-center gap-1.5">
+                          <span>🕌</span>
+                          <span>Islamic Reminder</span>
+                        </h4>
+                        <p>
+                          This platform is only a means of connecting people for the purpose of marriage in a Halal manner. Muslim users are encouraged to remain mindful of their accountability before Allah and to use this platform with honesty, modesty, respect, and proper Islamic manners.
+                        </p>
+                        <p>
+                          If any user, after becoming acquainted with another person through this platform, engages in indecent behavior, fraud, an unlawful relationship, wrongdoing, or any other immoral or prohibited activity, the responsibility for such actions shall rest entirely with the individual concerned.
+                        </p>
+                        <p className="font-semibold text-amber-950">
+                          2ndNikah.com and its management shall bear no responsibility, in this world or in the Hereafter, for such personal actions, decisions, or sins committed by users.
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-white rounded-2xl border border-emerald-200 space-y-1">
+                        <h4 className="font-serif font-bold text-emerald-900 text-xs">User Consent</h4>
+                        <p className="text-[11px] text-stone-700">
+                          By clicking “Accept & Continue,” I confirm that I have read, understood, and agreed to the above terms and notices. I understand that 2ndNikah.com is only a means of connecting people for the purpose of marriage, and that I am solely responsible for my own decisions, actions, and activities.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Agreement Checkbox */}
+                <label className="flex items-start gap-3 p-3.5 bg-rose-50/70 rounded-2xl border border-rose-200 cursor-pointer hover:bg-rose-50 transition-colors shadow-2xs">
+                  <input
+                    type="checkbox"
+                    checked={termsAgreed}
+                    onChange={(e) => {
+                      setStepError(null);
+                      setTermsAgreed(e.target.checked);
+                    }}
+                    className="w-5 h-5 mt-0.5 accent-pink-600 rounded cursor-pointer shrink-0"
+                  />
+                  <span className="text-xs font-bold text-stone-900 leading-snug">
+                    {formData.country.toLowerCase() === 'bangladesh' || formData.country.toLowerCase() === 'bd'
+                      ? '✓ আমি উপরোক্ত শর্তাবলি পড়েছি এবং সম্মত আছি'
+                      : '✓ I have read and agree to the above terms and conditions'}
+                  </span>
+                </label>
               </div>
             )}
 
@@ -617,10 +898,10 @@ export default function RegistrationWizardPage() {
                 variant="wine"
                 size="md"
                 onClick={handleNext}
-                className="shadow-md shadow-rose-900/20"
+                className="shadow-md shadow-rose-900/20 font-bold px-6"
                 rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                {currentStep === 9 ? 'Create My Profile' : 'Next Step'}
+                {currentStep === 9 ? 'Accept & Continue' : 'Next Step'}
               </Button>
             </div>
           </div>

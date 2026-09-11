@@ -8,11 +8,15 @@ import { BrandLogo } from '@/components/ui/brand-logo';
 import { BRAND_NAME, BRAND_TAGLINE } from '@/lib/constants';
 import { Heart, ShieldCheck, Phone, Mail, MapPin } from 'lucide-react';
 
+import { useAuth } from '@/lib/auth-context';
+
 export function Footer() {
   const pathname = usePathname();
+  const { isLoggedIn, userRole } = useAuth();
+  const isPaidMember = isLoggedIn && (userRole === 'PREMIUM' || userRole === 'ADMIN');
 
-  // Hide public footer inside Admin Portal
-  if (pathname.startsWith('/admin')) {
+  // Hide public footer on landing gateway (when not a paid member), register (/register), login (/login), and Admin Portal
+  if ((pathname === '/' && !isPaidMember) || pathname === '/register' || pathname === '/login' || pathname.startsWith('/admin')) {
     return null;
   }
 

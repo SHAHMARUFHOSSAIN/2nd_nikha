@@ -1,7 +1,7 @@
 import { NavItem, MembershipPlan } from '@/types';
 
-export const BRAND_NAME = '2nd Nikha';
-export const BRAND_TAGLINE = 'Every Heart Deserves a Second Nikha';
+export const BRAND_NAME = '2ndNikah';
+export const BRAND_TAGLINE = 'Every Heart Deserves a Second Nikah';
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/' },
@@ -56,7 +56,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
   {
     id: 'weekly',
     name: 'Weekly Pass',
-    priceUSD: 0.99,
+    priceUSD: 2.99,
     priceBDT: 99,
     billingCycle: 'per week',
     description: '1 week access to send interests, unlock chat, and direct contact details.',
@@ -73,7 +73,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
   {
     id: 'monthly',
     name: 'Monthly Pass',
-    priceUSD: 2.99,
+    priceUSD: 6.99,
     priceBDT: 299,
     billingCycle: 'per month',
     badge: 'Best Value For Remarriage',

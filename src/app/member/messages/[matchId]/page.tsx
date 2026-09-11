@@ -15,6 +15,7 @@ import { SharePhotoModal } from '@/components/communication/share-photo-modal';
 import { SafetyBanner } from '@/components/communication/safety-banner';
 import { useConnection } from '@/lib/connection-context';
 import { useCommunication } from '@/lib/communication-context';
+import { useAuth } from '@/lib/auth-context';
 import { MOCK_MATCHES } from '@/data/connection-data';
 import { MOCK_PROFILES } from '@/data/mock-data';
 import { Match } from '@/types';
@@ -25,6 +26,7 @@ import {
   ArrowLeft,
   Camera,
   MessageSquare,
+  MessageCircle,
   X,
   Pencil,
   Trash2,
@@ -40,6 +42,7 @@ interface ChatRoomPageProps {
 
 export default function ChatRoomPage({ params }: ChatRoomPageProps) {
   const router = useRouter();
+  const { currentUser } = useAuth();
   const connection = useConnection();
   const communication = useCommunication();
 
@@ -77,9 +80,18 @@ export default function ChatRoomPage({ params }: ChatRoomPageProps) {
   const match = safeMatches.find(
     (m) => m && (m.id === params.matchId || m.userTwoId === params.matchId)
   );
-  const matchedProfile = match
-    ? match.profile
-    : MOCK_PROFILES.find((p) => p.id === params.matchId) || MOCK_PROFILES[0];
+
+  // Dynamic partner profile resolution for matchId chat room
+  const activeConv = communication?.conversations.find(
+    (c) => c && (c.matchId === params.matchId || c.id === params.matchId || c.partnerId === params.matchId)
+  );
+
+  const matchedProfile =
+    activeConv?.profile && currentUser && activeConv.profile.id !== currentUser.id
+      ? activeConv.profile
+      : match && match.profile && currentUser && match.profile.id !== currentUser.id
+      ? match.profile
+      : MOCK_PROFILES.find((p) => currentUser && p.id !== currentUser.id) || MOCK_PROFILES[0];
 
   const chatMessages = messages[match?.id || params.matchId] || [];
 
@@ -215,10 +227,10 @@ export default function ChatRoomPage({ params }: ChatRoomPageProps) {
                   variant="wine"
                   size="sm"
                   onClick={() => setIsShareContactOpen(true)}
-                  className="rounded-full text-xs shadow-sm"
-                  leftIcon={<Phone className="w-3.5 h-3.5 text-white" />}
+                  className="rounded-full text-xs shadow-sm bg-emerald-700 hover:bg-emerald-800 text-white font-bold"
+                  leftIcon={<MessageCircle className="w-3.5 h-3.5 text-white" />}
                 >
-                  Contact Info
+                  Request WhatsApp
                 </Button>
               </div>
             </div>
@@ -244,7 +256,10 @@ export default function ChatRoomPage({ params }: ChatRoomPageProps) {
                 </div>
               ) : (
                 chatMessages.map((msg) => {
-                  const isMine = msg.senderId === 'p-101';
+                  const isMine =
+                    currentUser !== null &&
+                    (msg.senderId === currentUser.id ||
+                      (currentUser.email && msg.senderId === currentUser.email));
                   const isEditingThis = editingMessageId === msg.id;
 
                   const isPhotoMsg =
@@ -339,18 +354,25 @@ export default function ChatRoomPage({ params }: ChatRoomPageProps) {
                               </div>
                               <p className="text-[11px] font-medium opacity-90">📷 Shared Photo</p>
                             </div>
-                          ) : msg.type === 'CONTACT' ? (
-                            <ContactCard contactDetails={msg.contactDetails!} isSender={isMine} />
+                          ) : msg.type === 'CONTACT' || msg.contactDetails ? (
+                            <ContactCard
+                              matchId={match?.id || params.matchId}
+                              messageId={msg.id}
+                              contactDetails={msg.contactDetails}
+                              isSender={isMine}
+                            />
                           ) : (
                             <p className="leading-relaxed whitespace-pre-wrap text-sm">{msg.content}</p>
                           )}
 
                           <span
-                            className={`text-[9px] block text-right font-mono ${
+                            className={`text-[9px] flex items-center justify-end gap-1 font-mono ${
                               isMine ? 'text-rose-200' : 'text-stone-400'
                             }`}
                           >
-                            {msg.createdAt}
+                            <span className="font-semibold">{isMine ? 'You' : matchedProfile?.fullName?.split(' ')[0] || 'Member'}</span>
+                            <span>•</span>
+                            <span>{msg.createdAt}</span>
                           </span>
                         </div>
                       </div>

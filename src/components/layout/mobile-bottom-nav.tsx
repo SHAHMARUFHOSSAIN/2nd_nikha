@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Heart, Sparkles, MessageSquare, User } from 'lucide-react';
+import { Home, Eye, Sparkles, MessageSquare, User } from 'lucide-react';
 import { useCommunication } from '@/lib/communication-context';
 import { useAuth } from '@/lib/auth-context';
 
@@ -28,10 +28,10 @@ export function MobileBottomNav() {
       isCenter: false,
     },
     {
-      id: 'matches',
-      label: 'Matches',
-      href: isLoggedIn ? '/member/interests' : '/search',
-      icon: Heart,
+      id: 'visitors',
+      label: 'Visitors',
+      href: isLoggedIn ? '/member/visitors' : '/search',
+      icon: Eye,
       isCenter: false,
     },
     {

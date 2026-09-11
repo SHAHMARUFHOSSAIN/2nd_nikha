@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Container } from '@/components/layout/container';
 import { SectionHeading } from '@/components/ui/section-heading';
@@ -17,7 +17,11 @@ export default function MembershipPage() {
   return (
     <div className="min-h-screen bg-stone-50/40 py-12 md:py-16 space-y-16">
       {/* Hero & Pricing Cards */}
-      <MembershipPreview />
+      <Suspense fallback={
+        <div className="text-center py-20 font-bold text-stone-500">Loading membership passes...</div>
+      }>
+        <MembershipPreview />
+      </Suspense>
 
       {/* Feature Comparison Table */}
       <Container size="xl">
@@ -29,7 +33,7 @@ export default function MembershipPage() {
             <span>Encrypted & Safe Payments</span>
           </div>
           <p className="text-xs text-stone-600 leading-relaxed">
-            All transactions are securely processed through SSLCommerz. Your financial details are encrypted and never stored on our servers.
+            All transactions are securely processed through PayStation Payment Gateway (bKash, Nagad, Rocket, Visa/Mastercard). Your financial details are encrypted and never stored on our servers.
           </p>
         </div>
       </Container>

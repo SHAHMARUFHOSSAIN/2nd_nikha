@@ -1,26 +1,55 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/lib/auth-context';
+import { useAdmin } from '@/lib/admin-context';
 import { BRAND_NAME, BRAND_TAGLINE } from '@/lib/constants';
-import { Heart, LogIn, ShieldAlert, CheckCircle2, ArrowRight, Crown } from 'lucide-react';
-
+import { Profile } from '@/types';
+import { Heart, LogIn, ShieldAlert, CheckCircle2, ArrowRight, Crown, User } from 'lucide-react';
 import { MOCK_PROFILES } from '@/data/mock-data';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
 
-  const [emailOrPhone, setEmailOrPhone] = useState('anika.rahman@example.com');
+  let adminMembers: Profile[] = [];
+  try {
+    const admin = useAdmin();
+    if (admin?.members && admin.members.length > 0) {
+      adminMembers = admin.members;
+    }
+  } catch (e) {}
+
+  const allAvailableProfiles = React.useMemo(() => {
+    const combined = [...adminMembers];
+    for (const mock of MOCK_PROFILES) {
+      if (!combined.some((p) => p.id === mock.id)) {
+        combined.push(mock);
+      }
+    }
+    return combined;
+  }, [adminMembers]);
+
+  const [emailOrPhone, setEmailOrPhone] = useState(allAvailableProfiles[0]?.email || 'anika.rahman@example.com');
   const [password, setPassword] = useState('password123');
   const [rememberMe, setRememberMe] = useState(true);
   const [errorState, setErrorState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleLoginProfile = (targetProfile: Profile) => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      const roleToSet = targetProfile.membershipTier === 'Free' ? 'FREE' : 'PREMIUM';
+      login(targetProfile, roleToSet);
+      router.push('/member');
+    }, 200);
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,19 +72,17 @@ export default function LoginPage() {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      const foundProfile = MOCK_PROFILES.find(
-        (p) => p.email?.toLowerCase() === emailOrPhone.toLowerCase() || p.fullName.toLowerCase().includes(emailOrPhone.toLowerCase())
-      ) || MOCK_PROFILES[0];
+      const searchKey = emailOrPhone.trim().toLowerCase();
+      const foundProfile =
+        allAvailableProfiles.find(
+          (p) =>
+            p.email?.toLowerCase() === searchKey ||
+            p.fullName.toLowerCase().includes(searchKey) ||
+            (p.phone && p.phone.includes(searchKey))
+        ) || allAvailableProfiles[0];
 
-      login(foundProfile, 'PREMIUM');
-      router.push('/member');
-    }, 400);
-  };
-
-  const handleQuickDemoLogin = (role: 'PREMIUM' | 'FREE') => {
-    const selectedProfile = role === 'PREMIUM' ? MOCK_PROFILES[0] : MOCK_PROFILES[1];
-    login(selectedProfile, role);
-    router.push('/member');
+      handleLoginProfile(foundProfile);
+    }, 300);
   };
 
   return (
@@ -76,7 +103,7 @@ export default function LoginPage() {
               Welcome Back
             </h1>
             <p className="text-xs text-stone-500">
-              Sign in to manage your matches, preferences, and interests.
+              Sign in to manage your matches, messages, and preferences.
             </p>
           </div>
 
@@ -133,29 +160,36 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Quick Demo Login Helpers */}
-          <div className="pt-3 border-t border-stone-100 space-y-2">
-            <span className="text-[10px] uppercase font-bold text-stone-400 block text-center tracking-wider">
-              ⚡ Quick Demo 1-Click Login
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickDemoLogin('PREMIUM')}
-                className="w-full justify-center text-xs border-amber-200 bg-amber-50/50 text-amber-900 hover:bg-amber-100"
-                leftIcon={<Crown className="w-3.5 h-3.5 text-amber-600" />}
-              >
-                Login (Premium)
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickDemoLogin('FREE')}
-                className="w-full justify-center text-xs border-stone-200 text-stone-700 hover:bg-stone-50"
-              >
-                Login (Free Member)
-              </Button>
+          {/* Quick Account Switcher for 1-Click Multi-Account Login & Testing */}
+          <div className="pt-4 border-t border-stone-100 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-rose-800 tracking-wider flex items-center gap-1 font-mono">
+                ⚡ 1-Click Login to Registered Accounts
+              </span>
+              <span className="text-[10px] text-stone-400 font-mono">({allAvailableProfiles.length} Accounts)</span>
+            </div>
+
+            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              {allAvailableProfiles.slice(0, 6).map((prof) => (
+                <button
+                  key={prof.id}
+                  type="button"
+                  onClick={() => handleLoginProfile(prof)}
+                  className="w-full p-2 rounded-xl bg-rose-50/60 hover:bg-rose-100/80 border border-rose-100 flex items-center justify-between text-xs transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <div className="w-6 h-6 rounded-full bg-rose-200 text-rose-900 font-bold flex items-center justify-center text-[10px] shrink-0">
+                      {prof.fullName[0]}
+                    </div>
+                    <span className="font-bold text-stone-800 group-hover:text-rose-900 truncate">
+                      {prof.fullName}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-rose-700 font-medium shrink-0 bg-white px-2 py-0.5 rounded-full border border-rose-200">
+                    Sign In →
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
 
