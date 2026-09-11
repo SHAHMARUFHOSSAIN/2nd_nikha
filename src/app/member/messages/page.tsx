@@ -461,10 +461,11 @@ function MessagesInboxContent() {
                       </div>
                     ) : (
                       activeMessages.map((msg) => {
-                        const isMine =
-                          currentUser !== null &&
+                        const isMine = Boolean(
+                          currentUser &&
                           (msg.senderId === currentUser.id ||
-                            (currentUser.email && msg.senderId === currentUser.email));
+                            (currentUser.email && msg.senderId === currentUser.email))
+                        );
                         const isEditingThis = editingMessageId === msg.id;
 
                         const isPhotoMsg =
