@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAdmin } from '@/lib/admin-context';
+import { MOCK_PROFILES } from '@/data/mock-data';
 import { Crown, CheckCircle2 } from 'lucide-react';
 
 export default function AdminSubscribersPage() {
