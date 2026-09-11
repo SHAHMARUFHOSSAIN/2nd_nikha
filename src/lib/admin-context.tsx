@@ -53,7 +53,7 @@ interface AdminContextType {
   settings: Record<string, any>;
   
   // Full CRUD Actions for Single Page Manager
-  addMember: (member: Omit<Profile, 'id' | 'createdAt'>) => void;
+  addMember: (member: any) => void;
   updateMember: (id: string, member: Partial<Profile>) => void;
   deleteMember: (id: string) => void;
   
@@ -397,7 +397,7 @@ function mergeWithMockProfiles(list: Profile[]): Profile[] {
     setAuditLogs((prev) => [newLog, ...prev]);
   };
 
-  const addMember = (m: Omit<Profile, 'id' | 'createdAt'>) => {
+  const addMember = (m: any) => {
     const newMember: Profile = {
       ...m,
       id: `p-${Date.now()}`,

@@ -221,7 +221,18 @@ export default function RegistrationWizardPage() {
         isVerified: false,
         matchPercentage: 92,
         trustScore: 88,
-        familyType: formData.familyType || 'Nuclear Family',
+        hasChildren: Boolean(formData.childrenCount && formData.childrenCount > 0),
+        photoPrivacy: 'PUBLIC' as const,
+        membershipTier: (userRole === 'PREMIUM' ? 'Premium' : 'Free') as any,
+        matchReasons: ['Location Match', 'Education Compatibility', 'Religiosity'],
+        partnerPreferences: {
+          ageRange: '24-35',
+          maritalStatuses: ['Divorced', 'Single Parent'],
+          religion: 'Islam',
+          minHeight: "5'2\"",
+          education: 'Graduate',
+          location: 'Dhaka',
+        },
         createdAt: new Date().toISOString().split('T')[0],
       };
 
