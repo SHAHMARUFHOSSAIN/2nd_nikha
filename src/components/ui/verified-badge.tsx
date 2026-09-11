@@ -7,6 +7,7 @@ export interface VerifiedBadgeProps {
   showLabel?: boolean;
   labelText?: string;
   variant?: 'shield' | 'circle';
+  status?: string;
   className?: string;
 }
 

@@ -230,7 +230,7 @@ export default function ProfileVisitorsPage() {
                         <h3 className="font-serif font-bold text-base sm:text-lg text-stone-900 truncate">
                           {p.fullName}, {p.age}
                         </h3>
-                        <VerifiedBadge status="VERIFIED" />
+                        <VerifiedBadge showLabel labelText="Verified" />
                       </div>
 
                       <div className="space-y-0.5 text-xs text-stone-600">
