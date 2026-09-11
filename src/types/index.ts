@@ -72,6 +72,7 @@ export interface Profile {
   additionalPhotos?: string[];
   photoPrivacy: PhotoPrivacy;
   isVerified: boolean;
+  isNidVerified?: boolean;
   verificationDetails?: {
     identityVerified: boolean;
     backgroundChecked: boolean;
