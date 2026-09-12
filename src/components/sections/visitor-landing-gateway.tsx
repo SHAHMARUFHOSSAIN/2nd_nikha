@@ -105,9 +105,9 @@ export function VisitorLandingGateway() {
           <div className="space-y-12 max-w-6xl mx-auto">
             
             {/* Top Brand Bar - Sleek Floating Navbar */}
-            <header className="flex flex-row items-center justify-between gap-1.5 sm:gap-4 border border-white/40 px-3 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/95 shadow-2xl backdrop-blur-2xl relative z-50 max-w-full">
-              <div className="flex items-center gap-2 shrink-0">
-                <Link href="/" className="flex items-center gap-2 group">
+            <header className="flex flex-row items-center justify-between gap-1 sm:gap-4 border border-white/40 px-2 sm:px-6 py-2 sm:py-3 rounded-2xl sm:rounded-full bg-white/95 shadow-2xl backdrop-blur-2xl relative z-50 max-w-full">
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                <Link href="/" className="flex items-center gap-1 group">
                   <div className="hidden sm:block">
                     <BrandLogo size="md" showTagline />
                   </div>
@@ -117,14 +117,14 @@ export function VisitorLandingGateway() {
                 </Link>
               </div>
 
-              <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+              <div className="flex items-center gap-1 sm:gap-3 shrink-0">
                 <CurrencySwitcher variant="navbar" dropPosition="down" />
                 <Link href="/login">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="rounded-full px-3 sm:px-5 py-1.5 sm:py-2 border-2 border-pink-300 bg-pink-50 text-pink-900 font-bold hover:bg-pink-100 text-[11px] sm:text-xs shadow-xs shrink-0"
-                    leftIcon={<LogIn className="w-3.5 h-3.5 text-pink-600" />}
+                    className="rounded-full px-2.5 sm:px-5 py-1 sm:py-2 border-2 border-pink-300 bg-pink-50 text-pink-900 font-bold hover:bg-pink-100 text-[10px] sm:text-xs shadow-xs shrink-0"
+                    leftIcon={<LogIn className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-pink-600" />}
                   >
                     <span className="hidden sm:inline">Member Login</span>
                     <span className="sm:hidden">Login</span>

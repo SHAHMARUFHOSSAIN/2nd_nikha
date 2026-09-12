@@ -36,7 +36,7 @@ export function CurrencySwitcher({
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border shadow-sm ${
+        className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all border shadow-sm ${
           variant === 'pricing'
             ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white border-pink-400 shadow-md hover:from-pink-600 hover:to-rose-700'
             : 'bg-white/95 hover:bg-rose-50 text-stone-800 border-rose-200 hover:border-pink-300 shadow-xs'
