@@ -158,6 +158,7 @@ export interface Message {
     recipientName?: string;
     recipientWhatsapp?: string;
   };
+  isMine?: boolean;
 }
 
 export interface Conversation {
@@ -169,6 +170,7 @@ export interface Conversation {
   lastMessageAt: string;
   lastSenderId?: string;
   unreadCount: number;
+  unreadCounts?: Record<string, number>;
   status?: 'ACTIVE' | 'BLOCKED' | 'ENDED';
   blockedBy?: string;
   profile: Profile;
