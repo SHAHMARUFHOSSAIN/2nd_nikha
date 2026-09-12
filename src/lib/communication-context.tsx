@@ -755,7 +755,7 @@ export function CommunicationProvider({ children }: { children: React.ReactNode 
     if (typeof profileOrId === 'string') {
       const clean = profileOrId.trim().toLowerCase();
       if (!clean) return false;
-      return clean === targetId || (targetEmail && clean === targetEmail) || (targetName && clean === targetName);
+      return clean === targetId || (Boolean(targetEmail) && clean === targetEmail) || (Boolean(targetName) && clean === targetName);
     }
 
     const pId = profileOrId.id?.toLowerCase();
