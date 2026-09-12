@@ -49,7 +49,7 @@ export function SendInterestModal({
     } else if (result.message) {
       setNotice(result.message);
     }
-    if (onConfirm) onConfirm();
+    if (onSuccess) onSuccess();
   };
 
   return (
