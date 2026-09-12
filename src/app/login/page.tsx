@@ -35,8 +35,8 @@ export default function LoginPage() {
     return combined;
   }, [adminMembers]);
 
-  const [emailOrPhone, setEmailOrPhone] = useState(allAvailableProfiles[0]?.email || 'anika.rahman@example.com');
-  const [password, setPassword] = useState('password123');
+  const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [errorState, setErrorState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -159,39 +159,6 @@ export default function LoginPage() {
               {isLoading ? 'Signing In...' : 'Sign In to Member Portal'}
             </Button>
           </form>
-
-          {/* Quick Account Switcher for 1-Click Multi-Account Login & Testing */}
-          <div className="pt-4 border-t border-stone-100 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-bold text-rose-800 tracking-wider flex items-center gap-1 font-mono">
-                ⚡ 1-Click Login to Registered Accounts
-              </span>
-              <span className="text-[10px] text-stone-400 font-mono">({allAvailableProfiles.length} Accounts)</span>
-            </div>
-
-            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-              {allAvailableProfiles.slice(0, 6).map((prof) => (
-                <button
-                  key={prof.id}
-                  type="button"
-                  onClick={() => handleLoginProfile(prof)}
-                  className="w-full p-2 rounded-xl bg-rose-50/60 hover:bg-rose-100/80 border border-rose-100 flex items-center justify-between text-xs transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <div className="w-6 h-6 rounded-full bg-rose-200 text-rose-900 font-bold flex items-center justify-center text-[10px] shrink-0">
-                      {prof.fullName[0]}
-                    </div>
-                    <span className="font-bold text-stone-800 group-hover:text-rose-900 truncate">
-                      {prof.fullName}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-rose-700 font-medium shrink-0 bg-white px-2 py-0.5 rounded-full border border-rose-200">
-                    Sign In →
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Register Link Footer */}
           <div className="text-center pt-2 text-xs text-stone-600">

@@ -1,16 +1,14 @@
 import { NavItem, MembershipPlan } from '@/types';
 
 export const BRAND_NAME = '2ndNikah';
-export const BRAND_TAGLINE = 'Every Heart Deserves a Second Nikah';
+export const BRAND_TAGLINE = 'Every Heart Deserves a 2nd Chance';
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'About Us', href: '/about' },
   { label: 'AI Match', href: '/search' },
-  { label: 'Success Stories', href: '/stories' },
   { label: 'Membership', href: '/membership' },
   { label: 'Blog', href: '/blog' },
-  { label: 'Contact', href: '/contact' },
 ];
 
 export const MARITAL_STATUS_OPTIONS = [
@@ -18,6 +16,7 @@ export const MARITAL_STATUS_OPTIONS = [
   'Widowed',
   'Single Parent',
   'Never Married',
+  'Married',
 ] as const;
 
 export const RELIGION_OPTIONS = [
@@ -41,7 +40,41 @@ export const DEFAULT_COUNTRY_OPTIONS = [
   { label: '🇲🇾 Malaysia (Expat NRB)', value: 'Malaysia', flag: '🇲🇾' },
 ];
 
-export const AGE_RANGE_MIN = 22;
+export const COUNTRY_CITY_MAP: Record<string, string[]> = {
+  Bangladesh: [
+    'Dhaka',
+    'Chittagong',
+    'Sylhet',
+    'Rajshahi',
+    'Khulna',
+    'Barisal',
+    'Rangpur',
+    'Mymensingh',
+    'Comilla',
+    'Narayanganj',
+    'Gazipur',
+    'Bogra',
+    'Noakhali',
+    'Feni',
+    "Cox's Bazar",
+    'Tangail',
+    'Pabna',
+    'Kushtia',
+    'Jessore',
+    'Dinajpur',
+  ],
+  India: ['Kolkata', 'Mumbai', 'Delhi', 'Chennai', 'Bangalore', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow'],
+  Pakistan: ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Peshawar', 'Multan', 'Quetta'],
+  'United States': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Dallas', 'Atlanta', 'San Francisco', 'Washington DC', 'Boston', 'Seattle', 'Detroit', 'Miami', 'San Jose'],
+  'United Kingdom': ['London', 'Birmingham', 'Manchester', 'Leeds', 'Glasgow', 'Liverpool', 'Edinburgh', 'Bristol'],
+  UAE: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Al Ain'],
+  'Saudi Arabia': ['Riyadh', 'Jeddah', 'Dammam', 'Mecca', 'Medina', 'Khobar'],
+  Canada: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton', 'Winnipeg'],
+  Malaysia: ['Kuala Lumpur', 'Penang', 'Johor Bahru', 'Shah Alam', 'Melaka', 'Ipoh'],
+  Australia: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'],
+};
+
+export const AGE_RANGE_MIN = 18;
 export const AGE_RANGE_MAX = 65;
 
 export const MEMBERSHIP_CONFIG = {

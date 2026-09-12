@@ -4,8 +4,8 @@ import React from 'react';
 import { SearchFilterOptions, Gender, MaritalStatus, Religion } from '@/types';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS } from '@/lib/constants';
-import { RotateCcw, Filter, Search, CheckCircle2 } from 'lucide-react';
+import { MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, DEFAULT_COUNTRY_OPTIONS, COUNTRY_CITY_MAP } from '@/lib/constants';
+import { RotateCcw, Filter, Search, CheckCircle2, Globe, MapPin } from 'lucide-react';
 
 export interface SearchFiltersProps {
   filters: SearchFilterOptions;
@@ -25,6 +25,16 @@ export function SearchFilters({
   const updateFilter = (key: keyof SearchFilterOptions, value: any) => {
     onChange({ ...filters, [key]: value });
   };
+
+  const selectedCountry = filters.country || 'Any';
+  const availableCities = React.useMemo(() => {
+    if (selectedCountry && selectedCountry !== 'Any' && selectedCountry !== 'All' && COUNTRY_CITY_MAP[selectedCountry]) {
+      return ['Any', ...COUNTRY_CITY_MAP[selectedCountry]];
+    }
+    // All cities combined
+    const all = Array.from(new Set(Object.values(COUNTRY_CITY_MAP).flat()));
+    return ['Any', ...all];
+  }, [selectedCountry]);
 
   return (
     <div className="space-y-5 bg-white p-6 rounded-3xl border border-rose-100/90 shadow-sm">
@@ -71,24 +81,38 @@ export function SearchFilters({
         <div className="grid grid-cols-2 gap-2">
           <Select
             label="Min Age"
-            options={['22', '25', '28', '30', '35', '40']}
-            value={filters.minAge?.toString() || '22'}
+            options={['18', '21', '25', '28', '30', '35', '40', '45', '50', '55', '60', '65']}
+            value={filters.minAge?.toString() || '18'}
             onChange={(e) => updateFilter('minAge', parseInt(e.target.value))}
           />
           <Select
             label="Max Age"
-            options={['35', '40', '45', '50', '55', '65']}
-            value={filters.maxAge?.toString() || '55'}
+            options={['25', '30', '35', '40', '45', '50', '55', '60', '65']}
+            value={filters.maxAge?.toString() || '65'}
             onChange={(e) => updateFilter('maxAge', parseInt(e.target.value))}
           />
         </div>
 
-        {/* Location */}
+        {/* Country Select */}
         <Select
-          label="Location / City"
-          options={['Any', 'Dhaka', 'Chittagong', 'Sylhet', 'Overseas / NRI']}
-          value={filters.location || 'Any'}
-          onChange={(e) => updateFilter('location', e.target.value)}
+          label="Country / Region"
+          options={['Any', ...DEFAULT_COUNTRY_OPTIONS.map((c) => c.value)]}
+          value={filters.country || 'Any'}
+          onChange={(e) => {
+            const newCountry = e.target.value;
+            onChange({ ...filters, country: newCountry, city: 'Any', location: 'Any' });
+          }}
+        />
+
+        {/* Dynamic City Select */}
+        <Select
+          label={selectedCountry !== 'Any' && selectedCountry !== 'All' ? `City in ${selectedCountry}` : 'Select City'}
+          options={availableCities}
+          value={filters.city || 'Any'}
+          onChange={(e) => {
+            const newCity = e.target.value;
+            onChange({ ...filters, city: newCity, location: newCity });
+          }}
         />
 
         {/* Education Level */}

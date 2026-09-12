@@ -1,4 +1,4 @@
-export type MaritalStatus = 'Divorced' | 'Widowed' | 'Single Parent' | 'Never Married';
+export type MaritalStatus = 'Divorced' | 'Widowed' | 'Single Parent' | 'Never Married' | 'Married';
 
 export type Gender = 'Male' | 'Female';
 
@@ -218,6 +218,8 @@ export interface SearchFilterOptions {
   minAge?: number;
   maxAge?: number;
   religion?: Religion | 'Any';
+  country?: string;
+  city?: string;
   location?: string;
   education?: string;
   profession?: string;

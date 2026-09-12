@@ -120,7 +120,7 @@ const AdminContext = createContext<AdminContextType>({
     branding: {
       logoUrl: OFFICIAL_2ND_CHANCE_LOGO,
       faviconUrl: '/favicon.ico',
-      heroTitle: 'Every heart deserves a second Nikha',
+      heroTitle: 'Every heart deserves a 2nd Chance',
       heroSubtitle: 'A trusted matrimonial sanctuary designed for divorced, widowed, single parents, and mature singles seeking a genuine, lifelong companion.',
       heroImageUrl: '',
     },
@@ -167,7 +167,7 @@ const DEFAULT_SETTINGS = {
   branding: {
     logoUrl: OFFICIAL_2ND_CHANCE_LOGO,
     faviconUrl: '/favicon.ico',
-    heroTitle: 'Every heart deserves a second Nikha',
+    heroTitle: 'Every heart deserves a 2nd Chance',
     heroSubtitle: 'Designed specifically for divorced, widowed, single parents, and mature singles in Bangladesh & global NRB expats.',
     heroImageUrl: '',
   },

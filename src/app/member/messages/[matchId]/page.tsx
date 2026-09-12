@@ -27,6 +27,7 @@ import {
   Camera,
   MessageSquare,
   MessageCircle,
+  Ban,
   X,
   Pencil,
   Trash2,
@@ -174,21 +175,21 @@ export default function ChatRoomPage({ params }: ChatRoomPageProps) {
           <div className="bg-white rounded-3xl border border-rose-100 shadow-xl overflow-hidden flex flex-col h-[78vh]">
             
             {/* Top Chat Header with Guaranteed window.location Back Navigation */}
-            <div className="bg-white p-4 border-b border-rose-100 flex items-center justify-between shadow-xs z-10">
-              <div className="flex items-center gap-3">
+            <div className="bg-white p-3 sm:p-4 border-b border-rose-100 flex items-center justify-between shadow-xs z-10">
+              <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
                 <button
                   type="button"
                   onClick={() => {
                     window.location.href = '/member/messages';
                   }}
-                  className="p-2 text-stone-700 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-stone-200"
+                  className="p-1.5 sm:p-2 text-stone-700 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-1 cursor-pointer border border-stone-200 shrink-0"
                   title="Back to Messages Inbox"
                 >
                   <ArrowLeft className="w-5 h-5 text-stone-700" />
-                  <span className="text-xs font-bold text-stone-800">Back to Inbox</span>
+                  <span className="hidden sm:inline text-xs font-bold text-stone-800">Back to Inbox</span>
                 </button>
 
-                <div className="relative w-11 h-11 rounded-2xl overflow-hidden bg-rose-50 border-2 border-rose-100 shrink-0">
+                <div className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden bg-rose-50 border border-rose-200 shrink-0">
                   <Image
                     src={matchedProfile.photoUrl}
                     alt={matchedProfile.fullName}
@@ -197,40 +198,52 @@ export default function ChatRoomPage({ params }: ChatRoomPageProps) {
                   />
                 </div>
 
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <h2 className="font-serif font-bold text-stone-900 text-base">
+                    <h2 className="font-serif font-bold text-stone-900 text-xs sm:text-base truncate">
                       {matchedProfile.fullName}
                     </h2>
                     {matchedProfile.isVerified && <VerifiedBadge size="sm" />}
                   </div>
-                  <p className="text-[11px] text-stone-500 flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                    <span>Active Match • {matchedProfile.profession}</span>
+                  <p className="text-[10px] sm:text-[11px] text-emerald-600 font-semibold flex items-center gap-1 truncate">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse shrink-0" />
+                    <span className="truncate">Active Match <span className="hidden sm:inline">• {matchedProfile.profession}</span></span>
                   </p>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setIsSharePhotoOpen(true)}
-                  className="hidden sm:inline-flex rounded-full text-xs border-rose-200 text-rose-800 hover:bg-rose-50"
+                  className="rounded-full text-[10px] sm:text-xs border-rose-200 text-rose-800 hover:bg-rose-50 px-2 sm:px-3 h-8 sm:h-9"
                   leftIcon={<Camera className="w-3.5 h-3.5 text-rose-600" />}
                 >
-                  Share Photo
+                  <span className="hidden sm:inline">Share Photo</span>
+                  <span className="sm:hidden">Photo</span>
                 </Button>
 
                 <Button
                   variant="wine"
                   size="sm"
                   onClick={() => setIsShareContactOpen(true)}
-                  className="rounded-full text-xs shadow-sm bg-emerald-700 hover:bg-emerald-800 text-white font-bold"
+                  className="rounded-full text-[10px] sm:text-xs shadow-sm px-2 sm:px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold h-8 sm:h-9"
                   leftIcon={<MessageCircle className="w-3.5 h-3.5 text-white" />}
                 >
-                  Request WhatsApp
+                  <span className="hidden sm:inline">Request WhatsApp</span>
+                  <span className="sm:hidden">WhatsApp</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => toggleBlockConversation && toggleBlockConversation(params.matchId)}
+                  className="inline-flex rounded-full text-[10px] sm:text-xs px-2 sm:px-3 border-stone-300 text-rose-700 hover:bg-rose-50 h-8 sm:h-9"
+                  leftIcon={<Ban className="w-3.5 h-3.5 text-rose-600" />}
+                >
+                  <span>Block</span>
                 </Button>
               </div>
             </div>

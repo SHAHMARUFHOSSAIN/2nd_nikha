@@ -337,69 +337,7 @@ export function VisitorLandingGateway() {
               </div>
             </section>
 
-            {/* Verified Candidate Profiles Showcase - Glassmorphism Grid */}
-            <section className="space-y-6 pt-6 border-t border-white/20">
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-pink-200">
-                  <Users className="w-4 h-4 text-pink-300" />
-                  <span>Real Matrimonial Profiles Waiting to Connect</span>
-                </div>
-                <h3 className="text-2xl font-serif font-bold text-white drop-shadow-md">
-                  Meet Genuine Divorced, Widowed & Single Parent Matches
-                </h3>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {candidatePreviews.map((c, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-white/15 backdrop-blur-2xl rounded-3xl p-5 border border-white/30 space-y-4 hover:bg-white/25 hover:border-pink-300/80 transition-all shadow-2xl text-white"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/40 shrink-0 shadow-md">
-                        <Image
-                          src={c.photo}
-                          alt={c.profession}
-                          fill
-                          className="object-cover object-top"
-                        />
-                      </div>
-
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="font-serif font-bold text-base text-white truncate drop-shadow-sm">
-                            Candidate, {c.age}
-                          </h4>
-                          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                        </div>
-                        <p className="text-xs text-pink-200 font-semibold truncate">{c.status}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5 text-xs text-rose-100 border-t border-white/20 pt-3 font-serif">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                        <span className="truncate">{c.profession}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                        <span className="truncate">{c.education}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                        <span className="truncate">{c.location}</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 text-center">
-                      <span className="text-[11px] font-bold text-amber-200 bg-stone-950/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30 inline-block shadow-md">
-                        🔒 Pay Pass to Unlock Contact & Chat
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
 
             {/* Payment & Security Notice Banner - Glassmorphism Footer */}
             <footer className="p-6 bg-white/15 backdrop-blur-2xl rounded-3xl border border-white/30 text-center space-y-2 max-w-4xl mx-auto shadow-2xl text-white">

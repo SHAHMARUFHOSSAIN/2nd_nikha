@@ -336,18 +336,18 @@ function MessagesInboxContent() {
                 <>
                   {/* Messenger Top Header */}
                   <div className="p-3 sm:p-4 border-b border-stone-200/80 flex items-center justify-between bg-white shadow-2xs shrink-0 z-10">
-                    <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
                       
                       {/* Mobile Back Button (Chats List) */}
                       <button
                         onClick={() => setMobileActiveView('LIST')}
-                        className="lg:hidden p-1.5 rounded-full hover:bg-stone-100 active:bg-stone-200 text-stone-700 transition-all border border-stone-200 shadow-2xs"
+                        className="lg:hidden p-1.5 rounded-full hover:bg-stone-100 active:bg-stone-200 text-stone-700 transition-all border border-stone-200 shadow-2xs shrink-0"
                         title="Back to Chats"
                       >
-                        <ChevronLeft className="w-6 h-6 text-stone-800" />
+                        <ChevronLeft className="w-5 h-5 text-stone-800" />
                       </button>
 
-                      <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden bg-pink-50 border border-stone-200 shrink-0">
+                      <div className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden bg-pink-50 border border-stone-200 shrink-0">
                         <Image
                           src={activeConv?.profile?.photoUrl || '/images/default-avatar.jpg'}
                           alt={activeConv?.profile?.fullName || 'Candidate'}
@@ -356,24 +356,24 @@ function MessagesInboxContent() {
                         />
                         <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
                       </div>
-                      <div>
-                        <h3 className="font-sans font-bold text-stone-900 text-sm sm:text-base leading-tight">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-sans font-bold text-stone-900 text-xs sm:text-base leading-tight truncate">
                           {activeConv?.profile?.fullName || 'Candidate'}
                         </h3>
-                        <p className="text-[10px] sm:text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                          <span>Active Now • {activeConv?.profile?.profession || 'Verified Candidate'}</span>
+                        <p className="text-[10px] sm:text-[11px] text-emerald-600 font-semibold flex items-center gap-1 truncate">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse shrink-0" />
+                          <span className="truncate">Active Now <span className="hidden sm:inline">• {activeConv?.profile?.profession || 'Verified Candidate'}</span></span>
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setIsSharePhotoOpen(true)}
                         disabled={activeConv.status === 'BLOCKED'}
-                        className="rounded-full text-[11px] sm:text-xs border-pink-200 text-pink-800 hover:bg-pink-50 px-2.5 sm:px-3"
+                        className="rounded-full text-[10px] sm:text-xs border-pink-200 text-pink-800 hover:bg-pink-50 px-2 sm:px-3 h-8 sm:h-9"
                         leftIcon={<Camera className="w-3.5 h-3.5 text-pink-600" />}
                       >
                         <span className="hidden sm:inline">Share Photo</span>
@@ -385,27 +385,27 @@ function MessagesInboxContent() {
                         size="sm"
                         onClick={() => setIsShareContactOpen(true)}
                         disabled={activeConv.status === 'BLOCKED'}
-                        className="rounded-full text-[11px] sm:text-xs shadow-sm px-2.5 sm:px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold"
+                        className="rounded-full text-[10px] sm:text-xs shadow-sm px-2 sm:px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold h-8 sm:h-9"
                         leftIcon={<MessageCircle className="w-3.5 h-3.5 text-white" />}
                       >
                         <span className="hidden sm:inline">Request WhatsApp</span>
                         <span className="sm:hidden">WhatsApp</span>
                       </Button>
 
-                      {/* Block / Unblock Action Button: Only blocker can unblock; blocked recipient cannot unblock */}
+                      {/* Block / Unblock Action Button */}
                       {activeConv.status === 'BLOCKED' ? (
                         currentUser && activeConv.blockedBy && (activeConv.blockedBy === currentUser.id || activeConv.blockedBy === currentUser.email) ? (
                           <Button
                             variant="wine"
                             size="sm"
                             onClick={() => toggleBlockConversation && toggleBlockConversation(activeConv.matchId)}
-                            className="rounded-full text-[11px] sm:text-xs px-2.5 sm:px-3 bg-rose-700 hover:bg-rose-800 text-white font-bold"
+                            className="rounded-full text-[10px] sm:text-xs px-2 sm:px-3 bg-rose-700 hover:bg-rose-800 text-white font-bold h-8 sm:h-9"
                             leftIcon={<ShieldCheck className="w-3.5 h-3.5" />}
                           >
                             <span>Unblock</span>
                           </Button>
                         ) : (
-                          <span className="text-[11px] px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 font-bold flex items-center gap-1">
+                          <span className="text-[10px] sm:text-[11px] px-2 py-1 rounded-full bg-rose-100 text-rose-800 font-bold flex items-center gap-1">
                             <Ban className="w-3 h-3 text-rose-600" />
                             <span>Blocked</span>
                           </span>
@@ -415,7 +415,7 @@ function MessagesInboxContent() {
                           variant="outline"
                           size="sm"
                           onClick={() => toggleBlockConversation && toggleBlockConversation(activeConv.matchId)}
-                          className="rounded-full text-[11px] sm:text-xs px-2.5 sm:px-3 border-stone-300 text-rose-700 hover:bg-rose-50"
+                          className="inline-flex rounded-full text-[10px] sm:text-xs px-2 sm:px-3 border-stone-300 text-rose-700 hover:bg-rose-50 h-8 sm:h-9"
                           leftIcon={<Ban className="w-3.5 h-3.5 text-rose-600" />}
                         >
                           <span>Block</span>
@@ -430,7 +430,7 @@ function MessagesInboxContent() {
                             setSelectedMatchId(null);
                           }
                         }}
-                        className="p-1.5 rounded-full text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                        className="hidden sm:block p-1.5 rounded-full text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                         title="Delete Conversation"
                       >
                         <Trash2 className="w-4 h-4" />

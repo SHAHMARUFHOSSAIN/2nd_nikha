@@ -15,9 +15,11 @@ import { MembershipPreviewModal } from '@/components/sections/membership-preview
 const initialFilters: SearchFilterOptions = {
   seekingGender: 'Female',
   maritalStatus: 'Any',
-  minAge: 22,
-  maxAge: 55,
+  minAge: 18,
+  maxAge: 65,
   religion: 'Any',
+  country: 'Any',
+  city: 'Any',
   location: 'Any',
   education: 'Any',
   hasChildren: 'Any',
@@ -58,11 +60,26 @@ export function SearchClientView() {
       if (filters.minAge && profile.age < filters.minAge) return false;
       if (filters.maxAge && profile.age > filters.maxAge) return false;
 
+      // Country
+      if (filters.country && filters.country !== 'Any' && filters.country !== 'All') {
+        const cTarget = filters.country.toLowerCase();
+        const cProfile = (profile.country || profile.location || '').toLowerCase();
+        if (!cProfile.includes(cTarget)) return false;
+      }
+
+      // City
+      if (filters.city && filters.city !== 'Any') {
+        const cityTarget = filters.city.toLowerCase();
+        const cityProfile = (profile.city || profile.location || '').toLowerCase();
+        if (!cityProfile.includes(cityTarget)) return false;
+      }
+
       // Location
       if (
         filters.location &&
         filters.location !== 'Any' &&
-        !profile.location.toLowerCase().includes(filters.location.toLowerCase())
+        !profile.location.toLowerCase().includes(filters.location.toLowerCase()) &&
+        !profile.city?.toLowerCase().includes(filters.location.toLowerCase())
       ) {
         return false;
       }

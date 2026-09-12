@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { BrandLogo } from '@/components/ui/brand-logo';
 import { BRAND_NAME, BRAND_TAGLINE } from '@/lib/constants';
-import { Heart, ShieldCheck, Phone, Mail, MapPin } from 'lucide-react';
+import { Heart, ShieldCheck } from 'lucide-react';
 
 import { useAuth } from '@/lib/auth-context';
 
@@ -23,7 +23,7 @@ export function Footer() {
   return (
     <footer className="bg-stone-900 text-stone-300 pt-16 pb-12 border-t border-stone-800">
       <Container size="xl" className="space-y-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           
           {/* Brand & About Column */}
           <div className="lg:col-span-2 space-y-4">
@@ -47,7 +47,6 @@ export function Footer() {
               <li><Link href="/about" className="hover:text-rose-400">About Us</Link></li>
               <li><Link href="/search" className="hover:text-rose-400">Search Matches</Link></li>
               <li><Link href="/membership" className="hover:text-rose-400">Membership Plans</Link></li>
-              <li><Link href="/success-stories" className="hover:text-rose-400">Success Stories</Link></li>
             </ul>
           </div>
 
@@ -61,25 +60,6 @@ export function Footer() {
               <li><Link href="/member/interests" className="hover:text-rose-400">Interests & Matches</Link></li>
               <li><Link href="/member/subscription" className="hover:text-rose-400">Manage Subscription</Link></li>
             </ul>
-          </div>
-
-          {/* Contact & Support */}
-          <div className="space-y-3">
-            <h4 className="font-serif font-bold text-white text-base">Contact Support</h4>
-            <div className="space-y-2 text-xs text-stone-400">
-              <p className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
-                <span>Gulshan 2, Dhaka, Bangladesh</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-rose-500 shrink-0" />
-                <span>+880 1700-000000</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-rose-500 shrink-0" />
-                <span>support@2ndchance.com</span>
-              </p>
-            </div>
           </div>
 
         </div>

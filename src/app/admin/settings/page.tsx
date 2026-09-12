@@ -24,7 +24,7 @@ export default function AdminSettingsPage() {
 
   const [logoUrl, setLogoUrl] = useState(initialLogo);
   const [faviconUrl, setFaviconUrl] = useState(settings.branding?.faviconUrl || '/favicon.ico');
-  const [heroTitle, setHeroTitle] = useState(settings.branding?.heroTitle || 'Every heart deserves a second Nikha');
+  const [heroTitle, setHeroTitle] = useState(settings.branding?.heroTitle || 'Every heart deserves a 2nd Chance');
   const [heroSubtitle, setHeroSubtitle] = useState(settings.branding?.heroSubtitle || 'Designed specifically for divorced, widowed, single parents, and mature singles in Bangladesh & global NRB expats.');
   const [heroImageUrl, setHeroImageUrl] = useState(settings.branding?.heroImageUrl || '');
 

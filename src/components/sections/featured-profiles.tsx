@@ -40,8 +40,8 @@ export function FeaturedProfiles() {
   const [maritalStatusFilter, setMaritalStatusFilter] = useState<string>('All');
   const [cityFilter, setCityFilter] = useState<string>('All');
   const [religionFilter, setReligionFilter] = useState<string>('All');
-  const [minAge, setMinAge] = useState<number>(20);
-  const [maxAge, setMaxAge] = useState<number>(55);
+  const [minAge, setMinAge] = useState<number>(18);
+  const [maxAge, setMaxAge] = useState<number>(65);
   const [professionFilter, setProfessionFilter] = useState<string>('All');
   const [verifiedOnly, setVerifiedOnly] = useState<boolean>(false);
   const [hasChildrenFilter, setHasChildrenFilter] = useState<string>('All');
