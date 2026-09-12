@@ -221,7 +221,7 @@ export default function RegistrationWizardPage() {
         isVerified: false,
         matchPercentage: 92,
         trustScore: 88,
-        hasChildren: Boolean(formData.childrenCount && formData.childrenCount > 0),
+        hasChildren: Boolean(formData.childrenCount && Number(formData.childrenCount) > 0),
         photoPrivacy: 'PUBLIC' as const,
         membershipTier: (userRole === 'PREMIUM' ? 'Premium' : 'Free') as any,
         matchReasons: ['Location Match', 'Education Compatibility', 'Religiosity'],
