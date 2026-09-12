@@ -37,6 +37,7 @@ interface CommunicationContextType {
   markAsRead: (matchId: string) => void;
   startConversationWithProfile: (profile: Profile) => string;
   requestWhatsAppExchange: (matchId: string, receiverId: string, recipientName: string) => void;
+  respondToWhatsAppRequest?: (matchId: string, messageId: string, action: 'ACCEPT' | 'DECLINE') => void;
   toggleBlockConversation: (matchId: string) => void;
   deleteConversation: (matchId: string) => void;
 }
