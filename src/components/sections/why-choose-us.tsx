@@ -32,7 +32,7 @@ export function WhyChooseUs() {
     <section className="py-16 bg-white">
       <Container size="xl" className="space-y-12">
         <SectionHeading
-          title="Why Choose 2nd Chance?"
+          title="Why Choose 2nd Nikah?"
           subtitle="Designed with care, dignity, and high security for mature candidates."
         />
 

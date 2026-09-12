@@ -239,7 +239,7 @@ export default function ChatRoomPage({ params }: ChatRoomPageProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => toggleBlockConversation && toggleBlockConversation(params.matchId)}
+                  onClick={() => communication?.toggleBlockConversation && communication.toggleBlockConversation(params.matchId)}
                   className="inline-flex rounded-full text-[10px] sm:text-xs px-2 sm:px-3 border-stone-300 text-rose-700 hover:bg-rose-50 h-8 sm:h-9"
                   leftIcon={<Ban className="w-3.5 h-3.5 text-rose-600" />}
                 >

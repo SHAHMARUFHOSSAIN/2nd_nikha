@@ -8,17 +8,26 @@ import { Container } from '@/components/layout/container';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/lib/admin-context';
 import { OFFICIAL_2ND_CHANCE_LOGO } from '@/lib/official-logo-data';
+import { DEFAULT_COUNTRY_OPTIONS, COUNTRY_CITY_MAP } from '@/lib/constants';
 import { Heart, ShieldCheck, Users, Smile, UserPlus, Search, Play, MapPin, Sparkles, Globe } from 'lucide-react';
 
 export function HeroSection() {
   const router = useRouter();
   const [iam, setIam] = useState('Female');
   const [lookingFor, setLookingFor] = useState('Divorced / Widowed');
-  const [location, setLocation] = useState('Dhaka, Bangladesh');
+  const [country, setCountry] = useState('Bangladesh');
+  const [city, setCity] = useState('Dhaka');
+
+  const availableCities = React.useMemo(() => {
+    if (country && COUNTRY_CITY_MAP[country]) {
+      return ['Any City', ...COUNTRY_CITY_MAP[country]];
+    }
+    return ['Any City'];
+  }, [country]);
 
   // Read dynamic branding CMS from Admin Settings
   let heroImage = '';
-  let heroTitle = 'Every heart deserves a 2nd Chance';
+  let heroTitle = 'Every heart deserves a second chance';
   let heroSubtitle = 'A trusted matrimonial sanctuary designed for divorced, widowed, single parents, and mature singles seeking a genuine, lifelong companion.';
   let brandLogoUrl = OFFICIAL_2ND_CHANCE_LOGO;
 
@@ -35,8 +44,8 @@ export function HeroSection() {
   } catch (e) {}
 
   const renderHeroTitle = (title: string) => {
-    if (!title) return 'Every heart deserves a 2nd Chance';
-    const match = title.match(/(2nd\s*nikah|2nd\s*nikha|second\s*nikah|2nd\s*chance)/i);
+    if (!title) return 'Every heart deserves a second chance';
+    const match = title.match(/(second\s*chance|2nd\s*chance|2nd\s*nikah|2nd\s*nikha)/i);
     if (match && match.index !== undefined) {
       const idx = match.index;
       const matchedText = match[0];
@@ -55,7 +64,8 @@ export function HeroSection() {
 
   const handleQuickSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(`/register?gender=${iam}&maritalStatus=${encodeURIComponent(lookingFor)}&location=${encodeURIComponent(location)}`);
+    const cleanCity = city.replace(/\s*\([^)]*\)/g, '').trim();
+    router.push(`/search?seekingGender=${iam}&country=${encodeURIComponent(country)}&city=${encodeURIComponent(cleanCity)}`);
   };
 
   const leftColSpan = heroImage ? 'lg:col-span-4' : 'lg:col-span-7';
@@ -188,22 +198,39 @@ export function HeroSection() {
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-stone-700">Residency / Location:</label>
-                <select
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs font-semibold text-stone-800 focus:outline-none focus:border-pink-500"
-                >
-                  <option value="Dhaka, Bangladesh">Dhaka, Bangladesh 🇧🇩</option>
-                  <option value="Chittagong, Bangladesh">Chittagong, Bangladesh 🇧🇩</option>
-                  <option value="India">India (Mumbai / Delhi / Kolkata) 🇮🇳</option>
-                  <option value="Pakistan">Pakistan (Lahore / Karachi / Islamabad) 🇵🇰</option>
-                  <option value="USA">USA Expat (Green Card / Citizen) 🇺🇸</option>
-                  <option value="UK">UK Expat (British Citizen) 🇬🇧</option>
-                  <option value="UAE">Dubai / UAE Expat (Golden Visa) 🇦🇪</option>
-                  <option value="Saudi Arabia">Saudi Arabia Expat 🇸🇦</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="font-bold text-stone-700">Country:</label>
+                  <select
+                    value={country}
+                    onChange={(e) => {
+                      setCountry(e.target.value);
+                      setCity('Any City');
+                    }}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:border-pink-500"
+                  >
+                    {DEFAULT_COUNTRY_OPTIONS.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.flag} {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-stone-700">City / District:</label>
+                  <select
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:border-pink-500"
+                  >
+                    {availableCities.map((cityName) => (
+                      <option key={cityName} value={cityName}>
+                        {cityName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <Button

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Filter, Sparkles, SlidersHorizontal, RotateCcw, ShieldCheck, Heart, User, MapPin, Briefcase, Globe, ChevronDown, ChevronUp } from 'lucide-react';
 import { MembershipPreviewModal } from '@/components/sections/membership-preview-modal';
 
+import { getCitiesForCountry, ALL_PROFESSION_OPTIONS } from '@/lib/constants';
 import { useAuth } from '@/lib/auth-context';
 
 export function FeaturedProfiles() {
@@ -59,10 +60,35 @@ export function FeaturedProfiles() {
     { label: '🇲🇾 Malaysia (Expat NRB)', value: 'Malaysia' },
   ];
 
-  const cityOptions = ['All', 'Dhaka', 'Chittagong', 'Sylhet', 'Boston', 'London', 'Dubai', 'Riyadh', 'Toronto', 'Kuala Lumpur'];
-  const maritalOptions = ['All', 'Divorced', 'Widowed', 'Single Parent', 'Never Married'];
+  // Dynamic City options resolution for selected country
+  const availableCitiesForCountry = React.useMemo(() => {
+    return getCitiesForCountry(countryFilter);
+  }, [countryFilter]);
+
+  const cityOptions = React.useMemo(() => {
+    return ['All', ...availableCitiesForCountry];
+  }, [availableCitiesForCountry]);
+
+  // Reset city selection when country changes
+  React.useEffect(() => {
+    setCityFilter('All');
+  }, [countryFilter]);
+
+  const maritalOptions = React.useMemo(() => {
+    if (genderFilter === 'Male' || genderFilter === 'All') {
+      return ['All', 'Divorced', 'Widowed', 'Single Parent', 'Never Married', 'Married'];
+    }
+    return ['All', 'Divorced', 'Widowed', 'Single Parent', 'Never Married'];
+  }, [genderFilter]);
+
+  // Reset marital status if Female is selected while Married was chosen
+  React.useEffect(() => {
+    if (genderFilter === 'Female' && maritalStatusFilter === 'Married') {
+      setMaritalStatusFilter('All');
+    }
+  }, [genderFilter, maritalStatusFilter]);
   const religionOptions = ['All', 'Islam', 'Hinduism', 'Christianity', 'Buddhism', 'Other'];
-  const professionOptions = ['All', 'Software Engineer', 'Banker', 'Doctor', 'Teacher', 'Business Owner', 'Government Officer'];
+  const professionOptions = ['All', ...ALL_PROFESSION_OPTIONS];
 
   const resetFilters = () => {
     setCountryFilter('All');
@@ -70,8 +96,8 @@ export function FeaturedProfiles() {
     setMaritalStatusFilter('All');
     setCityFilter('All');
     setReligionFilter('All');
-    setMinAge(20);
-    setMaxAge(55);
+    setMinAge(18);
+    setMaxAge(65);
     setProfessionFilter('All');
     setVerifiedOnly(false);
     setHasChildrenFilter('All');
@@ -83,13 +109,55 @@ export function FeaturedProfiles() {
       if (p.id === currentUser.id) return false;
       if (p.email && currentUser.email && p.email.toLowerCase() === currentUser.email.toLowerCase()) return false;
     }
-    if (countryFilter !== 'All' && p.country !== countryFilter) return false;
+
+    // Country Matching with Aliases
+    if (countryFilter !== 'All') {
+      const cTarget = countryFilter.toLowerCase();
+      const cProfile = (p.country || p.location || '').toLowerCase();
+      let isCountryMatch = cProfile.includes(cTarget);
+
+      if (!isCountryMatch) {
+        if (cTarget.includes('united states') || cTarget.includes('usa')) {
+          isCountryMatch = cProfile.includes('usa') || cProfile.includes('us') || cProfile.includes('united states') || cProfile.includes('america');
+        } else if (cTarget.includes('united kingdom') || cTarget.includes('uk')) {
+          isCountryMatch = cProfile.includes('uk') || cProfile.includes('united kingdom') || cProfile.includes('london') || cProfile.includes('england');
+        } else if (cTarget.includes('uae')) {
+          isCountryMatch = cProfile.includes('uae') || cProfile.includes('dubai') || cProfile.includes('abu dhabi') || cProfile.includes('emirates');
+        } else if (cTarget.includes('saudi')) {
+          isCountryMatch = cProfile.includes('saudi') || cProfile.includes('ksa') || cProfile.includes('riyadh') || cProfile.includes('jeddah');
+        } else if (cTarget.includes('bangladesh')) {
+          isCountryMatch = cProfile.includes('bangladesh') || cProfile.includes('bd') || cProfile.includes('dhaka') || cProfile.includes('sylhet') || cProfile.includes('chittagong');
+        }
+      }
+      if (!isCountryMatch) return false;
+    }
+
     if (genderFilter !== 'All' && p.gender !== genderFilter) return false;
     if (maritalStatusFilter !== 'All' && p.maritalStatus !== maritalStatusFilter) return false;
-    if (cityFilter !== 'All' && p.city !== cityFilter && !p.location.toLowerCase().includes(cityFilter.toLowerCase())) return false;
+
+    // City Matching with Clean Names
+    if (cityFilter !== 'All') {
+      const cleanCityTarget = cityFilter.replace(/\s*\([^)]*\)/g, '').trim().toLowerCase();
+      const cityProfile = (p.city || p.location || '').toLowerCase();
+      if (!cityProfile.includes(cleanCityTarget)) return false;
+    }
+
     if (religionFilter !== 'All' && p.religion !== religionFilter) return false;
     if (p.age < minAge || p.age > maxAge) return false;
-    if (professionFilter !== 'All' && !p.profession.toLowerCase().includes(professionFilter.toLowerCase())) return false;
+
+    // Smart Profession Matching
+    if (professionFilter !== 'All') {
+      const profTarget = professionFilter.toLowerCase();
+      const profProfile = (p.profession || '').toLowerCase();
+      const keywords = profTarget
+        .split(/[\s/&(),-]+/)
+        .filter((k) => k.length > 2 && k !== 'professional' && k !== 'other');
+      const isProfMatch =
+        profProfile.includes(profTarget) ||
+        keywords.some((k) => profProfile.includes(k));
+      if (!isProfMatch) return false;
+    }
+
     if (verifiedOnly && !p.isVerified) return false;
     if (hasChildrenFilter === 'No' && p.hasChildren) return false;
     if (hasChildrenFilter === 'Yes' && !p.hasChildren) return false;

@@ -105,23 +105,29 @@ export function VisitorLandingGateway() {
           <div className="space-y-12 max-w-6xl mx-auto">
             
             {/* Top Brand Bar - Sleek Floating Navbar */}
-            <header className="flex flex-row items-center justify-between gap-4 border border-white/40 px-6 py-3 rounded-full bg-white/95 shadow-2xl backdrop-blur-2xl relative z-50">
-              <div className="flex items-center gap-3">
+            <header className="flex flex-row items-center justify-between gap-1.5 sm:gap-4 border border-white/40 px-3 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/95 shadow-2xl backdrop-blur-2xl relative z-50 max-w-full">
+              <div className="flex items-center gap-2 shrink-0">
                 <Link href="/" className="flex items-center gap-2 group">
-                  <BrandLogo size="md" showTagline />
+                  <div className="hidden sm:block">
+                    <BrandLogo size="md" showTagline />
+                  </div>
+                  <div className="sm:hidden">
+                    <BrandLogo size="sm" showTagline={false} />
+                  </div>
                 </Link>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                 <CurrencySwitcher variant="navbar" dropPosition="down" />
                 <Link href="/login">
                   <Button
                     variant="outline"
-                    size="md"
-                    className="rounded-full px-5 py-2 border-2 border-pink-300 bg-pink-50 text-pink-900 font-bold hover:bg-pink-100 text-xs shadow-xs"
-                    leftIcon={<LogIn className="w-4 h-4 text-pink-600" />}
+                    size="sm"
+                    className="rounded-full px-3 sm:px-5 py-1.5 sm:py-2 border-2 border-pink-300 bg-pink-50 text-pink-900 font-bold hover:bg-pink-100 text-[11px] sm:text-xs shadow-xs shrink-0"
+                    leftIcon={<LogIn className="w-3.5 h-3.5 text-pink-600" />}
                   >
-                    Member Login
+                    <span className="hidden sm:inline">Member Login</span>
+                    <span className="sm:hidden">Login</span>
                   </Button>
                 </Link>
               </div>
@@ -133,7 +139,7 @@ export function VisitorLandingGateway() {
               <div className="inline-flex items-center gap-2 bg-stone-950/70 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/30 shadow-2xl">
                 <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
                 <span className="text-xs sm:text-sm font-serif font-bold text-rose-100 tracking-wide uppercase">
-                  🌸 #1 Dignified Matrimonial Sanctuary for Remarriage & Second Nikha
+                  🌸 BD & Global Expat Matrimonial Sanctuary • Every Heart Deserves a Second Chance
                 </span>
               </div>
 
@@ -248,11 +254,15 @@ export function VisitorLandingGateway() {
                       </div>
                       <div className="flex items-center gap-2.5">
                         <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <span>Search Verified Divorced & Single Parent Matches</span>
+                        <span>Unlimited AI Match Searches & Profiles</span>
                       </div>
                       <div className="flex items-center gap-2.5">
                         <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <span>Express Direct Interests & Chat</span>
+                        <span>Direct Messaging, Photos & WhatsApp Sharing</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>Priority NID Verification & VIP Crown Badge</span>
                       </div>
                     </div>
                   </div>
@@ -272,7 +282,7 @@ export function VisitorLandingGateway() {
 
                 {/* Card 2: Monthly VIP Pass (Royal Glass Card) */}
                 <div className="bg-gradient-to-b from-rose-900/40 via-white/20 to-pink-900/40 backdrop-blur-2xl rounded-3xl p-8 border-2 border-amber-300/80 shadow-2xl flex flex-col justify-between relative transform hover:-translate-y-1 transition-all text-white">
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
                     <Badge variant="wine" className="shadow-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-bold px-4 py-1 text-xs tracking-wide border border-amber-300">
                       <Sparkles className="w-3.5 h-3.5 text-amber-300 mr-1 animate-pulse" />
                       Best Value For Remarriage

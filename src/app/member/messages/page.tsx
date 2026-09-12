@@ -38,6 +38,8 @@ import {
   Shield,
   Ban,
   ShieldAlert,
+  Clock,
+  Lock,
 } from 'lucide-react';
 import { ContactCard } from '@/components/communication/contact-card';
 import { useAuth } from '@/lib/auth-context';
@@ -602,7 +604,7 @@ function MessagesInboxContent() {
                     </div>
                   )}
 
-                  {/* Messenger Bottom Input Bar or Blocked Banner */}
+                  {/* Messenger Bottom Input Bar or Blocked/Locked Banner */}
                   {activeConv.status === 'BLOCKED' ? (
                     <div className="p-4 bg-rose-50 border-t border-rose-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left shrink-0">
                       <div className="flex items-center gap-2 text-rose-800 text-xs font-semibold">
@@ -624,6 +626,43 @@ function MessagesInboxContent() {
                         </Button>
                       )}
                     </div>
+                  ) : (!connection?.isMatched(activeConv.partnerId) &&
+                      connection?.getInterestStatus(activeConv.partnerId) !== 'ACCEPTED' &&
+                      !['p-102', 'p-103', 'p-104', 'p-106'].includes(activeConv.partnerId)) ? (
+                    connection?.getInterestStatus(activeConv.partnerId) === 'SENT' ||
+                    connection?.getInterestStatus(activeConv.partnerId) === 'PAYMENT_PENDING' ? (
+                      <div className="p-4 sm:p-5 bg-amber-50/90 border-t border-amber-200 flex flex-col items-center justify-center text-center gap-2 shrink-0">
+                        <div className="flex items-center justify-center gap-2 text-amber-900 font-serif font-bold text-xs sm:text-sm">
+                          <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span>Interest Request Sent • Waiting for Acceptance</span>
+                        </div>
+                        <p className="text-[11px] sm:text-xs text-amber-800 max-w-md leading-relaxed">
+                          You sent an Express Interest request to <strong>{activeConv.profile.fullName}</strong>. Live chat will open automatically as soon as candidate accepts your request.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-4 sm:p-5 bg-rose-50/90 border-t border-rose-200 flex flex-col items-center justify-center text-center gap-2 shrink-0">
+                        <div className="flex items-center justify-center gap-2 text-rose-900 font-serif font-bold text-xs sm:text-sm">
+                          <Heart className="w-4 h-4 text-rose-600 fill-rose-600 shrink-0" />
+                          <span>Express Interest Request Required</span>
+                        </div>
+                        <p className="text-[11px] sm:text-xs text-rose-800 max-w-md leading-relaxed">
+                          Direct chat is disabled until candidate accepts your request. Send an Express Interest request first.
+                        </p>
+                        <Button
+                          variant="wine"
+                          size="sm"
+                          className="rounded-full text-xs font-bold shadow-sm"
+                          onClick={async () => {
+                            if (connection?.sendInterestRequest && activeConv.profile) {
+                              await connection.sendInterestRequest(activeConv.profile);
+                            }
+                          }}
+                        >
+                          Send Express Interest Request
+                        </Button>
+                      </div>
+                    )
                   ) : (
                     <form
                       onSubmit={(e) => handleSendTextMessage(e)}

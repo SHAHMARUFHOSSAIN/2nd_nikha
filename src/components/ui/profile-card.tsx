@@ -7,10 +7,10 @@ import { Profile } from '@/types';
 import { Badge } from './badge';
 import { Button } from './button';
 import { VerifiedBadge } from './verified-badge';
-import { MapPin, Briefcase, GraduationCap, Heart, Users, Sparkles, Lock, Globe } from 'lucide-react';
+import { MapPin, Briefcase, GraduationCap, Heart, Users, Sparkles, Lock, Globe, MessageSquare, Clock, CheckCircle2 } from 'lucide-react';
 import { ProfileDetailModal } from '@/components/profile/profile-detail-modal';
 import { useCommunication } from '@/lib/communication-context';
-
+import { useConnection } from '@/lib/connection-context';
 import { useAuth } from '@/lib/auth-context';
 
 export interface ProfileCardProps {
@@ -21,13 +21,18 @@ export interface ProfileCardProps {
 export function ProfileCard({ profile, onOpenUpgradeModal }: ProfileCardProps) {
   const router = useRouter();
   const communication = useCommunication();
+  const { sendInterestRequest, getInterestStatus, isMatched } = useConnection();
   const { currentUser } = useAuth();
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const isOwnProfile =
     currentUser !== null &&
     (currentUser.id === profile.id ||
       (currentUser.email && profile.email && currentUser.email.toLowerCase() === profile.email.toLowerCase()));
+
+  const interestStatus = getInterestStatus(profile.id);
+  const matched = isMatched(profile.id);
 
   const getMaritalBadgeVariant = (status: Profile['maritalStatus']) => {
     switch (status) {
@@ -42,16 +47,35 @@ export function ProfileCard({ profile, onOpenUpgradeModal }: ProfileCardProps) {
     }
   };
 
-  const handleExpressInterest = () => {
+  const handleExpressInterest = async () => {
     if (isOwnProfile) {
       router.push('/member/dashboard');
       return;
     }
-    if (communication?.startConversationWithProfile) {
-      const targetMatchId = communication.startConversationWithProfile(profile);
-      router.push(`/member/messages?matchId=${targetMatchId}`);
+
+    if (matched || interestStatus === 'ACCEPTED') {
+      if (communication?.startConversationWithProfile) {
+        const targetMatchId = communication.startConversationWithProfile(profile);
+        router.push(`/member/messages?matchId=${targetMatchId}`);
+      } else {
+        router.push('/member/messages');
+      }
+      return;
+    }
+
+    if (interestStatus === 'SENT' || interestStatus === 'PAYMENT_PENDING') {
+      setNotice(`Interest request already sent to ${profile.fullName}. Chat opens after acceptance.`);
+      setTimeout(() => setNotice(null), 4000);
+      return;
+    }
+
+    // Send Interest Request
+    const res = await sendInterestRequest(profile);
+    if (res.success && res.redirectUrl) {
+      router.push(res.redirectUrl);
     } else {
-      router.push('/member/messages');
+      setNotice(`Interest request sent to ${profile.fullName}! Chat will open once accepted.`);
+      setTimeout(() => setNotice(null), 4000);
     }
   };
 
@@ -106,6 +130,14 @@ export function ProfileCard({ profile, onOpenUpgradeModal }: ProfileCardProps) {
         {/* Card Body */}
         <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
           <div className="space-y-2">
+            {/* Notice Toast inside card if triggered */}
+            {notice && (
+              <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-[11px] font-semibold animate-in fade-in flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>{notice}</span>
+              </div>
+            )}
+
             {/* Quick Details */}
             <div className="grid grid-cols-2 gap-2 text-xs text-stone-600">
               <div className="flex items-center gap-1.5 font-medium truncate">
@@ -164,11 +196,32 @@ export function ProfileCard({ profile, onOpenUpgradeModal }: ProfileCardProps) {
               >
                 Your Profile
               </Button>
+            ) : matched || interestStatus === 'ACCEPTED' ? (
+              <Button
+                variant="wine"
+                size="sm"
+                className="flex-1 rounded-2xl shadow-sm text-xs justify-center"
+                leftIcon={<MessageSquare className="w-3.5 h-3.5 text-white" />}
+                onClick={handleExpressInterest}
+              >
+                Chat Now
+              </Button>
+            ) : interestStatus === 'SENT' || interestStatus === 'PAYMENT_PENDING' ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 rounded-2xl border-amber-300 bg-amber-50/80 text-amber-900 text-xs justify-center font-semibold"
+                leftIcon={<Clock className="w-3.5 h-3.5 text-amber-600" />}
+                onClick={handleExpressInterest}
+              >
+                Request Pending
+              </Button>
             ) : (
               <Button
                 variant="wine"
                 size="sm"
                 className="flex-1 rounded-2xl shadow-sm text-xs justify-center"
+                leftIcon={<Heart className="w-3.5 h-3.5 fill-white" />}
                 onClick={handleExpressInterest}
               >
                 Express Interest

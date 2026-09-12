@@ -4,7 +4,7 @@ import React from 'react';
 import { SearchFilterOptions, Gender, MaritalStatus, Religion } from '@/types';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, DEFAULT_COUNTRY_OPTIONS, COUNTRY_CITY_MAP } from '@/lib/constants';
+import { MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, ALL_PROFESSION_OPTIONS, DEFAULT_COUNTRY_OPTIONS, COUNTRY_CITY_MAP, getCitiesForCountry } from '@/lib/constants';
 import { RotateCcw, Filter, Search, CheckCircle2, Globe, MapPin } from 'lucide-react';
 
 export interface SearchFiltersProps {
@@ -27,14 +27,20 @@ export function SearchFilters({
   };
 
   const selectedCountry = filters.country || 'Any';
-  const availableCities = React.useMemo(() => {
-    if (selectedCountry && selectedCountry !== 'Any' && selectedCountry !== 'All' && COUNTRY_CITY_MAP[selectedCountry]) {
-      return ['Any', ...COUNTRY_CITY_MAP[selectedCountry]];
-    }
-    // All cities combined
-    const all = Array.from(new Set(Object.values(COUNTRY_CITY_MAP).flat()));
-    return ['Any', ...all];
+  const availableCitiesList = React.useMemo(() => {
+    return getCitiesForCountry(selectedCountry);
   }, [selectedCountry]);
+
+  const availableCities = React.useMemo(() => {
+    return ['Any', ...availableCitiesList];
+  }, [availableCitiesList]);
+
+  const maritalStatusOptions = React.useMemo(() => {
+    if (filters.seekingGender === 'Male') {
+      return ['Any', 'Divorced', 'Widowed', 'Single Parent', 'Never Married', 'Married'];
+    }
+    return ['Any', 'Divorced', 'Widowed', 'Single Parent', 'Never Married'];
+  }, [filters.seekingGender]);
 
   return (
     <div className="space-y-5 bg-white p-6 rounded-3xl border border-rose-100/90 shadow-sm">
@@ -58,13 +64,17 @@ export function SearchFilters({
           label="Seeking Gender"
           options={['Female', 'Male']}
           value={filters.seekingGender || 'Female'}
-          onChange={(e) => updateFilter('seekingGender', e.target.value as Gender)}
+          onChange={(e) => {
+            const newGender = e.target.value as Gender;
+            const updatedMarital = (newGender === 'Female' && filters.maritalStatus === 'Married') ? 'Any' : filters.maritalStatus;
+            onChange({ ...filters, seekingGender: newGender, maritalStatus: updatedMarital });
+          }}
         />
 
         {/* Marital Status */}
         <Select
           label="Marital Status"
-          options={['Any', ...MARITAL_STATUS_OPTIONS]}
+          options={maritalStatusOptions}
           value={filters.maritalStatus || 'Any'}
           onChange={(e) => updateFilter('maritalStatus', e.target.value)}
         />
@@ -104,16 +114,59 @@ export function SearchFilters({
           }}
         />
 
-        {/* Dynamic City Select */}
-        <Select
-          label={selectedCountry !== 'Any' && selectedCountry !== 'All' ? `City in ${selectedCountry}` : 'Select City'}
-          options={availableCities}
-          value={filters.city || 'Any'}
-          onChange={(e) => {
-            const newCity = e.target.value;
-            onChange({ ...filters, city: newCity, location: newCity });
-          }}
-        />
+        {/* Dynamic City Select & Quick Chips */}
+        <div className="space-y-2">
+          <Select
+            label={selectedCountry !== 'Any' && selectedCountry !== 'All' ? `City Filter (${selectedCountry})` : 'Select City'}
+            options={availableCities}
+            value={filters.city || 'Any'}
+            onChange={(e) => {
+              const rawCity = e.target.value;
+              const cleanCity = rawCity.replace(/\s*\([^)]*\)/g, '').trim();
+              onChange({ ...filters, city: cleanCity, location: cleanCity });
+            }}
+          />
+
+          {/* Quick Select City Chips if Country is Selected */}
+          {selectedCountry && selectedCountry !== 'Any' && selectedCountry !== 'All' && availableCitiesList.length > 0 && (
+            <div className="space-y-1 pt-1">
+              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
+                Popular Cities in {selectedCountry}:
+              </span>
+              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...filters, city: 'Any', location: 'Any' })}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
+                    !filters.city || filters.city === 'Any'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                  }`}
+                >
+                  All Cities
+                </button>
+                {availableCitiesList.map((cityName) => {
+                  const cleanName = cityName.replace(/\s*\([^)]*\)/g, '').trim();
+                  const isSelected = filters.city?.toLowerCase() === cleanName.toLowerCase();
+                  return (
+                    <button
+                      key={cityName}
+                      type="button"
+                      onClick={() => onChange({ ...filters, city: cleanName, location: cleanName })}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${
+                        isSelected
+                          ? 'bg-rose-600 text-white shadow-xs'
+                          : 'bg-rose-50 text-rose-900 border border-rose-200/80 hover:bg-rose-100'
+                      }`}
+                    >
+                      {cityName}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Education Level */}
         <Select
@@ -126,6 +179,14 @@ export function SearchFilters({
           ]}
           value={filters.education || 'Any'}
           onChange={(e) => updateFilter('education', e.target.value)}
+        />
+
+        {/* Profession Filter */}
+        <Select
+          label="Profession Preference"
+          options={['Any', ...ALL_PROFESSION_OPTIONS]}
+          value={filters.profession || 'Any'}
+          onChange={(e) => updateFilter('profession', e.target.value)}
         />
 
         {/* Children Status */}

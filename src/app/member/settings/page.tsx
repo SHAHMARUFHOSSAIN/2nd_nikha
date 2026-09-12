@@ -1,20 +1,51 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { MemberLayout } from '@/components/member/member-layout';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Shield, Eye, Lock, Bell, Ban, KeyRound } from 'lucide-react';
+import {
+  CheckCircle2,
+  Shield,
+  Eye,
+  Lock,
+  Bell,
+  Ban,
+  KeyRound,
+  LogOut,
+  Trash2,
+  AlertTriangle,
+  UserX,
+} from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 
 export default function MemberSettingsPage() {
+  const router = useRouter();
+  const { logout } = useAuth();
+
   const [profileVisibility, setProfileVisibility] = useState('Visible to Registered Members');
   const [photoPrivacy, setPhotoPrivacy] = useState('Public');
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleSaveSettings = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
+
+  const handleConfirmDeleteAccount = () => {
+    logout();
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+    }
+    router.push('/');
   };
 
   return (
@@ -115,12 +146,95 @@ export default function MemberSettingsPage() {
         </div>
 
         {/* Save Settings */}
-        <div className="pt-2">
+        <div className="pt-2 flex items-center justify-between">
           <Button variant="wine" size="lg" onClick={handleSaveSettings}>
             Save Preference Changes
           </Button>
         </div>
+
+        {/* Account Management & Danger Zone */}
+        <div className="bg-white rounded-3xl p-6 border border-red-200/80 shadow-sm space-y-4 pt-4">
+          <h3 className="font-serif font-bold text-lg text-stone-900 border-b border-stone-100 pb-2 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-red-600" />
+            <span>Account Management & Danger Zone</span>
+          </h3>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 bg-stone-50 rounded-2xl border border-stone-200/80">
+            <div>
+              <p className="font-bold text-sm text-stone-900">Log Out of Account</p>
+              <p className="text-xs text-stone-500">
+                End your active login session securely on this device.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              leftIcon={<LogOut className="w-4 h-4 text-stone-600" />}
+            >
+              Log Out
+            </Button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 bg-red-50/60 rounded-2xl border border-red-100">
+            <div>
+              <p className="font-bold text-sm text-red-900 flex items-center gap-1.5">
+                <UserX className="w-4 h-4 text-red-600" />
+                Delete Account Permanently
+              </p>
+              <p className="text-xs text-red-700/80">
+                Erase your account profile, photos, saved preferences, and chat history.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors shrink-0 shadow-sm flex items-center justify-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Account
+            </button>
+          </div>
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-stone-200 shadow-2xl space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-serif font-bold text-stone-900">
+                  Delete Account Permanently?
+                </h3>
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  Are you sure you want to delete your profile? All of your saved information, uploaded photos, matches, and message logs will be permanently erased.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Cancel
+                </Button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteAccount}
+                  className="flex-1 py-2.5 px-4 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors shadow-md"
+                >
+                  Yes, Delete Account
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </MemberLayout>
   );
 }
+

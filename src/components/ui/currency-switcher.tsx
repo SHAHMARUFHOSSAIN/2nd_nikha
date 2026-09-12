@@ -93,7 +93,7 @@ export function CurrencySwitcher({
           </div>
 
           <div className="px-3.5 pt-2 border-t border-rose-100 text-[10px] text-stone-400 leading-tight">
-            * SSLCommerz handles BDT (Local) & USD (International Payments).
+            * Direct settlement for BDT (Local) & USD (International Payments).
           </div>
         </div>
       )}

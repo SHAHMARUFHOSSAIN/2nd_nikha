@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { VerifiedBadge } from '@/components/ui/verified-badge';
 import { useAuth } from '@/lib/auth-context';
+import { useConnection } from '@/lib/connection-context';
+import { useCommunication } from '@/lib/communication-context';
 import {
   MapPin,
   Briefcase,
@@ -31,6 +33,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ImageIcon,
+  Clock,
+  CheckCircle2,
 } from 'lucide-react';
 
 export interface ProfileDetailModalProps {
@@ -48,7 +52,11 @@ export function ProfileDetailModal({
 }: ProfileDetailModalProps) {
   const router = useRouter();
   const { currentUser, isShortlisted, toggleShortlist } = useAuth();
+  const { sendInterestRequest, getInterestStatus, isMatched } = useConnection();
+  const communication = useCommunication();
+
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
 
   if (!profile) return null;
 
@@ -56,6 +64,9 @@ export function ProfileDetailModal({
     currentUser !== null &&
     (currentUser.id === profile.id ||
       (currentUser.email && profile.email && currentUser.email.toLowerCase() === profile.email.toLowerCase()));
+
+  const interestStatus = getInterestStatus(profile.id);
+  const matched = isMatched(profile.id);
 
   const allPhotos = [profile.photoUrl, ...(profile.additionalPhotos || [])];
   const currentPhoto = allPhotos[activePhotoIndex] || profile.photoUrl;
@@ -69,9 +80,39 @@ export function ProfileDetailModal({
     setActivePhotoIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length);
   };
 
-  const handleExpressInterest = () => {
-    onClose();
-    router.push(`/member/messages`);
+  const handleExpressInterest = async () => {
+    if (isOwnProfile) {
+      onClose();
+      router.push('/member/dashboard');
+      return;
+    }
+
+    if (matched || interestStatus === 'ACCEPTED') {
+      onClose();
+      if (communication?.startConversationWithProfile) {
+        const targetMatchId = communication.startConversationWithProfile(profile);
+        router.push(`/member/messages?matchId=${targetMatchId}`);
+      } else {
+        router.push('/member/messages');
+      }
+      return;
+    }
+
+    if (interestStatus === 'SENT' || interestStatus === 'PAYMENT_PENDING') {
+      setNotice(`Interest request already sent to ${profile.fullName}. Chat will open once accepted.`);
+      setTimeout(() => setNotice(null), 4000);
+      return;
+    }
+
+    // Send Interest Request
+    const res = await sendInterestRequest(profile);
+    if (res.success && res.redirectUrl) {
+      onClose();
+      router.push(res.redirectUrl);
+    } else {
+      setNotice(`Express Interest Sent to ${profile.fullName}! Chat opens after acceptance.`);
+      setTimeout(() => setNotice(null), 4000);
+    }
   };
 
   return (
@@ -101,23 +142,25 @@ export function ProfileDetailModal({
               <>
                 <button
                   onClick={handlePrevPhoto}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-stone-950/80 text-white hover:bg-pink-600 transition-all border border-stone-700 shadow-xl z-30"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center border border-white/20 shadow-lg backdrop-blur-sm transition-all"
                   aria-label="Previous Photo"
+                  title="Previous Photo"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-6 h-6" />
                 </button>
                 <button
                   onClick={handleNextPhoto}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-stone-950/80 text-white hover:bg-pink-600 transition-all border border-stone-700 shadow-xl z-30"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center border border-white/20 shadow-lg backdrop-blur-sm transition-all"
                   aria-label="Next Photo"
+                  title="Next Photo"
                 >
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-6 h-6" />
                 </button>
               </>
             )}
 
-            {/* Top Badges Bar */}
-            <div className="absolute top-3.5 left-3.5 right-14 sm:top-4 sm:left-4 sm:right-16 flex items-center justify-between gap-2 z-20">
+            {/* Top Badges */}
+            <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-auto">
               <div className="flex items-center gap-2">
                 <span className="bg-stone-950/85 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold border border-stone-700 shadow-lg flex items-center gap-1.5">
                   <span className="text-sm">{profile.countryFlag || '🇧🇩'}</span>
@@ -130,32 +173,46 @@ export function ProfileDetailModal({
                 )}
               </div>
 
-              {profile.isVerified && <VerifiedBadge showLabel labelText="NID Verified Profile" />}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toggleShortlist(profile.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 backdrop-blur-md transition-all shadow-md ${
+                    isProfileSaved
+                      ? 'bg-amber-500 text-white border border-amber-400'
+                      : 'bg-black/60 text-stone-200 border border-white/20 hover:bg-black/80'
+                  }`}
+                >
+                  <Star className={`w-3.5 h-3.5 ${isProfileSaved ? 'fill-white' : ''}`} />
+                  <span>{isProfileSaved ? 'Shortlisted' : 'Save'}</span>
+                </button>
+
+                <button
+                  onClick={onClose}
+                  className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-stone-300 hover:text-white flex items-center justify-center border border-white/20 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
+            {/* Photo Counter */}
+            {allPhotos.length > 1 && (
+              <div className="absolute bottom-4 right-4 z-20 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full border border-white/20 flex items-center gap-1.5 shadow-md">
+                <ImageIcon className="w-3.5 h-3.5 text-rose-400" />
+                <span>
+                  Photo {activePhotoIndex + 1} of {allPhotos.length}
+                </span>
+              </div>
+            )}
+
             {/* Bottom Candidate Overlay Title */}
-            <div className="absolute bottom-4 left-4 right-4 flex flex-col sm:flex-row sm:items-end justify-between gap-2 z-20 text-white">
-              <div>
+            <div className="absolute bottom-4 left-4 right-20 z-20 text-white space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-2xl sm:text-3xl font-serif font-bold text-white flex items-center gap-2 drop-shadow-md">
                   <span>{profile.fullName}, {profile.age}</span>
                   <span className="text-stone-300 text-base sm:text-lg font-sans font-normal">({profile.height})</span>
                 </h2>
-                <p className="text-xs sm:text-sm text-stone-200 flex items-center gap-2 mt-1">
-                  <MapPin className="w-4 h-4 text-pink-400 shrink-0" />
-                  <span>{profile.location}</span>
-                  {profile.motherTongue && <span>• {profile.motherTongue}</span>}
-                </p>
               </div>
-
-              {/* Photo Indicator Badge */}
-              {allPhotos.length > 1 && (
-                <div className="flex items-center gap-1.5 bg-stone-950/85 backdrop-blur-md px-3 py-1 rounded-full border border-stone-700 shadow-lg shrink-0">
-                  <ImageIcon className="w-3.5 h-3.5 text-pink-400" />
-                  <span className="text-xs font-mono font-bold">
-                    {activePhotoIndex + 1} / {allPhotos.length} Photos
-                  </span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -365,7 +422,11 @@ export function ProfileDetailModal({
                 <p className="text-[11px] text-stone-400">
                   {isOwnProfile
                     ? 'This is your own verified profile. Manage details in your Dashboard.'
-                    : 'Send Express Interest or initiate private Messenger chat.'}
+                    : matched || interestStatus === 'ACCEPTED'
+                    ? 'Mutual match confirmed! Private chat is unlocked.'
+                    : interestStatus === 'SENT' || interestStatus === 'PAYMENT_PENDING'
+                    ? 'Interest request sent. Chat will open once accepted.'
+                    : 'Send an Express Interest request first. Chat opens after acceptance.'}
                 </p>
               </div>
 
@@ -382,28 +443,36 @@ export function ProfileDetailModal({
                   >
                     Go to My Member Dashboard
                   </Button>
+                ) : matched || interestStatus === 'ACCEPTED' ? (
+                  <Button
+                    variant="wine"
+                    size="md"
+                    className="w-full justify-center rounded-xl shadow-md text-xs font-bold"
+                    leftIcon={<MessageSquare className="w-4 h-4 text-white" />}
+                    onClick={handleExpressInterest}
+                  >
+                    Open Live Chat & Message
+                  </Button>
+                ) : interestStatus === 'SENT' || interestStatus === 'PAYMENT_PENDING' ? (
+                  <Button
+                    variant="outline"
+                    size="md"
+                    className="w-full justify-center rounded-xl border-amber-500/50 bg-amber-950/40 text-amber-200 text-xs font-semibold"
+                    leftIcon={<Clock className="w-4 h-4 text-amber-400" />}
+                    onClick={handleExpressInterest}
+                  >
+                    Interest Request Pending
+                  </Button>
                 ) : (
-                  <>
-                    <Button
-                      variant="wine"
-                      size="md"
-                      className="w-full justify-center rounded-xl shadow-md text-xs font-bold"
-                      leftIcon={<Heart className="w-4 h-4 fill-white" />}
-                      onClick={handleExpressInterest}
-                    >
-                      Express Interest & Start Chat
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="md"
-                      className="w-full justify-center rounded-xl border-stone-700 text-stone-200 hover:bg-stone-800 text-xs"
-                      leftIcon={<MessageSquare className="w-4 h-4 text-pink-400" />}
-                      onClick={handleExpressInterest}
-                    >
-                      Open Messenger Inbox
-                    </Button>
-                  </>
+                  <Button
+                    variant="wine"
+                    size="md"
+                    className="w-full justify-center rounded-xl shadow-md text-xs font-bold"
+                    leftIcon={<Heart className="w-4 h-4 fill-white" />}
+                    onClick={handleExpressInterest}
+                  >
+                    Send Express Interest Request
+                  </Button>
                 )}
               </div>
             </div>

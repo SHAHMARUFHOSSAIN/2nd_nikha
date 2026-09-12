@@ -27,6 +27,29 @@ export const RELIGION_OPTIONS = [
   'Other',
 ] as const;
 
+export const ALL_PROFESSION_OPTIONS = [
+  'Software Engineer / IT Professional',
+  'Doctor / Physician / Surgeon',
+  'Banker / Finance Professional',
+  'Engineer (Civil / Electrical / Mechanical)',
+  'Business Owner / Entrepreneur',
+  'Government Officer / BCS Cadre',
+  'Teacher / Lecturer / Professor',
+  'Corporate Executive / Manager',
+  'Lawyer / Legal Practitioner',
+  'Accountant / CA / Auditor',
+  'Architect / Interior Designer',
+  'Defense Officer (Army / Navy / Air Force)',
+  'Pilot / Aviation Professional',
+  'HR / Marketing Specialist',
+  'Pharmacist / Healthcare Professional',
+  'Freelancer / Consultant / Digital Creator',
+  'Media / Journalist / Writer',
+  'Homemaker / Family Business',
+  'Student / Researcher',
+  'Other Profession',
+] as const;
+
 export const DEFAULT_COUNTRY_OPTIONS = [
   { label: 'All Countries (Global)', value: 'All', flag: '🌐' },
   { label: '🇧🇩 Bangladesh', value: 'Bangladesh', flag: '🇧🇩' },
@@ -42,7 +65,7 @@ export const DEFAULT_COUNTRY_OPTIONS = [
 
 export const COUNTRY_CITY_MAP: Record<string, string[]> = {
   Bangladesh: [
-    'Dhaka',
+    'Dhaka (Capital)',
     'Chittagong',
     'Sylhet',
     'Rajshahi',
@@ -62,17 +85,86 @@ export const COUNTRY_CITY_MAP: Record<string, string[]> = {
     'Kushtia',
     'Jessore',
     'Dinajpur',
+    'Faridpur',
+    'Manikganj',
+    'Munshiganj',
+    'Narsingdi',
+    'Rajbari',
+    'Shariatpur',
+    'Gopalganj',
+    'Madaripur',
+    'Kishoreganj',
+    'Brahmanbaria',
+    'Chandpur',
+    'Lakshmipur',
+    'Rangamati',
+    'Khagrachhari',
+    'Bandarban',
+    'Moulvibazar',
+    'Habiganj',
+    'Sunamganj',
+    'Sirajganj',
+    'Naogaon',
+    'Natore',
+    'Joypurhat',
+    'Chapainawabganj',
+    'Bagerhat',
+    'Chuadanga',
+    'Jhenaidah',
+    'Magura',
+    'Meherpur',
+    'Narail',
+    'Satkhira',
+    'Bhola',
+    'Jhalokati',
+    'Patuakhali',
+    'Pirojpur',
+    'Barguna',
+    'Gaibandha',
+    'Kurigram',
+    'Lalmonirhat',
+    'Nilphamari',
+    'Panchagarh',
+    'Thakurgaon',
+    'Jamalpur',
+    'Netrokona',
+    'Sherpur',
   ],
-  India: ['Kolkata', 'Mumbai', 'Delhi', 'Chennai', 'Bangalore', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow'],
-  Pakistan: ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Peshawar', 'Multan', 'Quetta'],
-  'United States': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Dallas', 'Atlanta', 'San Francisco', 'Washington DC', 'Boston', 'Seattle', 'Detroit', 'Miami', 'San Jose'],
-  'United Kingdom': ['London', 'Birmingham', 'Manchester', 'Leeds', 'Glasgow', 'Liverpool', 'Edinburgh', 'Bristol'],
-  UAE: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Al Ain'],
-  'Saudi Arabia': ['Riyadh', 'Jeddah', 'Dammam', 'Mecca', 'Medina', 'Khobar'],
-  Canada: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton', 'Winnipeg'],
-  Malaysia: ['Kuala Lumpur', 'Penang', 'Johor Bahru', 'Shah Alam', 'Melaka', 'Ipoh'],
-  Australia: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'],
+  India: ['New Delhi (Capital)', 'Kolkata', 'Mumbai', 'Chennai', 'Bangalore', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow', 'Surat', 'Patna', 'Chandigarh'],
+  Pakistan: ['Islamabad (Capital)', 'Karachi', 'Lahore', 'Rawalpindi', 'Faisalabad', 'Peshawar', 'Multan', 'Quetta', 'Gujranwala', 'Sialkot'],
+  'United States': ['Washington DC (Capital)', 'New York', 'Los Angeles', 'Chicago', 'Houston', 'Dallas', 'Atlanta', 'San Francisco', 'Boston', 'Seattle', 'Detroit', 'Miami', 'San Jose', 'Philadelphia', 'Phoenix', 'San Diego', 'Austin', 'Virginia', 'Maryland'],
+  'United Kingdom': ['London (Capital)', 'Birmingham', 'Manchester', 'Leeds', 'Glasgow', 'Liverpool', 'Edinburgh', 'Bristol', 'Cardiff', 'Belfast', 'Leicester', 'Luton', 'Coventry'],
+  UAE: ['Abu Dhabi (Capital)', 'Dubai', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain', 'Al Ain'],
+  'Saudi Arabia': ['Riyadh (Capital)', 'Jeddah', 'Dammam', 'Mecca', 'Medina', 'Khobar', 'Tabuk', 'Abha', 'Jubail'],
+  Canada: ['Ottawa (Capital)', 'Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Edmonton', 'Winnipeg', 'Quebec City', 'Halifax'],
+  Malaysia: ['Kuala Lumpur (Capital)', 'Penang', 'Johor Bahru', 'Shah Alam', 'Melaka', 'Ipoh', 'Selangor'],
+  Australia: ['Canberra (Capital)', 'Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Gold Coast'],
 };
+
+export function getCitiesForCountry(countryName: string): string[] {
+  if (!countryName || countryName === 'Any' || countryName === 'All') {
+    return Array.from(new Set(Object.values(COUNTRY_CITY_MAP).flat()));
+  }
+  const clean = countryName.toLowerCase().trim();
+
+  if (clean.includes('bangladesh') || clean === 'bd') return COUNTRY_CITY_MAP['Bangladesh'] || [];
+  if (clean.includes('united states') || clean.includes('usa') || clean === 'us' || clean.includes('america')) return COUNTRY_CITY_MAP['United States'] || [];
+  if (clean.includes('united kingdom') || clean.includes('uk') || clean.includes('england') || clean.includes('london')) return COUNTRY_CITY_MAP['United Kingdom'] || [];
+  if (clean.includes('uae') || clean.includes('emirates') || clean.includes('dubai')) return COUNTRY_CITY_MAP['UAE'] || [];
+  if (clean.includes('saudi') || clean === 'ksa') return COUNTRY_CITY_MAP['Saudi Arabia'] || [];
+  if (clean.includes('canada')) return COUNTRY_CITY_MAP['Canada'] || [];
+  if (clean.includes('malaysia')) return COUNTRY_CITY_MAP['Malaysia'] || [];
+  if (clean.includes('india')) return COUNTRY_CITY_MAP['India'] || [];
+  if (clean.includes('pakistan')) return COUNTRY_CITY_MAP['Pakistan'] || [];
+  if (clean.includes('australia')) return COUNTRY_CITY_MAP['Australia'] || [];
+
+  const directMatchKey = Object.keys(COUNTRY_CITY_MAP).find(
+    (k) => k.toLowerCase() === clean || clean.includes(k.toLowerCase()) || k.toLowerCase().includes(clean)
+  );
+  if (directMatchKey) return COUNTRY_CITY_MAP[directMatchKey];
+
+  return Array.from(new Set(Object.values(COUNTRY_CITY_MAP).flat()));
+}
 
 export const AGE_RANGE_MIN = 18;
 export const AGE_RANGE_MAX = 65;
@@ -94,12 +186,10 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     billingCycle: 'per week',
     description: '1 week access to send interests, unlock chat, and direct contact details.',
     features: [
-      { text: 'Create & Verify Profile', included: true },
-      { text: 'Browse All Profiles', included: true },
-      { text: 'Send Unlimited Interest & Connects', included: true },
-      { text: 'Direct Messaging & Chat', included: true },
-      { text: 'Access Private Photos', included: true },
-      { text: 'Verified Contact Sharing', included: true },
+      { text: 'Complete Matrimonial Profile Setup', included: true },
+      { text: 'Unlimited AI Match Searches & Profiles', included: true },
+      { text: 'Direct Messaging, Photos & WhatsApp Sharing', included: true },
+      { text: 'Priority NID Verification & VIP Crown Badge', included: true },
     ],
     isPopular: false,
   },
@@ -112,13 +202,10 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     badge: 'Best Value For Remarriage',
     description: '30 days full premium access with priority search placement and 24/7 VIP support.',
     features: [
-      { text: 'Create & Verify Profile', included: true },
-      { text: 'Browse All Profiles', included: true },
-      { text: 'Send Unlimited Interest & Connects', included: true },
-      { text: 'Direct Messaging & Chat', included: true },
-      { text: 'Access Private Photos', included: true },
-      { text: 'Verified Contact Sharing', included: true },
-      { text: 'Priority Search Placement & VIP Support', included: true },
+      { text: 'Complete Matrimonial Profile Setup', included: true },
+      { text: 'Unlimited AI Match Searches & Profiles', included: true },
+      { text: 'Direct Messaging, Photos & WhatsApp Sharing', included: true },
+      { text: 'Priority NID Verification & VIP Crown Badge', included: true },
     ],
     isPopular: true,
   },

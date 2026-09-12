@@ -60,28 +60,46 @@ export function SearchClientView() {
       if (filters.minAge && profile.age < filters.minAge) return false;
       if (filters.maxAge && profile.age > filters.maxAge) return false;
 
-      // Country
+      // Country Matching with Aliases
       if (filters.country && filters.country !== 'Any' && filters.country !== 'All') {
         const cTarget = filters.country.toLowerCase();
         const cProfile = (profile.country || profile.location || '').toLowerCase();
-        if (!cProfile.includes(cTarget)) return false;
+        let isCountryMatch = cProfile.includes(cTarget);
+
+        if (!isCountryMatch) {
+          if (cTarget.includes('united states') || cTarget.includes('usa')) {
+            isCountryMatch = cProfile.includes('usa') || cProfile.includes('us') || cProfile.includes('united states') || cProfile.includes('america');
+          } else if (cTarget.includes('united kingdom') || cTarget.includes('uk')) {
+            isCountryMatch = cProfile.includes('uk') || cProfile.includes('united kingdom') || cProfile.includes('london') || cProfile.includes('england');
+          } else if (cTarget.includes('uae')) {
+            isCountryMatch = cProfile.includes('uae') || cProfile.includes('dubai') || cProfile.includes('abu dhabi') || cProfile.includes('emirates');
+          } else if (cTarget.includes('saudi')) {
+            isCountryMatch = cProfile.includes('saudi') || cProfile.includes('ksa') || cProfile.includes('riyadh') || cProfile.includes('jeddah');
+          } else if (cTarget.includes('bangladesh')) {
+            isCountryMatch = cProfile.includes('bangladesh') || cProfile.includes('bd') || cProfile.includes('dhaka') || cProfile.includes('sylhet') || cProfile.includes('chittagong');
+          }
+        }
+        if (!isCountryMatch) return false;
       }
 
-      // City
+      // City Matching
       if (filters.city && filters.city !== 'Any') {
-        const cityTarget = filters.city.toLowerCase();
+        const cleanCityTarget = filters.city.replace(/\s*\([^)]*\)/g, '').trim().toLowerCase();
         const cityProfile = (profile.city || profile.location || '').toLowerCase();
-        if (!cityProfile.includes(cityTarget)) return false;
+        if (!cityProfile.includes(cleanCityTarget)) return false;
       }
 
-      // Location
-      if (
-        filters.location &&
-        filters.location !== 'Any' &&
-        !profile.location.toLowerCase().includes(filters.location.toLowerCase()) &&
-        !profile.city?.toLowerCase().includes(filters.location.toLowerCase())
-      ) {
-        return false;
+      // Profession Matching
+      if (filters.profession && filters.profession !== 'Any' && filters.profession !== 'All') {
+        const profTarget = filters.profession.toLowerCase();
+        const profProfile = (profile.profession || '').toLowerCase();
+        const keywords = profTarget
+          .split(/[\s/&(),-]+/)
+          .filter((k) => k.length > 2 && k !== 'professional' && k !== 'other');
+        const isProfMatch =
+          profProfile.includes(profTarget) ||
+          keywords.some((k) => profProfile.includes(k));
+        if (!isProfMatch) return false;
       }
 
       // Children

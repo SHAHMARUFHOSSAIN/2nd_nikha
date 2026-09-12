@@ -36,12 +36,10 @@ export function MembershipPreview() {
         isPopular: p.id === 'monthly' || p.billingPeriod === '1 Month',
         badge: p.id === 'monthly' || p.billingPeriod === '1 Month' ? 'Best Value For Remarriage' : 'Quick Access',
         features: [
-          { text: 'Create & Edit Matrimonial Profile', included: true },
-          { text: 'Browse & Search Verified Profiles', included: true },
-          { text: 'Send Unlimited Interests & Connect', included: true },
-          { text: 'Direct Messaging & Private Photo Access', included: true },
-          { text: 'Verified Phone & WhatsApp Sharing', included: true },
-          { text: 'Priority Customer Support & VIP Badge', included: p.id === 'monthly' || p.billingPeriod === '1 Month' },
+          { text: 'Complete Matrimonial Profile Setup', included: true },
+          { text: 'Unlimited AI Match Searches & Profiles', included: true },
+          { text: 'Direct Messaging, Photos & WhatsApp Sharing', included: true },
+          { text: 'Priority NID Verification & VIP Crown Badge', included: true },
         ],
       }))
     : FALLBACK_PLANS.map((p) => ({
@@ -83,9 +81,6 @@ export function MembershipPreview() {
             <span>Select Region & Payment Currency:</span>
             <CurrencySwitcher variant="pricing" />
           </div>
-          <span className="text-[11px] text-pink-700 font-mono">
-            * SSLCommerz settles all payments directly to Bank Account.
-          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -99,11 +94,15 @@ export function MembershipPreview() {
               }`}
             >
               {plan.badge && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                  <Badge variant="wine" className="shadow-md">
-                    <Sparkles className="w-3 h-3 text-pink-300 mr-1" />
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
+                  <span className={`inline-flex items-center px-4 py-1 rounded-full text-xs font-bold shadow-lg border whitespace-nowrap ${
+                    plan.isPopular
+                      ? 'bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white border-pink-300'
+                      : 'bg-gradient-to-r from-stone-900 to-pink-950 text-pink-200 border-pink-700/60'
+                  }`}>
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300 mr-1.5 animate-pulse" />
                     {plan.badge}
-                  </Badge>
+                  </span>
                 </div>
               )}
 
@@ -159,7 +158,7 @@ export function MembershipPreview() {
                   rightIcon={<ArrowRight className="w-4 h-4" />}
                   onClick={() => handleSelectPlan(plan.id, plan.priceBDT, plan.priceUSD || (plan.id === 'weekly' ? 2.99 : 6.99))}
                 >
-                  Pay {formatAmount(plan.priceBDT, plan.priceUSD)} via SSLCommerz
+                  Pay {formatAmount(plan.priceBDT, plan.priceUSD)} Now
                 </Button>
                 <p className="text-[10px] text-center text-stone-400">
                   {selectedCountry.currency === 'BDT'

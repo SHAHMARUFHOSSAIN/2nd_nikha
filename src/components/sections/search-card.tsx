@@ -21,6 +21,10 @@ export function SearchCard() {
     }
   };
 
+  const maritalOptions = seekingGender === 'Male'
+    ? ['Any', 'Divorced', 'Widowed', 'Single Parent', 'Never Married', 'Married']
+    : ['Any', 'Divorced', 'Widowed', 'Single Parent', 'Never Married'];
+
   return (
     <div className="bg-white/95 backdrop-blur-xl border-2 border-rose-100 rounded-3xl p-6 shadow-2xl shadow-rose-200/50 relative overflow-hidden">
       {/* Decorative Top Accent */}
@@ -45,11 +49,17 @@ export function SearchCard() {
             label="I am looking for"
             options={['Female', 'Male']}
             value={seekingGender}
-            onChange={(e) => setSeekingGender(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSeekingGender(val);
+              if (val === 'Female' && maritalStatus === 'Married') {
+                setMaritalStatus('Divorced');
+              }
+            }}
           />
           <Select
             label="Marital Status"
-            options={['Any', ...MARITAL_STATUS_OPTIONS]}
+            options={maritalOptions}
             value={maritalStatus}
             onChange={(e) => setMaritalStatus(e.target.value)}
           />

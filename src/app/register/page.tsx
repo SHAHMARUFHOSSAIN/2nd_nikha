@@ -267,20 +267,18 @@ export default function RegistrationWizardPage() {
               <CheckCircle2 className="w-10 h-10" />
             </div>
 
-            <div className="space-y-2">
-              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
-                isPaid ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'
-              }`}>
-                <Sparkles className="w-3.5 h-3.5" />
-                {isPaid ? 'Profile Complete & Subscription Active ❤️' : 'Step 9 Complete — Account Pass Required'}
-              </span>
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-extrabold bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md animate-pulse">
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>Please Wait For Your Perfect Match ❤️</span>
+              </div>
               <h1 className="text-3xl font-serif font-bold text-stone-900">
-                Welcome to 2nd Nikha, {formData.fullName || 'Member'}!
+                Registration Complete, {formData.fullName || 'Member'}!
               </h1>
-              <p className="text-sm text-stone-600 max-w-md mx-auto leading-relaxed">
+              <p className="text-sm text-stone-600 max-w-md mx-auto leading-relaxed font-medium">
                 {isPaid
-                  ? 'Your profile setup is complete and your Subscription Pass is active! You now have full access to matches and features.'
-                  : 'Your profile has been created! To activate your profile, view matches, send interests, and use messenger features, please select a subscription pass below.'}
+                  ? 'Your profile setup is complete! Please wait for your perfect match — our smart AI engine & verification team are matching your profile with verified candidates.'
+                  : 'Your profile registration is complete! Please select a subscription pass below to activate your account and view your perfect matches.'}
               </p>
             </div>
 
@@ -450,7 +448,7 @@ export default function RegistrationWizardPage() {
                   />
                   <Select
                     label="Marital Status"
-                    options={[...MARITAL_STATUS_OPTIONS]}
+                    options={formData.gender === 'Male' ? [...MARITAL_STATUS_OPTIONS] : MARITAL_STATUS_OPTIONS.filter((o) => o !== 'Married')}
                     value={formData.maritalStatus}
                     onChange={(e) => updateField('maritalStatus', e.target.value)}
                   />
