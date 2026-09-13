@@ -63,25 +63,13 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       const initUrl = `${this.getApiBaseUrl()}/gwprocess/v4/api.php`;
       const formData = new URLSearchParams();
 
-      // Convert non-BDT amounts to BDT equivalent for SSLCommerz merchant processing
-      let chargeAmount = Math.round(request.amount);
-      if (request.currency === 'USD' && request.amount < 50) {
-        chargeAmount = Math.round(request.amount * 120);
-      } else if (request.currency === 'INR' && request.amount < 100) {
-        chargeAmount = Math.round(request.amount * 1.4);
-      } else if (request.currency === 'PKR' && request.amount < 500) {
-        chargeAmount = Math.round(request.amount * 0.43);
-      }
-
-      // Enforce SSLCommerz live merchant minimum transaction threshold (100 BDT)
-      if (chargeAmount < 100) {
-        chargeAmount = 100;
-      }
+      const chargeAmount = request.amount;
+      const chargeCurrency = request.currency || 'BDT';
 
       formData.append('store_id', storeId);
       formData.append('store_passwd', storePassword);
       formData.append('total_amount', chargeAmount.toFixed(2));
-      formData.append('currency', 'BDT');
+      formData.append('currency', chargeCurrency);
       formData.append('tran_id', transactionId);
       formData.append('success_url', `${appUrl}/api/payment/sslcommerz/success`);
       formData.append('fail_url', `${appUrl}/api/payment/sslcommerz/fail`);

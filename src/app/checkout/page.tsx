@@ -71,14 +71,14 @@ function CheckoutContent() {
       } catch (e) {}
     }
 
-    const finalChargeAmount = currency === 'USD' ? Math.round(usdPrice * 120) : bdtPrice;
+    const amountToCharge = currency === 'USD' ? usdPrice : bdtPrice;
 
     const session = await PaymentService.initiatePayment({
       userId: 'p-101',
       planId: planIdParam,
       purpose: 'subscription',
-      amount: finalChargeAmount,
-      currency: 'BDT',
+      amount: amountToCharge,
+      currency: currency,
       customerName: customerInfo.fullName,
       customerEmail: customerInfo.email,
       customerPhone: customerInfo.phone,
