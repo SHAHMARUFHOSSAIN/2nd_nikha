@@ -28,6 +28,25 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
     const transactionId = `TXN-SSL-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://2ndnikah.com';
 
+    // If running in client browser, proxy initiation through backend Next.js API route to avoid CORS
+    if (typeof window !== 'undefined') {
+      try {
+        const apiRes = await fetch('/api/payment/sslcommerz/init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentRequest: request }),
+        });
+        if (apiRes.ok) {
+          const result = await apiRes.json();
+          if (result && result.redirectUrl) {
+            return result;
+          }
+        }
+      } catch (err) {
+        console.warn('Client API initiation fallback:', err);
+      }
+    }
+
     const storeId = this.config.storeId;
     const storePassword = this.config.storePassword;
 

@@ -116,7 +116,7 @@ const AdminContext = createContext<AdminContextType>({
   isLoaded: false,
   settings: {
     general: { siteName: '2nd Nikha Matrimonial', supportEmail: 'support@2ndnikah.com' },
-    payment: { activeGateway: 'MOCK', currency: 'BDT', sslCommerzMode: 'SANDBOX' },
+    payment: { activeGateway: 'SSLCOMMERZ', currency: 'BDT', sslCommerzMode: 'LIVE' },
     branding: {
       logoUrl: OFFICIAL_2ND_CHANCE_LOGO,
       faviconUrl: '/favicon.ico',
@@ -163,7 +163,7 @@ const AdminContext = createContext<AdminContextType>({
 
 const DEFAULT_SETTINGS = {
   general: { siteName: '2nd Nikha Matrimonial', supportEmail: 'support@2ndnikah.com' },
-  payment: { activeGateway: 'MOCK', currency: 'BDT', sslCommerzMode: 'SANDBOX' },
+  payment: { activeGateway: 'SSLCOMMERZ', currency: 'BDT', sslCommerzMode: 'LIVE' },
   branding: {
     logoUrl: OFFICIAL_2ND_CHANCE_LOGO,
     faviconUrl: '/favicon.ico',
