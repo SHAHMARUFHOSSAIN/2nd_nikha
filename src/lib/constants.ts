@@ -188,8 +188,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     features: [
       { text: 'Complete Matrimonial Profile Setup', included: true },
       { text: 'Unlimited AI Match Searches & Profiles', included: true },
-      { text: 'Direct Messaging, Photos & WhatsApp Sharing', included: true },
-      { text: 'Priority NID Verification & VIP Crown Badge', included: true },
+      { text: 'Unlimited Chatting, Photo Sharing & WhatsApp Number Sharing', included: true },
     ],
     isPopular: false,
   },
@@ -204,8 +203,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     features: [
       { text: 'Complete Matrimonial Profile Setup', included: true },
       { text: 'Unlimited AI Match Searches & Profiles', included: true },
-      { text: 'Direct Messaging, Photos & WhatsApp Sharing', included: true },
-      { text: 'Priority NID Verification & VIP Crown Badge', included: true },
+      { text: 'Unlimited Chatting, Photo Sharing & WhatsApp Number Sharing', included: true },
     ],
     isPopular: true,
   },

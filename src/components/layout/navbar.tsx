@@ -151,7 +151,7 @@ export function Navbar() {
                         <p className="font-serif font-bold text-sm text-stone-900">
                           {currentUser.fullName}
                         </p>
-                        <p className="text-xs text-stone-500 truncate">{currentUser.email || `${currentUser.fullName.toLowerCase().replace(/\s+/g, '.')}@2ndnikha.com`}</p>
+                        <p className="text-xs text-stone-500 truncate">{currentUser.email || `${currentUser.fullName.toLowerCase().replace(/\s+/g, '.')}@2ndnikah.com`}</p>
                         <span className="inline-flex items-center gap-1 mt-1 bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                           👑 {userRole} Membership
                         </span>

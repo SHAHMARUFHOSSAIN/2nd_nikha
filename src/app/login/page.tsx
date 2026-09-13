@@ -26,12 +26,39 @@ export default function LoginPage() {
   } catch (e) {}
 
   const allAvailableProfiles = React.useMemo(() => {
-    const combined = [...adminMembers];
+    const combined: any[] = [];
+    
+    // 1. Registered users from localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const storedReg = localStorage.getItem('2ndchance_registered_accounts');
+        if (storedReg) {
+          const parsed = JSON.parse(storedReg);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((p) => {
+              if (p && (p.id || p.email)) {
+                combined.push(p);
+              }
+            });
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 2. Admin Panel members
+    for (const adminP of adminMembers) {
+      if (!combined.some((p) => p.id === adminP.id || (p.email && adminP.email && p.email.toLowerCase() === adminP.email.toLowerCase()))) {
+        combined.push(adminP);
+      }
+    }
+
+    // 3. Mock Profiles
     for (const mock of MOCK_PROFILES) {
-      if (!combined.some((p) => p.id === mock.id)) {
+      if (!combined.some((p) => p.id === mock.id || (p.email && mock.email && p.email.toLowerCase() === mock.email.toLowerCase()))) {
         combined.push(mock);
       }
     }
+
     return combined;
   }, [adminMembers]);
 
@@ -45,7 +72,8 @@ export default function LoginPage() {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      const roleToSet = targetProfile.membershipTier === 'Free' ? 'FREE' : 'PREMIUM';
+      const isExpired = (targetProfile as any).subscriptionExpiresAt && new Date((targetProfile as any).subscriptionExpiresAt).getTime() < Date.now();
+      const roleToSet = isExpired ? 'EXPIRED' : (targetProfile.membershipTier === 'Free' ? 'FREE' : 'PREMIUM');
       login(targetProfile, roleToSet);
       router.push('/member');
     }, 200);
@@ -55,7 +83,8 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorState(null);
 
-    if (!emailOrPhone) {
+    const searchKey = emailOrPhone.trim().toLowerCase();
+    if (!searchKey) {
       setErrorState('Please enter your email or registered phone number.');
       return;
     }
@@ -71,15 +100,27 @@ export default function LoginPage() {
 
     setIsLoading(true);
     setTimeout(() => {
-      setIsLoading(false);
-      const searchKey = emailOrPhone.trim().toLowerCase();
-      const foundProfile =
-        allAvailableProfiles.find(
-          (p) =>
-            p.email?.toLowerCase() === searchKey ||
-            p.fullName.toLowerCase().includes(searchKey) ||
-            (p.phone && p.phone.includes(searchKey))
-        ) || allAvailableProfiles[0];
+      // Exact account search by email, phone, or ID
+      const foundProfile = allAvailableProfiles.find(
+        (p) =>
+          (p.email && p.email.toLowerCase() === searchKey) ||
+          (p.phone && p.phone.trim() === searchKey) ||
+          (p.id && p.id.toLowerCase() === searchKey) ||
+          (p.fullName && p.fullName.toLowerCase() === searchKey)
+      );
+
+      if (!foundProfile) {
+        setIsLoading(false);
+        setErrorState('No registered account found matching this email or phone number. Please check your credentials or register a new profile.');
+        return;
+      }
+
+      // Password validation (if password was set on account during registration)
+      if (foundProfile.password && foundProfile.password !== password) {
+        setIsLoading(false);
+        setErrorState('Incorrect password. Please verify your password and try again.');
+        return;
+      }
 
       handleLoginProfile(foundProfile);
     }, 300);

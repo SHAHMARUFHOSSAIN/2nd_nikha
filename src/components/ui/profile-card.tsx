@@ -7,7 +7,7 @@ import { Profile } from '@/types';
 import { Badge } from './badge';
 import { Button } from './button';
 import { VerifiedBadge } from './verified-badge';
-import { MapPin, Briefcase, GraduationCap, Heart, Users, Sparkles, Lock, Globe, MessageSquare, Clock, CheckCircle2 } from 'lucide-react';
+import { MapPin, Briefcase, GraduationCap, Sparkles, MessageSquare, Clock } from 'lucide-react';
 import { ProfileDetailModal } from '@/components/profile/profile-detail-modal';
 import { useCommunication } from '@/lib/communication-context';
 import { useConnection } from '@/lib/connection-context';
@@ -53,178 +53,120 @@ export function ProfileCard({ profile, onOpenUpgradeModal }: ProfileCardProps) {
       return;
     }
 
-    if (matched || interestStatus === 'ACCEPTED') {
-      if (communication?.startConversationWithProfile) {
-        const targetMatchId = communication.startConversationWithProfile(profile);
-        router.push(`/member/messages?matchId=${targetMatchId}`);
-      } else {
-        router.push('/member/messages');
-      }
-      return;
-    }
-
-    if (interestStatus === 'SENT' || interestStatus === 'PAYMENT_PENDING') {
-      setNotice(`Interest request already sent to ${profile.fullName}. Chat opens after acceptance.`);
-      setTimeout(() => setNotice(null), 4000);
-      return;
-    }
-
-    // Send Interest Request
-    const res = await sendInterestRequest(profile);
-    if (res.success && res.redirectUrl) {
-      router.push(res.redirectUrl);
+    if (communication?.startConversationWithProfile) {
+      const targetMatchId = communication.startConversationWithProfile(profile);
+      router.push(`/member/messages?matchId=${targetMatchId}`);
     } else {
-      setNotice(`Interest request sent to ${profile.fullName}! Chat will open once accepted.`);
-      setTimeout(() => setNotice(null), 4000);
+      router.push('/member/messages');
     }
   };
 
   return (
     <>
-      <div className="group bg-white rounded-3xl border border-pink-100/90 overflow-hidden shadow-sm shadow-pink-100/50 hover:shadow-card-hover hover:border-pink-300 transition-all duration-300 flex flex-col h-full">
+      <div className="group bg-white rounded-2xl sm:rounded-3xl border border-pink-100/90 overflow-hidden shadow-xs hover:shadow-card-hover hover:border-pink-300 transition-all duration-300 flex flex-col h-full">
         {/* Photo Container */}
-        <div className="relative w-full h-64 overflow-hidden bg-pink-50">
+        <div className="relative w-full h-44 sm:h-64 overflow-hidden bg-pink-50">
           <Image
             src={profile.photoUrl}
             alt={profile.fullName}
             fill
             className="object-cover object-[center_15%] group-hover:scale-105 transition-transform duration-500"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-stone-900/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-stone-900/80 via-stone-900/10 to-transparent" />
 
           {/* Top Badges */}
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
-            <Badge variant={getMaritalBadgeVariant(profile.maritalStatus)}>
+          <div className="absolute top-2 sm:top-3 left-2 sm:left-3 right-2 sm:right-3 flex items-center justify-between gap-1">
+            <Badge variant={getMaritalBadgeVariant(profile.maritalStatus)} className="text-[9px] sm:text-xs px-2 py-0.5">
               {profile.maritalStatus}
             </Badge>
-            {profile.isVerified && <VerifiedBadge showLabel labelText="Verified" />}
+            {profile.isVerified && <VerifiedBadge showLabel labelText="Verified" className="scale-95 sm:scale-100" />}
           </div>
 
-          {/* Country & Residency Tag */}
-          <div className="absolute top-12 left-3 flex items-center gap-1.5 bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-white text-[10px] font-bold border border-stone-700 shadow-md">
+          {/* Country Tag */}
+          <div className="absolute top-10 sm:top-12 left-2 sm:left-3 flex items-center gap-1 bg-stone-950/80 backdrop-blur-md px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-white text-[9px] sm:text-[10px] font-bold border border-stone-700 shadow-md">
             <span>{profile.countryFlag || '🇧🇩'}</span>
-            <span>{profile.country || 'Bangladesh'}</span>
+            <span className="truncate max-w-[80px] sm:max-w-none">{profile.country || 'Bangladesh'}</span>
           </div>
 
           {/* Bottom Card Image Overlay */}
-          <div className="absolute bottom-3 left-3 right-3 text-white flex items-end justify-between">
+          <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 right-2 sm:right-3 text-white flex items-end justify-between">
             <div>
-              <h3 className="font-serif font-bold text-lg text-white group-hover:text-pink-200 transition-colors">
+              <h3 className="font-serif font-bold text-xs sm:text-lg text-white group-hover:text-pink-200 transition-colors leading-tight">
                 {profile.fullName.split(' ')[0]}, {profile.age}
               </h3>
-              <p className="text-xs text-stone-200 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-pink-400 shrink-0" />
-                <span>{profile.location}</span>
+              <p className="text-[10px] sm:text-xs text-stone-200 flex items-center gap-1 truncate max-w-[110px] sm:max-w-none">
+                <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-pink-400 shrink-0" />
+                <span className="truncate">{profile.location}</span>
               </p>
             </div>
 
             {/* AI Match Percentage Badge */}
-            <div className="bg-gradient-to-r from-pink-600 to-rose-600 text-white px-2.5 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">
-              <Sparkles className="w-3 h-3 fill-white" />
+            <div className="bg-gradient-to-r from-pink-600 to-rose-600 text-white px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold shadow-md flex items-center gap-0.5 sm:gap-1 shrink-0">
+              <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-white" />
               <span>{profile.matchPercentage}%</span>
             </div>
           </div>
         </div>
 
         {/* Card Body */}
-        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-          <div className="space-y-2">
-            {/* Notice Toast inside card if triggered */}
-            {notice && (
-              <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-[11px] font-semibold animate-in fade-in flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>{notice}</span>
-              </div>
-            )}
-
+        <div className="p-2.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2 sm:space-y-3">
+          <div className="space-y-1.5 sm:space-y-2">
             {/* Quick Details */}
-            <div className="grid grid-cols-2 gap-2 text-xs text-stone-600">
-              <div className="flex items-center gap-1.5 font-medium truncate">
-                <GraduationCap className="w-3.5 h-3.5 text-pink-600 shrink-0" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 text-[11px] sm:text-xs text-stone-600">
+              <div className="flex items-center gap-1 font-medium truncate">
+                <GraduationCap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-pink-600 shrink-0" />
                 <span className="truncate">{profile.education}</span>
               </div>
-              <div className="flex items-center gap-1.5 font-medium truncate">
-                <Briefcase className="w-3.5 h-3.5 text-pink-600 shrink-0" />
+              <div className="flex items-center gap-1 font-medium truncate">
+                <Briefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-pink-600 shrink-0" />
                 <span className="truncate">{profile.profession}</span>
               </div>
             </div>
 
             {/* Residency Tag */}
             {profile.residencyStatus && (
-              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-50 text-pink-900 border border-pink-200 text-[10px] font-bold">
-                <span>🌍 {profile.residencyStatus}</span>
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-50 text-pink-900 border border-pink-200 text-[9px] sm:text-[10px] font-bold">
+                <span className="truncate">🌍 {profile.residencyStatus}</span>
               </div>
             )}
 
             {/* Bio snippet */}
-            <p className="text-xs text-stone-600 line-clamp-2 italic pt-1">
+            <p className="text-[11px] sm:text-xs text-stone-600 line-clamp-2 italic pt-0.5 leading-snug">
               "{profile.bio}"
             </p>
-
-            {/* Why Match snippet */}
-            {profile.matchReasons && profile.matchReasons.length > 0 && (
-              <div className="mt-3.5 p-2.5 bg-pink-50/70 rounded-2xl border border-pink-100 space-y-1">
-                <div className="text-[10px] uppercase font-bold text-pink-800 tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-pink-500" />
-                  <span>AI Compatibility Highlights:</span>
-                </div>
-                <p className="text-[11px] text-stone-700 font-medium line-clamp-2 leading-tight">
-                  {profile.matchReasons.slice(0, 2).join(' • ')}
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-2 flex items-center gap-2 border-t border-stone-100">
+          <div className="pt-2 flex flex-col xs:flex-row items-center gap-1.5 sm:gap-2 border-t border-stone-100">
             <Button
-              variant="outline"
+              variant="wine"
               size="sm"
-              className="flex-1 rounded-2xl border-stone-200 hover:border-pink-300 text-xs"
+              className="w-full sm:flex-1 rounded-xl sm:rounded-2xl shadow-xs text-[11px] sm:text-xs py-1.5 sm:py-2 px-2 justify-center font-bold"
+              leftIcon={<Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />}
               onClick={() => setIsDetailOpen(true)}
             >
-              View Full Profile
+              View Profile
             </Button>
 
             {isOwnProfile ? (
               <Button
                 variant="secondary"
                 size="sm"
-                className="flex-1 rounded-2xl bg-stone-100 text-stone-600 border border-stone-200 text-xs justify-center font-bold"
+                className="w-full sm:flex-1 rounded-xl sm:rounded-2xl bg-stone-100 text-stone-600 border border-stone-200 text-[11px] sm:text-xs py-1.5 sm:py-2 px-2 justify-center font-bold"
                 onClick={() => router.push('/member/dashboard')}
               >
                 Your Profile
               </Button>
-            ) : matched || interestStatus === 'ACCEPTED' ? (
-              <Button
-                variant="wine"
-                size="sm"
-                className="flex-1 rounded-2xl shadow-sm text-xs justify-center"
-                leftIcon={<MessageSquare className="w-3.5 h-3.5 text-white" />}
-                onClick={handleExpressInterest}
-              >
-                Chat Now
-              </Button>
-            ) : interestStatus === 'SENT' || interestStatus === 'PAYMENT_PENDING' ? (
+            ) : (
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 rounded-2xl border-amber-300 bg-amber-50/80 text-amber-900 text-xs justify-center font-semibold"
-                leftIcon={<Clock className="w-3.5 h-3.5 text-amber-600" />}
+                className="w-full sm:flex-1 rounded-xl sm:rounded-2xl border-pink-200 hover:border-pink-400 text-pink-800 font-bold text-[11px] sm:text-xs py-1.5 sm:py-2 px-2 justify-center hover:bg-pink-50"
+                leftIcon={<MessageSquare className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-pink-600" />}
                 onClick={handleExpressInterest}
               >
-                Request Pending
-              </Button>
-            ) : (
-              <Button
-                variant="wine"
-                size="sm"
-                className="flex-1 rounded-2xl shadow-sm text-xs justify-center"
-                leftIcon={<Heart className="w-3.5 h-3.5 fill-white" />}
-                onClick={handleExpressInterest}
-              >
-                Express Interest
+                Message
               </Button>
             )}
           </div>

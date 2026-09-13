@@ -44,7 +44,7 @@ export class PayStationPaymentGateway implements PaymentGateway {
             cust_phone: request.customerPhone,
             cust_email: request.customerEmail,
             reference: request.planId || 'subscription_pass',
-            callback_url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/payment/success?txn=${transactionId}`,
+            callback_url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/payment/success?txn=${transactionId}&amount=${request.amount}&currency=${request.currency || 'BDT'}`,
           }),
         });
 
@@ -66,7 +66,7 @@ export class PayStationPaymentGateway implements PaymentGateway {
     }
 
     // Default seamless return for development/testing
-    const redirectUrl = `/payment/success?txn=${transactionId}&gateway=paystation&amount=${request.amount}`;
+    const redirectUrl = `/payment/success?txn=${transactionId}&gateway=paystation&amount=${request.amount}&currency=${request.currency || 'BDT'}`;
 
     return {
       success: true,

@@ -46,19 +46,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (savedUserStr) {
         try {
           const parsedUser = JSON.parse(savedUserStr);
-          setCurrentUser(parsedUser);
-          setUserRole(savedRole && savedRole !== 'GUEST' ? savedRole : 'PREMIUM');
-          return;
+          if (parsedUser && parsedUser.id) {
+            // Check subscription expiration
+            const isSubExpired = parsedUser.subscriptionExpiresAt && new Date(parsedUser.subscriptionExpiresAt).getTime() < Date.now();
+            const activeRole = isSubExpired ? 'EXPIRED' : (savedRole && savedRole !== 'GUEST' ? savedRole : 'PREMIUM');
+            
+            setCurrentUser(parsedUser);
+            setUserRole(activeRole);
+            return;
+          }
         } catch (e) {}
       }
 
-      if (savedRole && savedRole !== 'GUEST') {
-        setUserRole(savedRole);
-        setCurrentUser(MOCK_PROFILES[0]);
-      } else {
-        setUserRole('GUEST');
-        setCurrentUser(null);
-      }
+      setUserRole('GUEST');
+      setCurrentUser(null);
     }
   }, []);
 
@@ -70,12 +71,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = (userObj?: any, role: UserRole = 'PREMIUM') => {
-    const userToSet = userObj || MOCK_PROFILES[0];
-    setCurrentUser(userToSet);
-    setUserRole(role);
+    if (!userObj) return;
+    
+    // Check subscription expiration on login
+    const isSubExpired = userObj.subscriptionExpiresAt && new Date(userObj.subscriptionExpiresAt).getTime() < Date.now();
+    const effectiveRole = isSubExpired ? 'EXPIRED' : role;
+
+    setCurrentUser(userObj);
+    setUserRole(effectiveRole);
+
     if (typeof window !== 'undefined') {
-      localStorage.setItem(ROLE_STORAGE_KEY, role);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userToSet));
+      localStorage.setItem(ROLE_STORAGE_KEY, effectiveRole);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userObj));
     }
   };
 

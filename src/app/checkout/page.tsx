@@ -56,14 +56,14 @@ function CheckoutContent() {
         localStorage.setItem('2ndchance_checkout_customer', JSON.stringify(customerDetails));
         const existingTxns = JSON.parse(localStorage.getItem('2ndchance_admin_payments') || '[]');
         const newTxn = {
-          id: `TXN-PS-${Date.now()}`,
+          id: `TXN-SSL-${Date.now()}`,
           customerName: customerInfo.fullName,
           customerEmail: customerInfo.email,
           customerPhone: customerInfo.phone,
           planId: planIdParam,
           amount: numericAmountToCharge,
           currency: currency,
-          gateway: 'PayStation Gateway',
+          gateway: 'SSLCommerz',
           status: 'PAID',
           createdAt: new Date().toISOString(),
         };

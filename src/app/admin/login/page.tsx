@@ -34,7 +34,6 @@ export default function AdminLoginPage() {
   const VALID_ADMIN_EMAILS = [
     'admin@2ndnikah.com',
     'admin@2ndchance.com',
-    'admin@2ndnikha.com',
     'superadmin@2ndnikah.com',
   ];
 

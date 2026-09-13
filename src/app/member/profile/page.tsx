@@ -26,6 +26,7 @@ import {
 import Image from 'next/image';
 
 import { useAuth } from '@/lib/auth-context';
+import { SubscriptionValidityBanner } from '@/components/subscription/subscription-validity-banner';
 
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400';
 
@@ -161,7 +162,7 @@ export default function MemberProfilePage() {
         )}
 
         {/* Profile Strength Widget */}
-        <ProfileCompletionCard percentage={78} />
+        <ProfileCompletionCard user={profile} />
 
         {/* Live Profile Card Header */}
         <div className="bg-white rounded-3xl p-6 border border-rose-100/90 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -233,6 +234,9 @@ export default function MemberProfilePage() {
             </p>
           </div>
         </div>
+
+        {/* Subscription Validity & Renewal Banner */}
+        <SubscriptionValidityBanner />
 
         {/* Editable About Me Bio */}
         <div className="bg-white rounded-3xl p-6 border border-rose-100/90 shadow-sm space-y-3">

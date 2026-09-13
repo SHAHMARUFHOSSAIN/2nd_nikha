@@ -10,6 +10,7 @@ export interface ImageUploaderProps {
   label?: string;
   helperText?: string;
   className?: string;
+  variant?: 'default' | 'compact' | 'tile';
 }
 
 export function ImageUploader({
@@ -18,6 +19,7 @@ export function ImageUploader({
   label = 'Upload Image from Device',
   helperText = 'Supports JPG, PNG, WEBP files up to 10MB.',
   className = '',
+  variant = 'default',
 }: ImageUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -102,6 +104,77 @@ export function ImageUploader({
       processFile(e.dataTransfer.files[0]);
     }
   };
+
+  if (variant === 'compact' || variant === 'tile') {
+    return (
+      <div className={`relative ${className}`}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        {value ? (
+          <div className="relative group w-full h-32 sm:h-36 rounded-2xl overflow-hidden border-2 border-rose-200 shadow-sm bg-stone-900">
+            <Image src={value} alt="Preview" fill className="object-cover" unoptimized />
+            
+            <div className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2 rounded-full bg-white text-stone-900 font-bold text-xs shadow-lg hover:scale-110 transition-transform"
+                title="Change Photo"
+              >
+                <Upload className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange('')}
+                className="p-2 rounded-full bg-rose-600 text-white font-bold text-xs shadow-lg hover:scale-110 transition-transform"
+                title="Remove Photo"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+              <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-bold">
+                {label || 'Photo'}
+              </span>
+              <span className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md">
+                <Check className="w-3 h-3 stroke-[3]" />
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`w-full h-32 sm:h-36 border-2 border-dashed rounded-2xl p-3 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 ${
+              dragActive
+                ? 'border-pink-500 bg-pink-100/60 text-pink-900 scale-[1.02]'
+                : 'border-rose-200 bg-rose-50/40 hover:bg-rose-100/60 text-stone-600 hover:border-pink-400 shadow-xs'
+            }`}
+          >
+            <div className="w-9 h-9 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shadow-xs">
+              <Upload className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-stone-900 leading-tight">
+                {label || '+ Add Photo'}
+              </p>
+              <p className="text-[10px] text-stone-400 mt-0.5">Click or drag image</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-2 ${className}`}>

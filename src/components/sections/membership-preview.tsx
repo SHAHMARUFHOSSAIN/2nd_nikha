@@ -38,8 +38,7 @@ export function MembershipPreview() {
         features: [
           { text: 'Complete Matrimonial Profile Setup', included: true },
           { text: 'Unlimited AI Match Searches & Profiles', included: true },
-          { text: 'Direct Messaging, Photos & WhatsApp Sharing', included: true },
-          { text: 'Priority NID Verification & VIP Crown Badge', included: true },
+          { text: 'Unlimited Chatting, Photo Sharing & WhatsApp Number Sharing', included: true },
         ],
       }))
     : FALLBACK_PLANS.map((p) => ({

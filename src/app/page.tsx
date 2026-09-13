@@ -1,14 +1,10 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { VisitorLandingGateway } from '@/components/sections/visitor-landing-gateway';
 import { HeroSection } from '@/components/sections/hero-section';
-import { WhyChooseUs } from '@/components/sections/why-choose-us';
 import { HomeFeaturedProfiles } from '@/components/sections/home-featured-profiles';
-import { TrustSafety } from '@/components/sections/trust-safety';
-import { MembershipPreview } from '@/components/sections/membership-preview';
-import { FinalCta } from '@/components/sections/final-cta';
 
 export default function HomePage() {
   const { isLoggedIn, userRole } = useAuth();
@@ -27,31 +23,9 @@ export default function HomePage() {
       {/* Enterprise Hero Section with Admin CMS */}
       <HeroSection />
 
-      {/* Why Choose 2nd Nikha */}
-      <section id="about">
-        <WhyChooseUs />
-      </section>
-
-      {/* Homepage Featured Matches */}
-      <section id="search">
+      {/* Randomly Shuffled Abundant Member Profiles (No Filters) */}
+      <section id="profiles">
         <HomeFeaturedProfiles />
-      </section>
-
-      {/* Trust & Safety Features */}
-      <TrustSafety />
-
-      {/* Membership Comparison */}
-      <section id="membership">
-        <Suspense fallback={
-          <div className="text-center py-12 text-xs font-bold text-stone-400">Loading membership passes...</div>
-        }>
-          <MembershipPreview />
-        </Suspense>
-      </section>
-
-      {/* Final Warm Call to Action */}
-      <section id="contact">
-        <FinalCta />
       </section>
     </div>
   );

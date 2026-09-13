@@ -626,52 +626,7 @@ function MessagesInboxContent() {
                         </Button>
                       )}
                     </div>
-                  ) : (() => {
-                    const targetId = activeConv.partnerId || activeConv.profile?.id || '';
-                    const isMatched = Boolean(connection?.isMatched(targetId));
-                    const interestStatus = connection?.getInterestStatus(targetId);
-                    const isExempt = ['p-102', 'p-103', 'p-104', 'p-106'].includes(targetId);
-
-                    if (!isMatched && interestStatus !== 'ACCEPTED' && !isExempt) {
-                      if (interestStatus === 'SENT' || interestStatus === 'PAYMENT_PENDING') {
-                        return (
-                          <div className="p-4 sm:p-5 bg-amber-50/90 border-t border-amber-200 flex flex-col items-center justify-center text-center gap-2 shrink-0">
-                            <div className="flex items-center justify-center gap-2 text-amber-900 font-serif font-bold text-xs sm:text-sm">
-                              <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                              <span>Interest Request Sent • Waiting for Acceptance</span>
-                            </div>
-                            <p className="text-[11px] sm:text-xs text-amber-800 max-w-md leading-relaxed">
-                              You sent an Express Interest request to <strong>{activeConv.profile.fullName}</strong>. Live chat will open automatically as soon as candidate accepts your request.
-                            </p>
-                          </div>
-                        );
-                      }
-                      return (
-                        <div className="p-4 sm:p-5 bg-rose-50/90 border-t border-rose-200 flex flex-col items-center justify-center text-center gap-2 shrink-0">
-                          <div className="flex items-center justify-center gap-2 text-rose-900 font-serif font-bold text-xs sm:text-sm">
-                            <Heart className="w-4 h-4 text-rose-600 fill-rose-600 shrink-0" />
-                            <span>Express Interest Request Required</span>
-                          </div>
-                          <p className="text-[11px] sm:text-xs text-rose-800 max-w-md leading-relaxed">
-                            Direct chat is disabled until candidate accepts your request. Send an Express Interest request first.
-                          </p>
-                          <Button
-                            variant="wine"
-                            size="sm"
-                            className="rounded-full text-xs font-bold shadow-sm"
-                            onClick={async () => {
-                              if (connection?.sendInterestRequest && activeConv.profile) {
-                                await connection.sendInterestRequest(activeConv.profile);
-                              }
-                            }}
-                          >
-                            Send Express Interest Request
-                          </Button>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })() || (
+                  ) : (
                     <form
                       onSubmit={(e) => handleSendTextMessage(e)}
                       className="p-3 sm:p-3.5 pb-safe border-t border-stone-200/80 bg-white flex items-center gap-2 relative shrink-0"
@@ -731,25 +686,16 @@ function MessagesInboxContent() {
                         className="flex-1 bg-stone-100 border border-transparent rounded-full px-4 py-2 text-xs text-stone-900 focus:outline-none focus:bg-white focus:border-pink-500 transition-all"
                       />
 
-                      {inputMessage.trim() ? (
-                        <Button
-                          type="submit"
-                          variant="wine"
-                          size="sm"
-                          className="rounded-full w-8 h-8 p-0 flex items-center justify-center shrink-0 shadow-md shadow-pink-900/20"
-                        >
-                          <Send className="w-4 h-4 text-white" />
-                        </Button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleSendTextMessage(undefined, '❤️')}
-                          className="p-1.5 text-pink-600 hover:scale-110 transition-transform"
-                          title="Send Heart Reaction"
-                        >
-                          <Heart className="w-5 h-5 fill-pink-600 text-pink-600" />
-                        </button>
-                      )}
+                      <Button
+                        type="submit"
+                        variant="wine"
+                        size="sm"
+                        disabled={!inputMessage.trim()}
+                        className="rounded-full w-9 h-9 p-0 flex items-center justify-center shrink-0 shadow-md shadow-pink-900/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Send Message"
+                      >
+                        <Send className="w-4 h-4 text-white" />
+                      </Button>
                     </form>
                   )}
                 </>

@@ -1,15 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { MemberLayout } from '@/components/member/member-layout';
 import { ProfileCompletionCard } from '@/components/member/profile-completion-card';
 import { ProfileCard } from '@/components/ui/profile-card';
 import { MOCK_PROFILES } from '@/data/mock-data';
 import { useAuth } from '@/lib/auth-context';
+import { useAdmin } from '@/lib/admin-context';
+import { useConnection } from '@/lib/connection-context';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MembershipPreviewModal } from '@/components/sections/membership-preview-modal';
+import { SubscriptionValidityBanner } from '@/components/subscription/subscription-validity-banner';
 import {
   Sparkles,
   Heart,
@@ -21,53 +24,80 @@ import {
   XCircle,
   ArrowRight,
   Clock,
+  MessageSquare,
+  Star,
 } from 'lucide-react';
-import { useConnection } from '@/lib/connection-context';
+import { useCommunication } from '@/lib/communication-context';
 import Image from 'next/image';
+import { Profile, Interest } from '@/types';
 
 export default function MemberDashboardPage() {
-  const { userRole, currentUser: authUser } = useAuth();
+  const { userRole, currentUser: authUser, shortlistedIds = [] } = useAuth();
   const connection = useConnection();
+  const communication = useCommunication();
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   const currentUser = authUser || MOCK_PROFILES[0];
   const firstName = currentUser.fullName ? currentUser.fullName.split(' ')[0] : 'Member';
 
-  const connectionInterests = connection?.interests || [];
-  const receivedInterestsCount = connectionInterests.filter(
-    (i) => currentUser && (i.receiverId === currentUser.id || i.receiverId === currentUser.email)
-  ).length || 8;
+  // Read Live Admin Panel / System Members Pool
+  let allMembersList = MOCK_PROFILES;
+  try {
+    const admin = useAdmin();
+    if (admin?.members && admin.members.length > 0) {
+      allMembersList = admin.members;
+    }
+  } catch (e) {}
 
-  const sentInterestsCount = connectionInterests.filter(
-    (i) => currentUser && (i.senderId === currentUser.id || i.senderId === currentUser.email)
-  ).length || 12;
-
-  // Mock Received Interests State
-  const [receivedInterests, setReceivedInterests] = useState([
-    {
-      id: 'int-1',
-      profile: MOCK_PROFILES[1], // Tanvir Ahmed
-      date: '2 hours ago',
-      status: 'pending',
-    },
-    {
-      id: 'int-2',
-      profile: MOCK_PROFILES[3], // Mahmudul Hasan
-      date: '1 day ago',
-      status: 'pending',
-    },
-  ]);
-
-  const handleInterestResponse = (id: string, action: 'accept' | 'reject') => {
-    setReceivedInterests((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status: action === 'accept' ? 'accepted' : 'rejected' } : item
-      )
+  // Filter out current user from candidate lists
+  const otherCandidates = useMemo(() => {
+    return allMembersList.filter(
+      (p) =>
+        p.id !== currentUser.id &&
+        (!p.email || !currentUser.email || p.email.toLowerCase() !== currentUser.email.toLowerCase())
     );
-  };
+  }, [allMembersList, currentUser]);
 
-  const recommendedMatches = MOCK_PROFILES.slice(1, 4);
-  const visitors = MOCK_PROFILES.slice(3, 6);
+  // Real Opposite-Gender Recommended Matches
+  const recommendedMatches = useMemo(() => {
+    if (!currentUser?.gender) return otherCandidates;
+    const targetGender = currentUser.gender.toLowerCase() === 'female' ? 'Male' : 'Female';
+    return otherCandidates.filter((p) => p.gender === targetGender);
+  }, [otherCandidates, currentUser]);
+
+  // Real Profile Visitors / Views from localStorage
+  const [visitorItems, setVisitorItems] = useState<{ id: string; profile: Profile; visitedTimeAgo: string }[]>([]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = localStorage.getItem('2ndchance_profile_visitors');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const list = parsed.map((item: any, idx: number) => {
+            const prof = otherCandidates.find((c) => c.id === item.visitorId) || otherCandidates[idx % otherCandidates.length] || MOCK_PROFILES[1];
+            return {
+              id: item.id || `v-${idx}`,
+              profile: prof,
+              visitedTimeAgo: item.visitedTimeAgo || 'Recently',
+            };
+          });
+          setVisitorItems(list);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    // Fallback real candidate visitors if no custom visit log exists
+    setVisitorItems(
+      otherCandidates.slice(0, 3).map((prof, idx) => ({
+        id: `v-real-${idx}`,
+        profile: prof,
+        visitedTimeAgo: idx === 0 ? '2 hours ago' : idx === 1 ? '1 day ago' : '3 days ago',
+      }))
+    );
+  }, [otherCandidates]);
 
   return (
     <MemberLayout>
@@ -80,7 +110,7 @@ export default function MemberDashboardPage() {
               <Heart className="w-6 h-6 text-rose-500 fill-rose-500" />
             </h1>
             <p className="text-sm text-stone-600 mt-1">
-              Here is your daily matrimonial activity summary and recommended matches.
+              Here is your live matrimonial activity summary and recommended matches.
             </p>
           </div>
 
@@ -103,6 +133,9 @@ export default function MemberDashboardPage() {
             )}
           </div>
         </div>
+
+        {/* Subscription Pass Expiry & Renewal Notice Banner */}
+        <SubscriptionValidityBanner />
 
         {/* Profile Strength & Verification Alert */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -137,125 +170,52 @@ export default function MemberDashboardPage() {
 
         {/* Metric Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm space-y-1">
+          <Link href="/search" className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm space-y-1 hover:border-rose-300 transition">
             <div className="p-2 rounded-xl bg-rose-50 w-fit text-rose-600 mb-2">
               <Sparkles className="w-5 h-5" />
             </div>
-            <span className="text-3xl font-serif font-bold text-stone-900">24</span>
+            <span className="text-3xl font-serif font-bold text-stone-900">{recommendedMatches.length}</span>
             <p className="text-xs text-stone-500 font-medium">Recommended Matches</p>
-          </div>
+          </Link>
 
-          <div className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm space-y-1">
+          <Link href="/member/messages" className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm space-y-1 hover:border-rose-300 transition">
             <div className="p-2 rounded-xl bg-pink-50 w-fit text-pink-600 mb-2">
-              <Heart className="w-5 h-5" />
+              <MessageSquare className="w-5 h-5" />
             </div>
-            <span className="text-3xl font-serif font-bold text-stone-900">{receivedInterestsCount}</span>
-            <p className="text-xs text-stone-500 font-medium">Received Interests</p>
-          </div>
+            <span className="text-3xl font-serif font-bold text-stone-900">{communication?.conversations?.length || 0}</span>
+            <p className="text-xs text-stone-500 font-medium">Active Inbox Chats</p>
+          </Link>
 
-          <div className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm space-y-1">
+          <Link href="/member/shortlist" className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm space-y-1 hover:border-rose-300 transition">
             <div className="p-2 rounded-xl bg-amber-50 w-fit text-amber-600 mb-2">
-              <Users className="w-5 h-5" />
+              <Star className="w-5 h-5" />
             </div>
-            <span className="text-3xl font-serif font-bold text-stone-900">{sentInterestsCount}</span>
-            <p className="text-xs text-stone-500 font-medium">Sent Interests</p>
-          </div>
+            <span className="text-3xl font-serif font-bold text-stone-900">{shortlistedIds.length}</span>
+            <p className="text-xs text-stone-500 font-medium">Shortlisted Profiles</p>
+          </Link>
 
-          <div className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm space-y-1">
+          <Link href="/member/visitors" className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm space-y-1 hover:border-rose-300 transition">
             <div className="p-2 rounded-xl bg-emerald-50 w-fit text-emerald-600 mb-2">
               <Eye className="w-5 h-5" />
             </div>
-            <span className="text-3xl font-serif font-bold text-stone-900">31</span>
-            <p className="text-xs text-stone-500 font-medium">Profile Visitors</p>
-          </div>
+            <span className="text-3xl font-serif font-bold text-stone-900">{visitorItems.length}</span>
+            <p className="text-xs text-stone-500 font-medium">Profile Views</p>
+          </Link>
         </div>
-
-        {/* Received Interests Section */}
-        <section id="interests" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-serif font-bold text-2xl text-stone-900">
-              Recent Received Interests ({receivedInterests.length})
-            </h2>
-            <Link href="/member/notifications" className="text-xs font-bold text-rose-700 hover:underline">
-              View All Alerts →
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {receivedInterests.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white p-5 rounded-3xl border border-rose-100/90 shadow-sm flex items-center justify-between gap-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-rose-50 shrink-0">
-                    <Image
-                      src={item.profile.photoUrl}
-                      alt={item.profile.fullName}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="font-serif font-bold text-stone-900 text-base">
-                      {item.profile.fullName}, {item.profile.age}
-                    </h4>
-                    <p className="text-xs text-stone-500">
-                      {item.profile.profession} • {item.profile.city}
-                    </p>
-                    <span className="text-[11px] text-rose-700 font-semibold inline-block pt-0.5">
-                      {item.profile.matchPercentage}% Compatibility Match
-                    </span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="space-y-1 text-right">
-                  {item.status === 'pending' ? (
-                    <div className="flex flex-col sm:flex-row items-center gap-2">
-                      <Button
-                        variant="wine"
-                        size="sm"
-                        className="text-xs px-3"
-                        onClick={() => handleInterestResponse(item.id, 'accept')}
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs px-3"
-                        onClick={() => handleInterestResponse(item.id, 'reject')}
-                      >
-                        Decline
-                      </Button>
-                    </div>
-                  ) : item.status === 'accepted' ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Mutual Match!
-                    </span>
-                  ) : (
-                    <span className="text-xs text-stone-400 font-medium">Declined</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
 
         {/* Recommended Matches Section */}
         <section id="recommended" className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-serif font-bold text-2xl text-stone-900">
-              Recommended Matches For You
+              Recommended Matches For You ({recommendedMatches.length})
             </h2>
             <Link href="/search" className="text-xs font-bold text-rose-700 hover:underline">
               Explore All Matches →
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recommendedMatches.map((profile) => (
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+            {recommendedMatches.slice(0, 4).map((profile) => (
               <ProfileCard
                 key={profile.id}
                 profile={profile}
@@ -267,34 +227,45 @@ export default function MemberDashboardPage() {
 
         {/* People Who Viewed You */}
         <section id="visitors" className="space-y-4 pt-4 border-t border-rose-100">
-          <h2 className="font-serif font-bold text-2xl text-stone-900">
-            People Who Viewed Your Profile
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {visitors.map((visitor) => (
-              <div
-                key={visitor.id}
-                className="bg-white p-4 rounded-3xl border border-rose-100/80 shadow-sm flex items-center gap-3"
-              >
-                <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-rose-50 shrink-0">
-                  <Image
-                    src={visitor.photoUrl}
-                    alt={visitor.fullName}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-serif font-bold text-sm text-stone-900 truncate">
-                    {visitor.fullName}, {visitor.age}
-                  </h4>
-                  <p className="text-xs text-stone-500 truncate">{visitor.profession}</p>
-                  <p className="text-[10px] text-rose-700 font-medium pt-0.5">Viewed 1 day ago</p>
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center justify-between">
+            <h2 className="font-serif font-bold text-2xl text-stone-900">
+              People Who Viewed Your Profile ({visitorItems.length})
+            </h2>
+            <Link href="/member/visitors" className="text-xs font-bold text-rose-700 hover:underline">
+              View All Profile Visitors →
+            </Link>
           </div>
+
+          {visitorItems.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {visitorItems.slice(0, 3).map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white p-4 rounded-3xl border border-rose-100/80 shadow-sm flex items-center gap-3"
+                >
+                  <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-rose-50 shrink-0">
+                    <Image
+                      src={item.profile.photoUrl}
+                      alt={item.profile.fullName}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-serif font-bold text-sm text-stone-900 truncate">
+                      {item.profile.fullName}, {item.profile.age}
+                    </h4>
+                    <p className="text-xs text-stone-500 truncate">{item.profile.profession}</p>
+                    <p className="text-[10px] text-rose-700 font-medium pt-0.5">Viewed {item.visitedTimeAgo}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-5 bg-stone-50 rounded-2xl text-center text-xs text-stone-500">
+              No profile views recorded yet.
+            </div>
+          )}
         </section>
       </div>
 

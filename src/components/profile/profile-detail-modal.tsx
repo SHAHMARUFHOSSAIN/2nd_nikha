@@ -87,31 +87,12 @@ export function ProfileDetailModal({
       return;
     }
 
-    if (matched || interestStatus === 'ACCEPTED') {
-      onClose();
-      if (communication?.startConversationWithProfile) {
-        const targetMatchId = communication.startConversationWithProfile(profile);
-        router.push(`/member/messages?matchId=${targetMatchId}`);
-      } else {
-        router.push('/member/messages');
-      }
-      return;
-    }
-
-    if (interestStatus === 'SENT' || interestStatus === 'PAYMENT_PENDING') {
-      setNotice(`Interest request already sent to ${profile.fullName}. Chat will open once accepted.`);
-      setTimeout(() => setNotice(null), 4000);
-      return;
-    }
-
-    // Send Interest Request
-    const res = await sendInterestRequest(profile);
-    if (res.success && res.redirectUrl) {
-      onClose();
-      router.push(res.redirectUrl);
+    onClose();
+    if (communication?.startConversationWithProfile) {
+      const targetMatchId = communication.startConversationWithProfile(profile);
+      router.push(`/member/messages?matchId=${targetMatchId}`);
     } else {
-      setNotice(`Express Interest Sent to ${profile.fullName}! Chat opens after acceptance.`);
-      setTimeout(() => setNotice(null), 4000);
+      router.push('/member/messages');
     }
   };
 
@@ -443,7 +424,7 @@ export function ProfileDetailModal({
                   >
                     Go to My Member Dashboard
                   </Button>
-                ) : matched || interestStatus === 'ACCEPTED' ? (
+                ) : (
                   <Button
                     variant="wine"
                     size="md"
@@ -451,27 +432,7 @@ export function ProfileDetailModal({
                     leftIcon={<MessageSquare className="w-4 h-4 text-white" />}
                     onClick={handleExpressInterest}
                   >
-                    Open Live Chat & Message
-                  </Button>
-                ) : interestStatus === 'SENT' || interestStatus === 'PAYMENT_PENDING' ? (
-                  <Button
-                    variant="outline"
-                    size="md"
-                    className="w-full justify-center rounded-xl border-amber-500/50 bg-amber-950/40 text-amber-200 text-xs font-semibold"
-                    leftIcon={<Clock className="w-4 h-4 text-amber-400" />}
-                    onClick={handleExpressInterest}
-                  >
-                    Interest Request Pending
-                  </Button>
-                ) : (
-                  <Button
-                    variant="wine"
-                    size="md"
-                    className="w-full justify-center rounded-xl shadow-md text-xs font-bold"
-                    leftIcon={<Heart className="w-4 h-4 fill-white" />}
-                    onClick={handleExpressInterest}
-                  >
-                    Send Express Interest Request
+                    Open Direct Chat & Message
                   </Button>
                 )}
               </div>

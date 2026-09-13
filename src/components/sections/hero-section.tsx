@@ -1,29 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/lib/admin-context';
 import { OFFICIAL_2ND_CHANCE_LOGO } from '@/lib/official-logo-data';
-import { DEFAULT_COUNTRY_OPTIONS, COUNTRY_CITY_MAP } from '@/lib/constants';
-import { Heart, ShieldCheck, Users, Smile, UserPlus, Search, Play, MapPin, Sparkles, Globe } from 'lucide-react';
+import { Users, Play, Sparkles, X, ArrowRight } from 'lucide-react';
 
 export function HeroSection() {
   const router = useRouter();
-  const [iam, setIam] = useState('Female');
-  const [lookingFor, setLookingFor] = useState('Divorced / Widowed');
-  const [country, setCountry] = useState('Bangladesh');
-  const [city, setCity] = useState('Dhaka');
-
-  const availableCities = React.useMemo(() => {
-    if (country && COUNTRY_CITY_MAP[country]) {
-      return ['Any City', ...COUNTRY_CITY_MAP[country]];
-    }
-    return ['Any City'];
-  }, [country]);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Read dynamic branding CMS from Admin Settings
   let heroImage = '';
@@ -35,7 +23,11 @@ export function HeroSection() {
     const admin = useAdmin();
     if (admin?.settings?.branding?.heroImageUrl) heroImage = admin.settings.branding.heroImageUrl;
     if (admin?.settings?.branding?.heroTitle) {
-      heroTitle = admin.settings.branding.heroTitle;
+      heroTitle = admin.settings.branding.heroTitle
+        .replace(/second\s*nikha/gi, 'second chance')
+        .replace(/second\s*nikah/gi, 'second chance')
+        .replace(/2nd\s*nikha/gi, '2nd Chance')
+        .replace(/2nd\s*nikah/gi, '2nd Chance');
     }
     if (admin?.settings?.branding?.heroSubtitle) heroSubtitle = admin.settings.branding.heroSubtitle;
     if (admin?.settings?.branding?.logoUrl) {
@@ -44,32 +36,42 @@ export function HeroSection() {
   } catch (e) {}
 
   const renderHeroTitle = (title: string) => {
-    if (!title) return 'Every heart deserves a second chance';
-    const match = title.match(/(second\s*chance|2nd\s*chance|2nd\s*nikah|2nd\s*nikha)/i);
+    let cleanTitle = title || 'Every heart deserves a second chance';
+    cleanTitle = cleanTitle
+      .replace(/second\s*nikha/gi, 'second chance')
+      .replace(/second\s*nikah/gi, 'second chance')
+      .replace(/2nd\s*nikha/gi, '2nd Chance')
+      .replace(/2nd\s*nikah/gi, '2nd Chance');
+
+    const match = cleanTitle.match(/(2nd|second)\s*(chance)/i);
     if (match && match.index !== undefined) {
       const idx = match.index;
       const matchedText = match[0];
-      const before = title.substring(0, idx);
-      const after = title.substring(idx + matchedText.length);
+      const before = cleanTitle.substring(0, idx);
+      const after = cleanTitle.substring(idx + matchedText.length);
+      const is2nd = matchedText.toLowerCase().startsWith('2');
       return (
         <>
           {before}
-          <span className="text-pink-600 font-extrabold">{matchedText}</span>
+          {is2nd ? (
+            <span className="inline-inline-flex items-baseline">
+              <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-pink-600 leading-none drop-shadow-xs">2</span>
+              <span className="text-pink-600 font-extrabold">{matchedText.substring(1)}</span>
+            </span>
+          ) : (
+            <span className="text-pink-600 font-extrabold">{matchedText}</span>
+          )}
           {after}
         </>
       );
     }
-    return title;
+    return cleanTitle;
   };
 
-  const handleQuickSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanCity = city.replace(/\s*\([^)]*\)/g, '').trim();
-    router.push(`/search?seekingGender=${iam}&country=${encodeURIComponent(country)}&city=${encodeURIComponent(cleanCity)}`);
+  const handleSelectGender = (gender: 'Female' | 'Male') => {
+    setIsProfileModalOpen(false);
+    router.push(`/search?seekingGender=${gender}`);
   };
-
-  const leftColSpan = heroImage ? 'lg:col-span-4' : 'lg:col-span-7';
-  const rightColSpan = heroImage ? 'lg:col-span-4' : 'lg:col-span-5';
 
   return (
     <div className="relative bg-gradient-to-b from-pink-100/90 via-rose-50/40 to-white pt-4 sm:pt-6 pb-12 sm:pb-20 overflow-hidden">
@@ -82,18 +84,18 @@ export function HeroSection() {
       </div>
 
       <Container size="xl" className="relative z-10 space-y-6 sm:space-y-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
+        <div className={`grid grid-cols-1 ${heroImage ? 'lg:grid-cols-12' : ''} gap-6 sm:gap-8 items-center`}>
           
           {/* Left Column: Brand Headline & Introduction */}
-          <div className={`${leftColSpan} space-y-4 text-center lg:text-left`}>
+          <div className={`${heroImage ? 'lg:col-span-6 text-center lg:text-left' : 'max-w-3xl mx-auto text-center'} space-y-4`}>
             
             {/* Direct Dynamic Uploaded Hero 1st Image */}
-            <div className="flex justify-center lg:justify-start">
+            <div className={`flex justify-center ${heroImage ? 'lg:justify-start' : ''}`}>
               <div className="relative w-80 sm:w-[480px] lg:w-[560px] h-40 sm:h-60 lg:h-64 filter drop-shadow-2xl hover:scale-105 transition-transform cursor-pointer">
                 <img
                   src={brandLogoUrl}
                   alt="Hero 1st Image"
-                  className="w-full h-full object-contain object-center lg:object-left"
+                  className={`w-full h-full object-contain ${heroImage ? 'object-center lg:object-left' : 'object-center'}`}
                 />
               </div>
             </div>
@@ -116,27 +118,26 @@ export function HeroSection() {
               </p>
             </div>
 
-            <p className="text-stone-600 text-xs sm:text-xs leading-relaxed max-w-md mx-auto lg:mx-0">
+            <p className={`text-stone-600 text-xs sm:text-xs leading-relaxed max-w-md ${heroImage ? 'mx-auto lg:mx-0' : 'mx-auto'}`}>
               {heroSubtitle}
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-1">
-              <Link href="/register" className="w-full sm:w-auto">
-                <Button
-                  variant="wine"
-                  size="md"
-                  className="w-full sm:w-auto justify-center rounded-full px-6 shadow-md shadow-pink-900/20 text-xs"
-                  leftIcon={<UserPlus className="w-4 h-4 text-white" />}
-                >
-                  Register Free Profile
-                </Button>
-              </Link>
+            <div className={`flex flex-wrap items-center justify-center ${heroImage ? 'lg:justify-start' : ''} gap-3 pt-1`}>
+              <Button
+                variant="wine"
+                size="md"
+                onClick={() => setIsProfileModalOpen(true)}
+                className="w-full sm:w-auto justify-center rounded-full px-6 shadow-md shadow-pink-900/20 text-xs font-bold hover:scale-105 transition-all"
+                leftIcon={<Users className="w-4 h-4 text-white" />}
+              >
+                View All Profiles
+              </Button>
               <Link href="/about" className="w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="md"
-                  className="w-full sm:w-auto justify-center rounded-full px-5 border-2 border-pink-200 text-pink-800 hover:bg-pink-50 text-xs"
+                  className="w-full sm:w-auto justify-center rounded-full px-5 border-2 border-pink-200 text-pink-800 hover:bg-pink-50 text-xs font-bold"
                   leftIcon={<Play className="w-3.5 h-3.5 fill-pink-600 text-pink-600" />}
                 >
                   Learn How It Works
@@ -145,9 +146,9 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Center Column: Dynamic Uploaded Hero 2nd Image (Clean Direct Image Style - Extra Large Display) */}
+          {/* Dynamic Uploaded Hero 2nd Image (Clean Direct Image Style - Extra Large Display) */}
           {heroImage ? (
-            <div className="lg:col-span-4 flex justify-center my-4 lg:my-0">
+            <div className="lg:col-span-6 flex justify-center my-4 lg:my-0">
               <div className="relative w-full max-w-[340px] sm:max-w-[480px] lg:max-w-[560px] h-[320px] sm:h-[460px] lg:h-[520px] filter drop-shadow-2xl hover:scale-105 transition-transform cursor-pointer">
                 <img
                   src={heroImage}
@@ -158,95 +159,118 @@ export function HeroSection() {
             </div>
           ) : null}
 
-          {/* Right Column: AI Match Quick Search Card */}
-          <div className={`${rightColSpan} bg-white/95 backdrop-blur-xl border-2 border-pink-200 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4`}>
-            <div className="border-b border-pink-100 pb-3 flex items-center justify-between">
-              <div>
-                <h3 className="font-serif font-bold text-lg text-stone-900 flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-pink-600 fill-pink-600" />
-                  <span>Quick AI Match Search</span>
-                </h3>
-                <p className="text-[11px] text-stone-500">Find compatible singles by status & location</p>
-              </div>
-              <span className="px-2.5 py-1 rounded-full bg-pink-100 text-pink-800 text-[10px] font-bold">
-                100% Free
-              </span>
-            </div>
-
-            <form onSubmit={handleQuickSearch} className="space-y-3 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-stone-700">I am a:</label>
-                <select
-                  value={iam}
-                  onChange={(e) => setIam(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs font-semibold text-stone-800 focus:outline-none focus:border-pink-500"
-                >
-                  <option value="Female">Bride (Female)</option>
-                  <option value="Male">Groom (Male)</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-stone-700">Looking For:</label>
-                <select
-                  value={lookingFor}
-                  onChange={(e) => setLookingFor(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs font-semibold text-stone-800 focus:outline-none focus:border-pink-500"
-                >
-                  <option value="Divorced / Widowed">Divorced / Widowed / Single Parent</option>
-                  <option value="Never Married">Never Married (Mature Singles)</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="font-bold text-stone-700">Country:</label>
-                  <select
-                    value={country}
-                    onChange={(e) => {
-                      setCountry(e.target.value);
-                      setCity('Any City');
-                    }}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:border-pink-500"
-                  >
-                    {DEFAULT_COUNTRY_OPTIONS.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.flag} {c.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-stone-700">City / District:</label>
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:border-pink-500"
-                  >
-                    {availableCities.map((cityName) => (
-                      <option key={cityName} value={cityName}>
-                        {cityName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                variant="wine"
-                size="md"
-                className="w-full justify-center rounded-2xl font-bold py-3 text-xs shadow-md shadow-pink-900/20 mt-2"
-                leftIcon={<Search className="w-4 h-4 text-white" />}
-              >
-                Search Compatible Matches Now
-              </Button>
-            </form>
-          </div>
-
         </div>
       </Container>
+
+      {/* Modal for View All Profiles - 2 Sections (Female & Male) */}
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-pink-200 relative space-y-6 animate-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-pink-100 pb-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-100 text-pink-800 text-xs font-bold">
+                  <Sparkles className="w-3.5 h-3.5 text-pink-600" />
+                  <span>Select Profile Category</span>
+                </div>
+                <h3 className="font-serif font-bold text-xl text-stone-900">
+                  View All Verified Profiles
+                </h3>
+                <p className="text-xs text-stone-500">
+                  Select whether you want to view Female Bride profiles or Male Groom profiles.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsProfileModalOpen(false)}
+                className="p-2 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 2 Separate Section Cards: Female & Male */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              {/* Section 1: Female Bride Profiles */}
+              <div
+                onClick={() => handleSelectGender('Female')}
+                className="p-5 rounded-2xl border-2 border-pink-200 bg-gradient-to-b from-pink-50/70 to-rose-50/30 hover:border-pink-500 hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between space-y-4"
+              >
+                <div className="space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-pink-600 text-white flex items-center justify-center text-xl shadow-md group-hover:scale-110 transition-transform">
+                    👰
+                  </div>
+                  <div>
+                    <h4 className="font-serif font-bold text-base text-stone-900 group-hover:text-pink-600 transition-colors">
+                      Female Profiles (পাত্রী)
+                    </h4>
+                    <p className="text-[11px] text-stone-500 leading-relaxed mt-1">
+                      Divorced, Widowed, Single Parents & Mature Female Candidates
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  variant="wine"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectGender('Female');
+                  }}
+                  className="w-full justify-center rounded-full text-xs font-bold shadow-md shadow-pink-900/10"
+                  rightIcon={<ArrowRight className="w-3.5 h-3.5 text-white" />}
+                >
+                  View Female IDs
+                </Button>
+              </div>
+
+              {/* Section 2: Male Groom Profiles */}
+              <div
+                onClick={() => handleSelectGender('Male')}
+                className="p-5 rounded-2xl border-2 border-blue-200 bg-gradient-to-b from-blue-50/70 to-indigo-50/30 hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between space-y-4"
+              >
+                <div className="space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xl shadow-md group-hover:scale-110 transition-transform">
+                    🤵
+                  </div>
+                  <div>
+                    <h4 className="font-serif font-bold text-base text-stone-900 group-hover:text-blue-600 transition-colors">
+                      Male Profiles (পাত্র)
+                    </h4>
+                    <p className="text-[11px] text-stone-500 leading-relaxed mt-1">
+                      Divorced, Widowed, Single Parents & Mature Male Candidates
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectGender('Male');
+                  }}
+                  className="w-full justify-center rounded-full text-xs font-bold shadow-md shadow-blue-900/10 bg-blue-600 hover:bg-blue-700 border-blue-600"
+                  rightIcon={<ArrowRight className="w-3.5 h-3.5 text-white" />}
+                >
+                  View Male IDs
+                </Button>
+              </div>
+
+            </div>
+
+            {/* Modal Footer Note */}
+            <div className="pt-2 border-t border-stone-100 text-center">
+              <p className="text-[11px] text-stone-400 font-medium">
+                🔒 100% NID Verified & Dignified Remarriage Profiles
+              </p>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

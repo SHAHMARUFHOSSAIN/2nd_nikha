@@ -72,7 +72,9 @@ export default function RegistrationWizardPage() {
     bio: 'I am a resilient, warm-hearted professional looking for an honest, emotionally mature companion for a lifelong second chapter.',
     // Step 7
     prefGender: 'Male',
-    prefAgeRange: '32 - 42',
+    prefMinAge: '26',
+    prefMaxAge: '40',
+    prefAgeRange: '26 - 40 yrs',
     prefReligion: 'Islam',
     prefLocation: 'Dhaka / Overseas',
     prefEducation: 'Graduate degree',
@@ -195,11 +197,17 @@ export default function RegistrationWizardPage() {
         ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600'
         : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600');
 
+      const daysPass = 30;
+      const passExpiresAt = new Date(Date.now() + daysPass * 24 * 60 * 60 * 1000).toISOString();
+
       const newProfile = {
         id: `p-${Date.now()}`,
         fullName: formData.fullName || 'New Member',
         email: formData.email,
         phone: formData.phone,
+        password: formData.password || '123456',
+        subscriptionExpiresAt: passExpiresAt,
+        isSubscriptionActive: true,
         age: formData.dob ? Math.max(18, new Date().getFullYear() - new Date(formData.dob).getFullYear()) : 28,
         gender: formData.gender || 'Female',
         height: formData.height || "5'5\"",
@@ -223,21 +231,30 @@ export default function RegistrationWizardPage() {
         trustScore: 88,
         hasChildren: Boolean(formData.childrenCount && Number(formData.childrenCount) > 0),
         photoPrivacy: 'PUBLIC' as const,
-        membershipTier: (userRole === 'PREMIUM' ? 'Premium' : 'Free') as any,
+        membershipTier: 'Premium' as any,
         matchReasons: ['Location Match', 'Education Compatibility', 'Religiosity'],
         partnerPreferences: {
-          ageRange: '24-35',
-          maritalStatuses: ['Divorced', 'Single Parent'],
-          religion: 'Islam',
+          ageRange: `${formData.prefMinAge || '26'} - ${formData.prefMaxAge || '40'} yrs`,
+          maritalStatuses: formData.prefMaritalStatus ? formData.prefMaritalStatus.split(',').map((s) => s.trim() as any) : ['Divorced', 'Single Parent'],
+          religion: formData.prefReligion || 'Islam',
           minHeight: "5'2\"",
-          education: 'Graduate',
-          location: 'Dhaka',
+          education: formData.prefEducation || 'Graduate',
+          location: formData.prefLocation || 'Dhaka',
         },
         createdAt: new Date().toISOString().split('T')[0],
       };
 
-      const isPaidUser = userRole === 'PREMIUM';
-      login(newProfile, isPaidUser ? 'PREMIUM' : 'FREE');
+      // Save to registered accounts database in localStorage
+      try {
+        if (typeof window !== 'undefined') {
+          const storedReg = localStorage.getItem('2ndchance_registered_accounts');
+          const regAccounts = storedReg ? JSON.parse(storedReg) : [];
+          regAccounts.push(newProfile);
+          localStorage.setItem('2ndchance_registered_accounts', JSON.stringify(regAccounts));
+        }
+      } catch (e) {}
+
+      login(newProfile, 'PREMIUM');
       try {
         addMember(newProfile);
       } catch (e) {}
@@ -637,7 +654,7 @@ export default function RegistrationWizardPage() {
             {currentStep === 7 && (
               <div className="space-y-4 animate-in fade-in">
                 <h2 className="text-xl font-serif font-bold text-stone-900">
-                  Step 7: Partner Preferences
+                  Step 7: Partner Preferences & Expectations
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Select
@@ -653,18 +670,54 @@ export default function RegistrationWizardPage() {
                     onChange={(e) => updateField('prefReligion', e.target.value)}
                   />
                 </div>
+
+                {/* Partner Age Preference Dual Selectors */}
+                <div className="space-y-1.5 p-3.5 bg-rose-50/50 rounded-2xl border border-rose-100">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                    Preferred Partner Age Range ({formData.prefMinAge} — {formData.prefMaxAge} years old)
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Select
+                      label="Minimum Age"
+                      options={['18', '20', '21', '22', '24', '26', '28', '30', '32', '35', '38', '40', '45', '50']}
+                      value={formData.prefMinAge}
+                      onChange={(e) => {
+                        const min = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          prefMinAge: min,
+                          prefAgeRange: `${min} - ${prev.prefMaxAge} yrs`,
+                        }));
+                      }}
+                    />
+                    <Select
+                      label="Maximum Age"
+                      options={['25', '28', '30', '32', '35', '38', '40', '42', '45', '50', '55', '60', '65+']}
+                      value={formData.prefMaxAge}
+                      onChange={(e) => {
+                        const max = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          prefMaxAge: max,
+                          prefAgeRange: `${prev.prefMinAge} - ${max} yrs`,
+                        }));
+                      }}
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
-                    label="Preferred Age Range"
-                    placeholder="e.g. 32 - 42"
-                    value={formData.prefAgeRange}
-                    onChange={(e) => updateField('prefAgeRange', e.target.value)}
-                  />
-                  <Input
                     label="Preferred Location"
-                    placeholder="e.g. Dhaka / Overseas"
+                    placeholder="e.g. Dhaka / Overseas / USA / UK"
                     value={formData.prefLocation}
                     onChange={(e) => updateField('prefLocation', e.target.value)}
+                  />
+                  <Input
+                    label="Preferred Education / Qualification"
+                    placeholder="e.g. Graduate degree / Engineer / Doctor"
+                    value={formData.prefEducation}
+                    onChange={(e) => updateField('prefEducation', e.target.value)}
                   />
                 </div>
               </div>
@@ -696,18 +749,28 @@ export default function RegistrationWizardPage() {
                   </Button>
                 </div>
 
-                {/* 4 Photo Upload Slots Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[0, 1, 2, 3].map((slotIdx) => (
-                    <div key={slotIdx} className="p-3 bg-rose-50/40 rounded-2xl border border-rose-100 space-y-2">
+                {/* Smart Compact 4-Photo Tile Gallery Grid */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-stone-700">
+                      Profile Photos ({formData.photos?.filter(p => Boolean(p && p.trim())).length || (formData.photoUrl ? 1 : 0)} / 4 Uploaded)
+                    </span>
+                    <span className="text-[11px] text-pink-700 font-semibold">
+                      ★ Slot 1 is Primary Photo
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[0, 1, 2, 3].map((slotIdx) => (
                       <ImageUploader
-                        label={`Photo ${slotIdx + 1} ${slotIdx === 0 ? '(Main Profile Photo)' : '(Gallery Photo)'}`}
-                        helperText={slotIdx === 0 ? 'Primary photo displayed on profile cards.' : 'Additional photo for gallery.'}
+                        key={slotIdx}
+                        variant="tile"
+                        label={slotIdx === 0 ? '★ Primary Photo' : `+ Photo ${slotIdx + 1}`}
                         value={formData.photos?.[slotIdx] || (slotIdx === 0 ? formData.photoUrl : '')}
                         onChange={(val) => updatePhotoSlot(slotIdx, val)}
                       />
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
 
                 <Select

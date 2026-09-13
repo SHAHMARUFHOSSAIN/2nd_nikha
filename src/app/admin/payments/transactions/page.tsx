@@ -71,7 +71,7 @@ export default function AdminTransactionsPage() {
                 <tr key={t.id} className="hover:bg-stone-800/40 transition-colors">
                   <td className="p-4 font-mono text-emerald-400 font-bold">{t.transactionId}</td>
                   <td className="p-4 font-semibold text-white">{t.gateway}</td>
-                  <td className="p-4 font-mono font-bold text-white">{formatCurrency(t.amount)}</td>
+                  <td className="p-4 font-mono font-bold text-white">{formatCurrency(t.amount, t.currency)}</td>
                   <td className="p-4 uppercase font-mono text-[10px] text-stone-400">{t.purpose || 'subscription'}</td>
                   <td className="p-4">
                     <span

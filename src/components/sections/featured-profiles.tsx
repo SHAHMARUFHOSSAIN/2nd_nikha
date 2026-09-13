@@ -8,7 +8,7 @@ import { MOCK_PROFILES } from '@/data/mock-data';
 import { useAdmin } from '@/lib/admin-context';
 import { Profile } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Filter, Sparkles, SlidersHorizontal, RotateCcw, ShieldCheck, Heart, User, MapPin, Briefcase, Globe, ChevronDown, ChevronUp } from 'lucide-react';
+import { Filter, Sparkles, SlidersHorizontal, RotateCcw, ShieldCheck, Heart, User, MapPin, Briefcase, Globe, ChevronDown, ChevronUp, Bell, Languages } from 'lucide-react';
 import { MembershipPreviewModal } from '@/components/sections/membership-preview-modal';
 
 import { getCitiesForCountry, ALL_PROFESSION_OPTIONS } from '@/lib/constants';
@@ -18,6 +18,7 @@ export function FeaturedProfiles() {
   const { currentUser } = useAuth();
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [alertSavedNotice, setAlertSavedNotice] = useState(false);
 
   let profilesList = MOCK_PROFILES;
   try {
@@ -32,6 +33,20 @@ export function FeaturedProfiles() {
   const [genderFilter, setGenderFilter] = useState<string>('All');
 
   React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramGender = urlParams.get('seekingGender') || urlParams.get('gender');
+      if (paramGender) {
+        if (paramGender.toLowerCase() === 'female') {
+          setGenderFilter('Female');
+          return;
+        } else if (paramGender.toLowerCase() === 'male') {
+          setGenderFilter('Male');
+          return;
+        }
+      }
+    }
+
     if (currentUser?.gender) {
       const g = currentUser.gender.toLowerCase();
       if (g === 'female') setGenderFilter('Male');
@@ -41,6 +56,7 @@ export function FeaturedProfiles() {
   const [maritalStatusFilter, setMaritalStatusFilter] = useState<string>('All');
   const [cityFilter, setCityFilter] = useState<string>('All');
   const [religionFilter, setReligionFilter] = useState<string>('All');
+  const [languageFilter, setLanguageFilter] = useState<string>('All');
   const [minAge, setMinAge] = useState<number>(18);
   const [maxAge, setMaxAge] = useState<number>(65);
   const [professionFilter, setProfessionFilter] = useState<string>('All');
@@ -88,6 +104,7 @@ export function FeaturedProfiles() {
     }
   }, [genderFilter, maritalStatusFilter]);
   const religionOptions = ['All', 'Islam', 'Hinduism', 'Christianity', 'Buddhism', 'Other'];
+  const languageOptions = ['All', 'Bengali', 'English', 'Hindi', 'Urdu', 'Arabic'];
   const professionOptions = ['All', ...ALL_PROFESSION_OPTIONS];
 
   const resetFilters = () => {
@@ -96,6 +113,7 @@ export function FeaturedProfiles() {
     setMaritalStatusFilter('All');
     setCityFilter('All');
     setReligionFilter('All');
+    setLanguageFilter('All');
     setMinAge(18);
     setMaxAge(65);
     setProfessionFilter('All');
@@ -103,7 +121,12 @@ export function FeaturedProfiles() {
     setHasChildrenFilter('All');
   };
 
-  // Dynamic Filtering Logic (Global Country + City + Marital + Verification)
+  const handleSaveAiAlert = () => {
+    setAlertSavedNotice(true);
+    setTimeout(() => setAlertSavedNotice(false), 5000);
+  };
+
+  // Dynamic Filtering Logic (Global Country + City + Marital + Verification + Language)
   const filteredProfiles = profilesList.filter((p) => {
     if (currentUser) {
       if (p.id === currentUser.id) return false;
@@ -144,6 +167,18 @@ export function FeaturedProfiles() {
 
     if (religionFilter !== 'All' && p.religion !== religionFilter) return false;
     if (p.age < minAge || p.age > maxAge) return false;
+
+    // Language / Mother Tongue Matching
+    if (languageFilter !== 'All') {
+      const langTarget = languageFilter.toLowerCase();
+      const motherTongue = (p.motherTongue || '').toLowerCase();
+      const profileLangs = (p.languages || []).map((l) => l.toLowerCase());
+      const isLangMatch =
+        motherTongue.includes(langTarget) ||
+        profileLangs.some((l) => l.includes(langTarget)) ||
+        (langTarget === 'bengali' && (motherTongue.includes('bangla') || motherTongue.includes('bengali')));
+      if (!isLangMatch) return false;
+    }
 
     // Smart Profession Matching
     if (professionFilter !== 'All') {
@@ -337,6 +372,23 @@ export function FeaturedProfiles() {
                 </select>
               </div>
 
+              {/* Language / Mother Tongue */}
+              <div className="space-y-1 pt-2 border-t border-stone-800/80">
+                <label className="text-stone-300 flex items-center gap-1 text-[11px]">
+                  <Languages className="w-3 h-3 text-pink-400" />
+                  <span>Language / Mother Tongue</span>
+                </label>
+                <select
+                  value={languageFilter}
+                  onChange={(e) => setLanguageFilter(e.target.value)}
+                  className="w-full bg-stone-900 border border-stone-800 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-pink-500 text-xs"
+                >
+                  {languageOptions.map((lang) => (
+                    <option key={lang} value={lang}>{lang}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* Profession */}
               <div className="space-y-1 pt-2 border-t border-stone-800/80">
                 <label className="text-stone-300 flex items-center gap-1 text-[11px]">
@@ -376,14 +428,24 @@ export function FeaturedProfiles() {
           {/* Right Main Column: Responsive Cards Grid (lg:col-span-9) */}
           <main className="lg:col-span-9 space-y-4">
             
+            {alertSavedNotice && (
+              <div className="p-4 bg-emerald-950 text-emerald-200 border border-emerald-700 rounded-2xl text-xs font-bold flex items-center justify-between shadow-xl animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-emerald-400 animate-bounce" />
+                  <span>Match হওয়ার সাথে সাথে আমরা আপনাকে Matching ID এবং নোটিফিকেশন প্রদান করব! AI alert saved successfully.</span>
+                </div>
+                <span className="text-[10px] bg-emerald-800 px-2 py-0.5 rounded-full text-white">Active Alert</span>
+              </div>
+            )}
+
             {/* Results Bar */}
             <div className="p-3 sm:p-3.5 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-between text-xs text-stone-700 font-bold">
               <span>{filteredProfiles.length} verified profile matches</span>
               <span className="text-pink-600 font-mono text-[11px]">Global & Expat Search</span>
             </div>
 
-            {/* 3-Column Profile Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+            {/* 2-Column Mobile Grid / 3-Column Desktop Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2.5 sm:gap-5">
               {filteredProfiles.length > 0 ? (
                 filteredProfiles.map((profile) => (
                   <ProfileCard
@@ -393,18 +455,35 @@ export function FeaturedProfiles() {
                   />
                 ))
               ) : (
-                <div className="col-span-full py-12 px-4 bg-stone-50 rounded-3xl border border-stone-200 text-center space-y-3">
-                  <Filter className="w-10 h-10 text-pink-500 mx-auto" />
-                  <h4 className="font-serif font-bold text-lg text-stone-900">No Global Matches Found</h4>
-                  <p className="text-xs text-stone-500 max-w-xs mx-auto">
-                    No profiles match your specific country/location filter combination. Try selecting "All Countries (Global)".
-                  </p>
-                  <button
-                    onClick={resetFilters}
-                    className="px-4 py-2 rounded-full bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-md transition-all inline-block"
-                  >
-                    Reset All Filters
-                  </button>
+                <div className="col-span-full py-12 px-6 bg-gradient-to-br from-stone-900 via-stone-950 to-stone-900 rounded-3xl border border-pink-900/60 text-center space-y-4 text-white shadow-xl">
+                  <div className="w-14 h-14 rounded-2xl bg-pink-500/20 text-pink-400 flex items-center justify-center mx-auto border border-pink-500/40 shadow-inner">
+                    <Sparkles className="w-7 h-7 text-pink-400 animate-pulse" />
+                  </div>
+                  <div className="space-y-1.5 max-w-md mx-auto">
+                    <h4 className="font-serif font-bold text-xl text-white">Not available right profile match</h4>
+                    <p className="text-sm text-pink-300 font-serif font-semibold leading-relaxed">
+                      Match হওয়ার সাথে সাথে আমরা আপনাকে Matching ID / Notification প্রদান করব।
+                    </p>
+                    <p className="text-xs text-stone-400 leading-relaxed pt-1">
+                      Our AI Match engine is continuously evaluating new candidate registrations across Bangladesh and global NRB expats.
+                    </p>
+                  </div>
+
+                  <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button
+                      onClick={handleSaveAiAlert}
+                      className="px-5 py-2.5 rounded-full bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-bold text-xs shadow-lg border border-pink-400/40 transition-all flex items-center gap-2"
+                    >
+                      <Bell className="w-4 h-4 text-amber-300" />
+                      <span>Get Matching ID Notification</span>
+                    </button>
+                    <button
+                      onClick={resetFilters}
+                      className="px-4 py-2.5 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-xs border border-stone-700 transition-all"
+                    >
+                      Reset Filters & View All Matches
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

@@ -15,11 +15,17 @@ import { CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
-  const { setRole } = useAuth();
+  const { currentUser, login, setRole } = useAuth();
   const txnId = searchParams.get('txn') || 'TXN-SSL-884920';
+  const queryAmount = searchParams.get('amount');
+  const queryCurrency = searchParams.get('currency');
 
   const [isVerifying, setIsVerifying] = useState(true);
   const [verificationResult, setVerificationResult] = useState<PaymentVerificationResult | null>(null);
+  const [paidDetails, setPaidDetails] = useState<{ amount: number | string; currency: string }>({
+    amount: queryAmount || 299,
+    currency: queryCurrency || 'BDT',
+  });
 
   useEffect(() => {
     PaymentService.verifyPayment(txnId).then((res) => {
@@ -27,9 +33,55 @@ function PaymentSuccessContent() {
       setIsVerifying(false);
       if (res.verified) {
         setRole('PREMIUM');
+        if (currentUser) {
+          const newExpDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+          const updatedUser = {
+            ...currentUser,
+            subscriptionExpiresAt: newExpDate,
+            isSubscriptionActive: true,
+          };
+          login(updatedUser, 'PREMIUM');
+
+          // Update in registered accounts database
+          try {
+            if (typeof window !== 'undefined') {
+              const regStr = localStorage.getItem('2ndchance_registered_accounts');
+              if (regStr) {
+                const parsed = JSON.parse(regStr);
+                if (Array.isArray(parsed)) {
+                  const idx = parsed.findIndex((p: any) => p.id === currentUser.id || p.email === currentUser.email);
+                  if (idx !== -1) {
+                    parsed[idx] = updatedUser;
+                    localStorage.setItem('2ndchance_registered_accounts', JSON.stringify(parsed));
+                  }
+                }
+              }
+            }
+          } catch (e) {}
+        }
       }
     });
-  }, [txnId, setRole]);
+
+    if (typeof window !== 'undefined' && txnId) {
+      try {
+        const savedTxns = JSON.parse(localStorage.getItem('2ndchance_admin_payments') || '[]');
+        const match = savedTxns.find((t: any) => t.id === txnId || t.transactionId === txnId);
+        if (match) {
+          setPaidDetails({
+            amount: match.amount || queryAmount || 299,
+            currency: match.currency || queryCurrency || 'BDT',
+          });
+        } else if (queryAmount || queryCurrency) {
+          setPaidDetails({
+            amount: queryAmount || 299,
+            currency: queryCurrency || 'BDT',
+          });
+        }
+      } catch (e) {}
+    }
+  }, [txnId, queryAmount, queryCurrency, setRole, currentUser, login]);
+
+  const displayPriceFormatted = formatCurrency(paidDetails.amount, paidDetails.currency);
 
   return (
     <div className="bg-white rounded-3xl p-8 sm:p-10 border border-rose-100 shadow-2xl text-center space-y-6">
@@ -52,7 +104,7 @@ function PaymentSuccessContent() {
           </div>
 
           <div className="space-y-2">
-            <Badge variant="success">Verified Paid</Badge>
+            <Badge variant="success">Verified Paid ({paidDetails.currency})</Badge>
             <h1 className="text-3xl font-serif font-bold text-stone-900">
               Payment Successful ❤️
             </h1>
@@ -68,8 +120,8 @@ function PaymentSuccessContent() {
             </div>
             <div className="flex justify-between border-b border-rose-100 pb-1.5">
               <span className="font-semibold text-stone-900">Amount Paid:</span>
-              <span className="font-bold text-rose-800">
-                {formatCurrency(MEMBERSHIP_CONFIG.PREMIUM_MONTHLY_BDT, 'BDT')}
+              <span className="font-bold text-rose-800 font-mono">
+                {displayPriceFormatted}
               </span>
             </div>
             <div className="flex justify-between border-b border-rose-100 pb-1.5">

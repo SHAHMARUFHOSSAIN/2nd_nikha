@@ -164,8 +164,7 @@ export const MOCK_MEMBERSHIP_PLANS_ADMIN: MembershipPlanAdmin[] = [
     features: [
       'Complete Matrimonial Profile Setup',
       'Unlimited AI Match Searches & Profiles',
-      'Direct Messaging, Photos & WhatsApp Sharing',
-      'Priority NID Verification & VIP Crown Badge',
+      'Unlimited Chatting, Photo Sharing & WhatsApp Number Sharing',
     ],
     status: 'ACTIVE',
     subscriberCount: 840,
@@ -179,8 +178,7 @@ export const MOCK_MEMBERSHIP_PLANS_ADMIN: MembershipPlanAdmin[] = [
     features: [
       'Complete Matrimonial Profile Setup',
       'Unlimited AI Match Searches & Profiles',
-      'Direct Messaging, Photos & WhatsApp Sharing',
-      'Priority NID Verification & VIP Crown Badge',
+      'Unlimited Chatting, Photo Sharing & WhatsApp Number Sharing',
     ],
     status: 'ACTIVE',
     subscriberCount: 1420,

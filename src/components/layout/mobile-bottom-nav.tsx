@@ -29,7 +29,7 @@ export function MobileBottomNav() {
     },
     {
       id: 'visitors',
-      label: 'Visitors',
+      label: 'Views',
       href: isLoggedIn ? '/member/visitors' : '/search',
       icon: Eye,
       isCenter: false,

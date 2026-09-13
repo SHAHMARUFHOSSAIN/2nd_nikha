@@ -19,7 +19,7 @@ export function SSLCommerzHandoffModal({
   onClose,
   amount = MEMBERSHIP_CONFIG.PREMIUM_MONTHLY_BDT,
   currency = 'BDT',
-  gatewayName = 'PayStation Payment Gateway',
+  gatewayName = 'SSLCommerz Payment Gateway',
 }: SSLCommerzHandoffModalProps) {
   const formattedPrice = currency === 'USD' ? `$${amount.toFixed(2)} USD` : `৳${amount}`;
 

@@ -32,6 +32,17 @@ export function SearchClientView() {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramGender = urlParams.get('seekingGender') || urlParams.get('gender');
+      if (paramGender) {
+        const formattedGender = paramGender.toLowerCase() === 'female' ? 'Female' : paramGender.toLowerCase() === 'male' ? 'Male' : 'Female';
+        setFilters((prev) => ({ ...prev, seekingGender: formattedGender }));
+      }
+    }
+  }, []);
+
   // Filter & Sort Logic
   const filteredProfiles = useMemo(() => {
     return MOCK_PROFILES.filter((profile) => {
@@ -184,7 +195,7 @@ export function SearchClientView() {
         {/* Profile Results Grid */}
         <main className="lg:col-span-8 xl:col-span-9 space-y-6">
           {filteredProfiles.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-6">
               {filteredProfiles.map((profile) => (
                 <ProfileCard
                   key={profile.id}

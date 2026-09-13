@@ -22,8 +22,10 @@ import {
   Sparkles,
   ShieldCheck,
   CheckCircle2,
+  User,
 } from 'lucide-react';
 import { MOCK_PROFILES } from '@/data/mock-data';
+import { ProfileDetailModal } from '@/components/profile/profile-detail-modal';
 
 interface VisitorItem {
   id: string;
@@ -39,6 +41,7 @@ export default function ProfileVisitorsPage() {
   const { sendInterestRequest, interests } = useConnection();
   const [filter, setFilter] = useState<'all' | 'today' | 'new'>('all');
   const [visitorsList, setVisitorsList] = useState<VisitorItem[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<any | null>(null);
 
   // Harvest real registered user profiles & profile visits
   useEffect(() => {
@@ -192,9 +195,6 @@ export default function ProfileVisitorsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {filteredVisitors.map((item) => {
               const p = item.profile;
-              const hasSentInterest = interests.some(
-                (i) => i.receiverId === p.id && (i.status === 'PENDING' || i.status === 'ACCEPTED')
-              );
 
               return (
                 <div
@@ -215,19 +215,22 @@ export default function ProfileVisitorsPage() {
                   </div>
 
                   {/* Profile Details */}
-                  <div className="flex items-start gap-4">
+                  <div
+                    onClick={() => setSelectedProfile(p)}
+                    className="flex items-start gap-4 cursor-pointer group/card"
+                  >
                     <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-rose-50 border-2 border-emerald-100 shrink-0 shadow-xs">
                       <Image
                         src={p.photoUrl || '/images/default-avatar.jpg'}
                         alt={p.fullName}
                         fill
-                        className="object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                        className="object-cover object-top group-hover/card:scale-105 transition-transform duration-300"
                       />
                     </div>
 
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <h3 className="font-serif font-bold text-base sm:text-lg text-stone-900 truncate">
+                        <h3 className="font-serif font-bold text-base sm:text-lg text-stone-900 truncate group-hover/card:text-rose-700 transition-colors">
                           {p.fullName}, {p.age}
                         </h3>
                         <VerifiedBadge showLabel labelText="Verified" />
@@ -256,31 +259,20 @@ export default function ProfileVisitorsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => router.push(`/member/messages?matchId=${p.id}`)}
-                      className="rounded-full text-xs border-stone-200 hover:border-pink-500 hover:bg-pink-50 text-stone-700 flex-1"
+                      className="rounded-full text-xs border-stone-200 hover:border-pink-500 hover:bg-pink-50 text-stone-700 flex-1 font-bold"
                       leftIcon={<MessageSquare className="w-3.5 h-3.5 text-pink-600" />}
                     >
                       Message
                     </Button>
 
                     <Button
-                      variant={hasSentInterest ? 'outline' : 'wine'}
+                      variant="wine"
                       size="sm"
-                      disabled={hasSentInterest}
-                      onClick={() => sendInterestRequest(p)}
-                      className={`rounded-full text-xs flex-1 font-bold ${
-                        hasSentInterest
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                          : 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white'
-                      }`}
-                      leftIcon={
-                        hasSentInterest ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        ) : (
-                          <Heart className="w-3.5 h-3.5 text-white" />
-                        )
-                      }
+                      onClick={() => setSelectedProfile(p)}
+                      className="rounded-full text-xs flex-1 font-bold bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white shadow-xs"
+                      leftIcon={<User className="w-3.5 h-3.5 text-white" />}
                     >
-                      {hasSentInterest ? 'Interest Sent' : 'Express Interest'}
+                      View Profile
                     </Button>
                   </div>
                 </div>
@@ -297,6 +289,14 @@ export default function ProfileVisitorsPage() {
           />
         )}
       </div>
+
+      {selectedProfile && (
+        <ProfileDetailModal
+          profile={selectedProfile}
+          isOpen={Boolean(selectedProfile)}
+          onClose={() => setSelectedProfile(null)}
+        />
+      )}
     </MemberLayout>
   );
 }

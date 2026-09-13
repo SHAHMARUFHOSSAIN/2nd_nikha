@@ -13,6 +13,8 @@ export interface CountryCurrency {
 
 export const COUNTRY_CURRENCIES: CountryCurrency[] = [
   { code: 'BD', name: 'Bangladesh', flag: '🇧🇩', currency: 'BDT', symbol: '৳', rateToUSD: 1 },
+  { code: 'IN', name: 'India', flag: '🇮🇳', currency: 'USD', symbol: '$', rateToUSD: 0.0083 },
+  { code: 'PK', name: 'Pakistan', flag: '🇵🇰', currency: 'USD', symbol: '$', rateToUSD: 0.0083 },
   { code: 'US', name: 'United States', flag: '🇺🇸', currency: 'USD', symbol: '$', rateToUSD: 0.0083 },
   { code: 'UK', name: 'United Kingdom', flag: '🇬🇧', currency: 'USD', symbol: '$', rateToUSD: 0.0083 },
   { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪', currency: 'USD', symbol: '$', rateToUSD: 0.0083 },

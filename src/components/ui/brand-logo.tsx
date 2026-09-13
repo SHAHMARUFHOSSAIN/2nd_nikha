@@ -23,10 +23,10 @@ export function BrandLogo({ size = 'md', showTagline = false, variant = 'light' 
   }
 
   const dimensions = {
-    sm: { iconSize: 'w-10 h-10', text2nd: 'text-lg', textChance: 'text-lg', tagline: 'text-[9px]' },
-    md: { iconSize: 'w-12 h-12', text2nd: 'text-2xl', textChance: 'text-2xl', tagline: 'text-[10px]' },
-    lg: { iconSize: 'w-16 h-16', text2nd: 'text-3xl', textChance: 'text-3xl', tagline: 'text-xs' },
-    hero: { iconSize: 'w-28 h-28', text2nd: 'text-5xl', textChance: 'text-5xl', tagline: 'text-base' },
+    sm: { iconSize: 'w-10 h-10', num2: 'text-2xl sm:text-3xl', textNd: 'text-xs sm:text-sm', textNikah: 'text-xs sm:text-sm', tagline: 'text-[9px]' },
+    md: { iconSize: 'w-12 h-12', num2: 'text-3xl sm:text-4xl', textNd: 'text-sm sm:text-base', textNikah: 'text-sm sm:text-base', tagline: 'text-[10px]' },
+    lg: { iconSize: 'w-16 h-16', num2: 'text-4xl sm:text-5xl', textNd: 'text-lg sm:text-xl', textNikah: 'text-lg sm:text-xl', tagline: 'text-xs' },
+    hero: { iconSize: 'w-28 h-28', num2: 'text-6xl sm:text-7xl', textNd: 'text-2xl sm:text-3xl', textNikah: 'text-2xl sm:text-3xl', tagline: 'text-base' },
   }[size];
 
   const textColor2nd = variant === 'dark' ? 'text-white' : 'text-stone-900';
@@ -42,9 +42,10 @@ export function BrandLogo({ size = 'md', showTagline = false, variant = 'light' 
       </div>
 
       <div className="flex flex-col leading-none">
-        <div className="flex items-baseline font-serif font-extrabold tracking-tight">
-          <span className={textColor2nd}>2nd</span>
-          <span className="text-pink-600 ml-0.5">Nikah</span>
+        <div className="flex items-baseline font-serif tracking-tight">
+          <span className={`${dimensions.num2} font-black text-pink-600 leading-none drop-shadow-xs transition-transform group-hover:scale-110 inline-block`}>2</span>
+          <span className={`${textColor2nd} ${dimensions.textNd} font-black`}>nd</span>
+          <span className={`text-pink-600 ml-0.5 ${dimensions.textNikah} font-black`}>Nikah</span>
         </div>
 
         {showTagline && (
