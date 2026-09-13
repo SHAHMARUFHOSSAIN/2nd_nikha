@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/lib/auth-context';
 import { useAdmin } from '@/lib/admin-context';
 import { BRAND_NAME, BRAND_TAGLINE } from '@/lib/constants';
-import { Profile } from '@/types';
+import { Profile, UserRole } from '@/types';
 import { Heart, LogIn, ShieldAlert, CheckCircle2, ArrowRight, Crown, User } from 'lucide-react';
 import { MOCK_PROFILES } from '@/data/mock-data';
 
