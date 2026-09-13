@@ -80,7 +80,7 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
 
       formData.append('store_id', storeId);
       formData.append('store_passwd', storePassword);
-      formData.append('total_amount', chargeAmount.toString());
+      formData.append('total_amount', chargeAmount.toFixed(2));
       formData.append('currency', 'BDT');
       formData.append('tran_id', transactionId);
       formData.append('success_url', `${appUrl}/api/payment/sslcommerz/success`);
@@ -101,6 +101,7 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       formData.append('product_name', request.planId ? `Subscription Plan (${request.planId})` : 'Matrimonial Service');
       formData.append('product_category', 'Services');
       formData.append('product_profile', 'non-physical-goods');
+      formData.append('emi_option', '0');
       formData.append('value_a', request.userId || '');
       formData.append('value_b', request.planId || '');
       formData.append('value_c', request.purpose || 'subscription');
