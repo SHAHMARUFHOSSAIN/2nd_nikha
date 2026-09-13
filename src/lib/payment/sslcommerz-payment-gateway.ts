@@ -120,7 +120,15 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
             status: 'PENDING',
           };
         } else {
-          console.error('SSLCommerz Session Init Failed Reason:', data.failedreason || data);
+          console.error('SSLCommerz Session Init Error:', data.failedreason || data);
+          const errReason = data.failedreason || data.status || 'init_failed';
+          return {
+            success: false,
+            gateway: 'sslcommerz',
+            redirectUrl: `/payment/fail?gateway=sslcommerz&reason=${encodeURIComponent(errReason)}`,
+            transactionId,
+            status: 'FAILED',
+          };
         }
       }
     } catch (err) {
