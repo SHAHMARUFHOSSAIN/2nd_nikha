@@ -63,10 +63,22 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       const initUrl = `${this.getApiBaseUrl()}/gwprocess/v4/api.php`;
       const formData = new URLSearchParams();
 
+      // Convert non-BDT amounts to BDT equivalent for SSLCommerz merchant processing
+      let chargeAmount = request.amount;
+      if (request.currency && request.currency !== 'BDT') {
+        if (request.currency === 'USD') {
+          chargeAmount = Math.round(request.amount * 120);
+        } else if (request.currency === 'INR') {
+          chargeAmount = Math.round(request.amount * 1.4);
+        } else if (request.currency === 'PKR') {
+          chargeAmount = Math.round(request.amount * 0.43);
+        }
+      }
+
       formData.append('store_id', storeId);
       formData.append('store_passwd', storePassword);
-      formData.append('total_amount', request.amount.toString());
-      formData.append('currency', request.currency || 'BDT');
+      formData.append('total_amount', chargeAmount.toString());
+      formData.append('currency', 'BDT');
       formData.append('tran_id', transactionId);
       formData.append('success_url', `${appUrl}/api/payment/sslcommerz/success`);
       formData.append('fail_url', `${appUrl}/api/payment/sslcommerz/fail`);
