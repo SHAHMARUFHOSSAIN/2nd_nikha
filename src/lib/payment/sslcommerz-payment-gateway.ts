@@ -101,6 +101,9 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
               transactionId,
               status: 'PENDING',
             };
+          } else {
+            console.error('SSLCommerz Session Init Error:', data.failedreason || data);
+          }
         }
       } catch (err) {
         console.error('SSLCommerz payment init exception:', err);
