@@ -143,14 +143,14 @@ function CheckoutContent() {
                 <div className="flex items-center justify-between font-bold text-pink-900">
                   <span className="flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>PayStation Payment Gateway ({selectedCountry.flag} {currency})</span>
+                    <span>SSLCommerz Payment Gateway ({selectedCountry.flag} {currency})</span>
                   </span>
                   <span className="font-mono text-xs">{currentPriceFormatted}</span>
                 </div>
                 <p className="text-[11px] text-stone-500 leading-relaxed">
                   {currency === 'BDT'
                     ? 'Supports bKash, Nagad, Rocket, Upay, Visa, Mastercard, AMEX and Bangladeshi Bank Internet Banking.'
-                    : 'Supports International Visa, Mastercard, AMEX cards. Funds settle directly to your Bangladeshi Bank Account via PayStation.'}
+                    : 'Supports International Visa, Mastercard, AMEX cards. Funds settle directly to your Bangladeshi Bank Account via SSLCommerz.'}
                 </p>
               </div>
 
@@ -161,7 +161,7 @@ function CheckoutContent() {
                 className="w-full justify-center shadow-lg shadow-pink-900/20"
                 rightIcon={<ArrowRight className="w-4 h-4 text-white" />}
               >
-                Pay {currentPriceFormatted} via PayStation Gateway
+                Pay {currentPriceFormatted} via SSLCommerz Gateway
               </Button>
             </form>
           </div>
@@ -187,7 +187,7 @@ function CheckoutContent() {
                   <span className="font-mono">{currentPriceFormatted}</span>
                 </div>
                 <div className="flex justify-between text-stone-600">
-                  <span>PayStation Processing Fee</span>
+                  <span>SSLCommerz Processing Fee</span>
                   <span className="text-emerald-600 font-semibold">FREE</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold text-stone-900 pt-2 border-t border-stone-100">
@@ -200,7 +200,7 @@ function CheckoutContent() {
 
               <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-[11px] text-stone-500 space-y-1">
                 <p className="font-bold text-stone-700">🏦 Settlement Notice:</p>
-                <p>All BDT & USD payments are securely processed by PayStation Payment Gateway and deposited to your Bangladeshi Bank Account.</p>
+                <p>All BDT & USD payments are securely processed by SSLCommerz Payment Gateway and deposited to your Bangladeshi Bank Account.</p>
               </div>
             </div>
           </div>

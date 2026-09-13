@@ -429,8 +429,8 @@ export default function AdminSettingsPage() {
                 onChange={(e) => { isDirty.current = true; setGateway(e.target.value); }}
                 className="w-full bg-stone-950 border border-stone-800 rounded-2xl p-3 text-xs text-stone-200 font-bold"
               >
-                <option value="PAYSTATION">PayStation BD (Primary Production / Sandbox Gateway)</option>
-                <option value="SSLCOMMERZ">SSLCommerz (Alternative Merchant Gateway)</option>
+                <option value="SSLCOMMERZ">SSLCommerz (Primary Production Gateway - Active)</option>
+                <option value="PAYSTATION">PayStation BD (Alternative Merchant Gateway)</option>
                 <option value="MOCK">Mock Gateway (Testing & Local Development)</option>
               </select>
             </div>
@@ -438,48 +438,47 @@ export default function AdminSettingsPage() {
             <div className="p-4 bg-stone-950 rounded-2xl border border-purple-900/60 space-y-3">
               <h4 className="font-bold text-purple-300 flex items-center gap-1.5">
                 <CreditCard className="w-4 h-4 text-purple-400" />
-                <span>PayStation Payment Gateway Configuration (PayStation BD)</span>
+                <span>SSLCommerz Payment Gateway Configuration (Official Live Merchant)</span>
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] text-stone-400 font-bold block mb-1">PayStation Merchant ID:</label>
+                  <label className="text-[10px] text-stone-400 font-bold block mb-1">SSLCommerz Store ID:</label>
                   <input
                     type="text"
-                    value={paystationMerchantId}
+                    value={paystationMerchantId || 'ndnikah0live'}
                     onChange={(e) => { isDirty.current = true; setPaystationMerchantId(e.target.value); }}
                     className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-200 font-mono"
-                    placeholder="e.g. PS_2NDNIKHA_LIVE"
+                    placeholder="e.g. ndnikah0live"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-stone-400 font-bold block mb-1">PayStation Gateway Mode:</label>
+                  <label className="text-[10px] text-stone-400 font-bold block mb-1">SSLCommerz Gateway Mode:</label>
                   <select
-                    value={paystationMode}
+                    value={paystationMode || 'live'}
                     onChange={(e) => { isDirty.current = true; setPaystationMode(e.target.value); }}
                     className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-200"
                   >
+                    <option value="live">Live (Production Settlement to Bank - Active)</option>
                     <option value="sandbox">Sandbox (Testing / Demo Mode)</option>
-                    <option value="live">Live (Production Settlement to Bank)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] text-stone-400 font-bold block mb-1">PayStation API Key:</label>
+                  <label className="text-[10px] text-stone-400 font-bold block mb-1">SSLCommerz Store Password:</label>
                   <input
                     type="password"
-                    value={paystationApiKey}
+                    value={paystationApiKey || '6AA67B2A4DD6B64213'}
                     onChange={(e) => { isDirty.current = true; setPaystationApiKey(e.target.value); }}
                     className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-200 font-mono"
                     placeholder="••••••••••••••••"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-stone-400 font-bold block mb-1">PayStation Secret Key:</label>
+                  <label className="text-[10px] text-stone-400 font-bold block mb-1">Default Settlement Currency:</label>
                   <input
-                    type="password"
-                    value={paystationSecretKey}
-                    onChange={(e) => { isDirty.current = true; setPaystationSecretKey(e.target.value); }}
-                    className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-200 font-mono"
-                    placeholder="••••••••••••••••"
+                    type="text"
+                    value="BDT (Bangladeshi Taka)"
+                    disabled
+                    className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-400 font-mono"
                   />
                 </div>
               </div>
