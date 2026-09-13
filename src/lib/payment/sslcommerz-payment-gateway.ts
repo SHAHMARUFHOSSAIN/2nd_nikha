@@ -64,15 +64,13 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       const formData = new URLSearchParams();
 
       // Convert non-BDT amounts to BDT equivalent for SSLCommerz merchant processing
-      let chargeAmount = request.amount;
-      if (request.currency && request.currency !== 'BDT') {
-        if (request.currency === 'USD') {
-          chargeAmount = Math.round(request.amount * 120);
-        } else if (request.currency === 'INR') {
-          chargeAmount = Math.round(request.amount * 1.4);
-        } else if (request.currency === 'PKR') {
-          chargeAmount = Math.round(request.amount * 0.43);
-        }
+      let chargeAmount = Math.round(request.amount);
+      if (request.currency === 'USD' && request.amount < 50) {
+        chargeAmount = Math.round(request.amount * 120);
+      } else if (request.currency === 'INR' && request.amount < 100) {
+        chargeAmount = Math.round(request.amount * 1.4);
+      } else if (request.currency === 'PKR' && request.amount < 500) {
+        chargeAmount = Math.round(request.amount * 0.43);
       }
 
       formData.append('store_id', storeId);
