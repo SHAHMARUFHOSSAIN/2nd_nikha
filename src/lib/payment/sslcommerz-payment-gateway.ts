@@ -73,6 +73,11 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
         chargeAmount = Math.round(request.amount * 0.43);
       }
 
+      // Enforce SSLCommerz live merchant minimum transaction threshold (100 BDT)
+      if (chargeAmount < 100) {
+        chargeAmount = 100;
+      }
+
       formData.append('store_id', storeId);
       formData.append('store_passwd', storePassword);
       formData.append('total_amount', chargeAmount.toString());

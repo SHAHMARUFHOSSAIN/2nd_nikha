@@ -29,7 +29,7 @@ function CheckoutContent() {
     || membershipPlans?.[0];
 
   const planName = targetPlan ? targetPlan.name : (planIdParam === 'weekly' ? 'Weekly Pass' : 'Monthly Pass');
-  const bdtPrice = targetPlan ? targetPlan.price : (planIdParam === 'weekly' ? 99 : 299);
+  const bdtPrice = targetPlan ? targetPlan.price : (planIdParam === 'weekly' ? 100 : 299);
   const usdPrice = priceUSDParam ? parseFloat(priceUSDParam) : (planIdParam === 'weekly' ? 2.99 : 6.99);
 
   const currentPriceFormatted = formatAmount(bdtPrice, usdPrice);
