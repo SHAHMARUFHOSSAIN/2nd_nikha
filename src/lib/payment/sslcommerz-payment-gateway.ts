@@ -101,10 +101,12 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
               transactionId,
               status: 'PENDING',
             };
-          } else {
-            console.error('SSLCommerz Session Init Error:', data.failedreason || data);
-          }
         }
+      } catch (err) {
+        console.error('SSLCommerz payment init exception:', err);
+      }
+    }
+
     // Fallback URL if store credentials missing or initialization failed
     const isLiveMode = this.config.isLive;
     const fallbackUrl = isLiveMode
