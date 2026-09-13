@@ -10,16 +10,25 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
   private config: SSLCommerzConfig;
 
   constructor(config: SSLCommerzConfig = {}) {
-    const isLiveEnv = process.env.NEXT_PUBLIC_SSLCOMMERZ_IS_LIVE === 'true' || process.env.SSLCOMMERZ_IS_LIVE === 'true';
-    this.config = {
-      storeId: config.storeId || process.env.NEXT_PUBLIC_SSLCOMMERZ_STORE_ID || process.env.SSLCOMMERZ_STORE_ID || '',
-      storePassword: config.storePassword || process.env.SSLCOMMERZ_STORE_PASSWORD || '',
-      isLive: config.isLive !== undefined ? config.isLive : isLiveEnv,
-    };
+    this.config = config;
+  }
+
+  getStoreId(): string {
+    return this.config.storeId || process.env.NEXT_PUBLIC_SSLCOMMERZ_STORE_ID || process.env.SSLCOMMERZ_STORE_ID || 'ndnikah0live';
+  }
+
+  getStorePassword(): string {
+    return this.config.storePassword || process.env.SSLCOMMERZ_STORE_PASSWORD || '6AA67B2A4DD6B64213';
+  }
+
+  isLiveMode(): boolean {
+    if (this.config.isLive !== undefined) return this.config.isLive;
+    const envLive = process.env.NEXT_PUBLIC_SSLCOMMERZ_IS_LIVE || process.env.SSLCOMMERZ_IS_LIVE;
+    return envLive === 'true' || envLive === undefined || envLive === '1';
   }
 
   getApiBaseUrl(): string {
-    return this.config.isLive
+    return this.isLiveMode()
       ? 'https://securepay.sslcommerz.com'
       : 'https://sandbox.sslcommerz.com';
   }
@@ -47,87 +56,80 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       }
     }
 
-    const storeId = this.config.storeId;
-    const storePassword = this.config.storePassword;
+    const storeId = this.getStoreId();
+    const storePassword = this.getStorePassword();
 
-    // If store credentials are configured, initiate real session with SSLCommerz
-    if (storeId && storePassword) {
-      try {
-        const initUrl = `${this.getApiBaseUrl()}/gwprocess/v4/api.php`;
-        const formData = new URLSearchParams();
+    try {
+      const initUrl = `${this.getApiBaseUrl()}/gwprocess/v4/api.php`;
+      const formData = new URLSearchParams();
 
-        formData.append('store_id', storeId);
-        formData.append('store_passwd', storePassword);
-        formData.append('total_amount', request.amount.toString());
-        formData.append('currency', request.currency || 'BDT');
-        formData.append('tran_id', transactionId);
-        formData.append('success_url', `${appUrl}/api/payment/sslcommerz/success`);
-        formData.append('fail_url', `${appUrl}/api/payment/sslcommerz/fail`);
-        formData.append('cancel_url', `${appUrl}/api/payment/sslcommerz/cancel`);
-        formData.append('ipn_url', `${appUrl}/api/payment/sslcommerz/ipn`);
-        formData.append('cus_name', request.customerName || '2nd Nikah User');
-        formData.append('cus_email', request.customerEmail || 'user@2ndnikah.com');
-        formData.append('cus_add1', 'Gulshan 2');
-        formData.append('cus_add2', 'Dhaka');
-        formData.append('cus_city', 'Dhaka');
-        formData.append('cus_state', 'Dhaka');
-        formData.append('cus_postcode', '1212');
-        formData.append('cus_country', 'Bangladesh');
-        formData.append('cus_phone', request.customerPhone || '01712345678');
-        formData.append('cus_fax', request.customerPhone || '01712345678');
-        formData.append('shipping_method', 'NO');
-        formData.append('product_name', request.planId ? `Subscription Plan (${request.planId})` : 'Matrimonial Service');
-        formData.append('product_category', 'Services');
-        formData.append('product_profile', 'non-physical-goods');
-        formData.append('value_a', request.userId || '');
-        formData.append('value_b', request.planId || '');
-        formData.append('value_c', request.purpose || 'subscription');
+      formData.append('store_id', storeId);
+      formData.append('store_passwd', storePassword);
+      formData.append('total_amount', request.amount.toString());
+      formData.append('currency', request.currency || 'BDT');
+      formData.append('tran_id', transactionId);
+      formData.append('success_url', `${appUrl}/api/payment/sslcommerz/success`);
+      formData.append('fail_url', `${appUrl}/api/payment/sslcommerz/fail`);
+      formData.append('cancel_url', `${appUrl}/api/payment/sslcommerz/cancel`);
+      formData.append('ipn_url', `${appUrl}/api/payment/sslcommerz/ipn`);
+      formData.append('cus_name', request.customerName || '2nd Nikah User');
+      formData.append('cus_email', request.customerEmail || 'user@2ndnikah.com');
+      formData.append('cus_add1', 'Gulshan 2');
+      formData.append('cus_add2', 'Dhaka');
+      formData.append('cus_city', 'Dhaka');
+      formData.append('cus_state', 'Dhaka');
+      formData.append('cus_postcode', '1212');
+      formData.append('cus_country', 'Bangladesh');
+      formData.append('cus_phone', request.customerPhone || '01712345678');
+      formData.append('cus_fax', request.customerPhone || '01712345678');
+      formData.append('shipping_method', 'NO');
+      formData.append('product_name', request.planId ? `Subscription Plan (${request.planId})` : 'Matrimonial Service');
+      formData.append('product_category', 'Services');
+      formData.append('product_profile', 'non-physical-goods');
+      formData.append('value_a', request.userId || '');
+      formData.append('value_b', request.planId || '');
+      formData.append('value_c', request.purpose || 'subscription');
 
-        const response = await fetch(initUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: formData.toString(),
-        });
+      const response = await fetch(initUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
+      });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status === 'SUCCESS' && data.GatewayPageURL) {
-            return {
-              success: true,
-              gateway: 'sslcommerz',
-              redirectUrl: data.GatewayPageURL,
-              transactionId,
-              status: 'PENDING',
-            };
-          } else {
-            console.error('SSLCommerz Session Init Error:', data.failedreason || data);
-          }
+      if (response.ok) {
+        const data = await response.json();
+        console.log('SSLCommerz Session API Response:', data);
+        if (data.status === 'SUCCESS' && data.GatewayPageURL) {
+          return {
+            success: true,
+            gateway: 'sslcommerz',
+            redirectUrl: data.GatewayPageURL,
+            transactionId,
+            status: 'PENDING',
+          };
+        } else {
+          console.error('SSLCommerz Session Init Failed Reason:', data.failedreason || data);
         }
-      } catch (err) {
-        console.error('SSLCommerz payment init exception:', err);
       }
+    } catch (err) {
+      console.error('SSLCommerz payment init exception:', err);
     }
 
-    // Fallback URL if store credentials missing or initialization failed
-    const isLiveMode = this.config.isLive;
-    const fallbackUrl = isLiveMode
-      ? `/payment/fail?gateway=sslcommerz&reason=init_failed`
-      : `/payment/success?txn=${transactionId}&gateway=sslcommerz&amount=${request.amount}&planId=${request.planId || ''}`;
-
+    // On failure or error, redirect to payment fail page so user knows payment was not completed
     return {
-      success: !isLiveMode,
+      success: false,
       gateway: 'sslcommerz',
-      redirectUrl: fallbackUrl,
+      redirectUrl: `/payment/fail?gateway=sslcommerz&reason=gateway_init_error`,
       transactionId,
-      status: isLiveMode ? 'FAILED' : 'PENDING',
+      status: 'FAILED',
     };
   }
 
   async verifyPayment(val_id: string): Promise<PaymentVerificationResult> {
-    const storeId = this.config.storeId;
-    const storePassword = this.config.storePassword;
+    const storeId = this.getStoreId();
+    const storePassword = this.getStorePassword();
 
     if (storeId && storePassword && val_id) {
       try {
@@ -152,9 +154,9 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
     }
 
     return {
-      verified: true,
-      status: 'SUCCESS',
-      transactionId: `TXN-SSL-SIM-${Date.now()}`,
+      verified: false,
+      status: 'FAILED',
+      transactionId: `TXN-SSL-FAIL-${Date.now()}`,
       amount: 0,
       paidAt: new Date().toISOString(),
     };
