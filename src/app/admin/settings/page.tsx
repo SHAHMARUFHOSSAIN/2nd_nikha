@@ -12,12 +12,12 @@ export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'countries' | 'membership' | 'payment' | 'notifications' | 'security' | 'privacy'>('general');
   const [siteName, setSiteName] = useState(settings.general?.siteName || '2nd Chance Matrimonial');
   const [supportEmail, setSupportEmail] = useState(settings.general?.supportEmail || 'support@2ndchance.com');
-  const [gateway, setGateway] = useState(settings.payment?.activeGateway || 'PAYSTATION');
+  const [gateway, setGateway] = useState(settings.payment?.activeGateway || 'SSLCOMMERZ');
   const [currency, setCurrency] = useState(settings.payment?.currency || 'BDT');
-  const [paystationMerchantId, setPaystationMerchantId] = useState(settings.payment?.paystationMerchantId || 'PS_2NDNIKHA_LIVE');
-  const [paystationApiKey, setPaystationApiKey] = useState(settings.payment?.paystationApiKey || '');
+  const [paystationMerchantId, setPaystationMerchantId] = useState(settings.payment?.paystationMerchantId || 'ndnikah0live');
+  const [paystationApiKey, setPaystationApiKey] = useState(settings.payment?.paystationApiKey || '6AA67B2A4DD6B64213');
   const [paystationSecretKey, setPaystationSecretKey] = useState(settings.payment?.paystationSecretKey || '');
-  const [paystationMode, setPaystationMode] = useState(settings.payment?.paystationMode || 'sandbox');
+  const [paystationMode, setPaystationMode] = useState(settings.payment?.paystationMode || 'live');
 
   // Hero CMS Fields
   const initialLogo = settings.branding?.logoUrl || OFFICIAL_2ND_CHANCE_LOGO;

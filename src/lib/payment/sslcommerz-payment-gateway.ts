@@ -101,6 +101,8 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       formData.append('product_name', request.planId ? `Subscription Plan (${request.planId})` : 'Matrimonial Service');
       formData.append('product_category', 'Services');
       formData.append('product_profile', 'non-physical-goods');
+      formData.append('multi_card_name', 'all');
+      formData.append('allowed_bin', 'all');
       formData.append('emi_option', '0');
       formData.append('value_a', request.userId || '');
       formData.append('value_b', request.planId || '');
