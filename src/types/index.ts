@@ -8,7 +8,7 @@ export type VerificationStatus = 'Verified' | 'Pending' | 'Unverified';
 
 export type MembershipTier = 'Free' | 'Premium';
 
-export type UserRole = 'GUEST' | 'FREE' | 'PREMIUM' | 'ADMIN';
+export type UserRole = 'GUEST' | 'FREE' | 'PREMIUM' | 'ADMIN' | 'EXPIRED';
 
 export type PhotoPrivacy = 'PUBLIC' | 'PRIVATE' | 'MATCH_ONLY' | 'PREMIUM_ONLY';
 

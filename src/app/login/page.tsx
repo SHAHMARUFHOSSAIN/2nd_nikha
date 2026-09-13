@@ -73,7 +73,7 @@ export default function LoginPage() {
     setTimeout(() => {
       setIsLoading(false);
       const isExpired = (targetProfile as any).subscriptionExpiresAt && new Date((targetProfile as any).subscriptionExpiresAt).getTime() < Date.now();
-      const roleToSet = isExpired ? 'EXPIRED' : (targetProfile.membershipTier === 'Free' ? 'FREE' : 'PREMIUM');
+      const roleToSet: UserRole = isExpired ? 'EXPIRED' : (targetProfile.membershipTier === 'Free' ? 'FREE' : 'PREMIUM');
       login(targetProfile, roleToSet);
       router.push('/member');
     }, 200);
