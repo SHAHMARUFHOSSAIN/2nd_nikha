@@ -220,6 +220,15 @@ function normalizeBranding(branding: any): any {
 function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
   const copy = { ...(settings || {}) };
   if (copy.branding) copy.branding = normalizeBranding({ ...copy.branding });
+  copy.payment = {
+    ...(copy.payment || {}),
+    activeGateway: 'SSLCOMMERZ',
+    currency: 'BDT',
+    sslCommerzMode: 'LIVE',
+    sslCommerzStoreId: 'ndnikah0live',
+    paystationMerchantId: 'ndnikah0live',
+    paystationMode: 'live',
+  };
   return copy;
 }
 
