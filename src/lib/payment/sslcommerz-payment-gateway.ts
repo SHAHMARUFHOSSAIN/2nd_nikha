@@ -63,13 +63,19 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       const initUrl = `${this.getApiBaseUrl()}/gwprocess/v4/api.php`;
       const formData = new URLSearchParams();
 
-      const chargeAmount = request.amount;
-      const chargeCurrency = request.currency || 'BDT';
+      // Convert USD/foreign currency amounts to BDT equivalent (e.g. $2.99 -> 359 BDT, $6.99 -> 839 BDT)
+      let chargeAmount = request.amount;
+      if (request.currency === 'USD' || request.amount < 50) {
+        chargeAmount = Math.round(request.amount * 120);
+      }
+      if (chargeAmount < 100) {
+        chargeAmount = 100;
+      }
 
       formData.append('store_id', storeId);
       formData.append('store_passwd', storePassword);
       formData.append('total_amount', chargeAmount.toFixed(2));
-      formData.append('currency', chargeCurrency);
+      formData.append('currency', 'BDT');
       formData.append('tran_id', transactionId);
       formData.append('success_url', `${appUrl}/api/payment/sslcommerz/success`);
       formData.append('fail_url', `${appUrl}/api/payment/sslcommerz/fail`);
@@ -86,11 +92,9 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       formData.append('cus_phone', request.customerPhone || '01712345678');
       formData.append('cus_fax', request.customerPhone || '01712345678');
       formData.append('shipping_method', 'NO');
-      formData.append('product_name', request.planId ? `Subscription Plan (${request.planId})` : 'Matrimonial Service');
-      formData.append('product_category', 'Services');
-      formData.append('product_profile', 'non-physical-goods');
-      formData.append('multi_card_name', 'all');
-      formData.append('allowed_bin', 'all');
+      formData.append('product_name', request.planId ? `Matrimonial Subscription (${request.planId})` : 'Matrimonial Service');
+      formData.append('product_category', 'Service');
+      formData.append('product_profile', 'general');
       formData.append('emi_option', '0');
       formData.append('value_a', request.userId || '');
       formData.append('value_b', request.planId || '');
