@@ -84,7 +84,11 @@ function CheckoutContent() {
 
     setTimeout(() => {
       setIsHandoffOpen(false);
-      router.push(session.redirectUrl);
+      if (session.redirectUrl && (session.redirectUrl.startsWith('http://') || session.redirectUrl.startsWith('https://'))) {
+        window.location.href = session.redirectUrl;
+      } else {
+        router.push(session.redirectUrl || '/payment/fail');
+      }
     }, 1000);
   };
 

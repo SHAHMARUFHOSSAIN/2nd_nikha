@@ -105,20 +105,18 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
             console.error('SSLCommerz Session Init Error:', data.failedreason || data);
           }
         }
-      } catch (err) {
-        console.error('SSLCommerz payment init exception:', err);
-      }
-    }
-
-    // Fallback/Sandbox simulation URL if credentials missing or test mode
-    const redirectUrl = `/payment/success?txn=${transactionId}&gateway=sslcommerz&amount=${request.amount}&planId=${request.planId || ''}`;
+    // Fallback URL if store credentials missing or initialization failed
+    const isLiveMode = this.config.isLive;
+    const fallbackUrl = isLiveMode
+      ? `/payment/fail?gateway=sslcommerz&reason=init_failed`
+      : `/payment/success?txn=${transactionId}&gateway=sslcommerz&amount=${request.amount}&planId=${request.planId || ''}`;
 
     return {
-      success: true,
+      success: !isLiveMode,
       gateway: 'sslcommerz',
-      redirectUrl,
+      redirectUrl: fallbackUrl,
       transactionId,
-      status: 'PENDING',
+      status: isLiveMode ? 'FAILED' : 'PENDING',
     };
   }
 

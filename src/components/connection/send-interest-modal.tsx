@@ -45,7 +45,11 @@ export function SendInterestModal({
 
     if (result.success && result.redirectUrl) {
       onClose();
-      router.push(result.redirectUrl);
+      if (result.redirectUrl.startsWith('http://') || result.redirectUrl.startsWith('https://')) {
+        window.location.href = result.redirectUrl;
+      } else {
+        router.push(result.redirectUrl);
+      }
     } else if (result.message) {
       setNotice(result.message);
     }
