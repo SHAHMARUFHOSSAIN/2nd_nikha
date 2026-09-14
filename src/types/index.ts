@@ -95,6 +95,8 @@ export interface Profile {
   createdAt: string;
   isShortlisted?: boolean;
   lastActive?: string;
+  isSubscriptionActive?: boolean;
+  userRole?: UserRole;
 }
 
 export interface Interest {
