@@ -29,11 +29,20 @@ interface ProfilePageProps {
   };
 }
 
+import { useAdmin } from '@/lib/admin-context';
+
 export default function ProfileDetailPage({ params }: ProfilePageProps) {
-  const profile = MOCK_PROFILES.find((p) => p.id === params.id) || MOCK_PROFILES[0];
+  let profile = MOCK_PROFILES.find((p) => p.id === params.id);
+  try {
+    const admin = useAdmin();
+    if (admin?.members) {
+      const found = admin.members.find((p) => p.id === params.id);
+      if (found) profile = found;
+    }
+  } catch (e) {}
 
   if (!profile) {
-    notFound();
+    profile = MOCK_PROFILES[0];
   }
 
   return (

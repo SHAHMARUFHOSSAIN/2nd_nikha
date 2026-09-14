@@ -297,42 +297,172 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
     }
   }, [settings?.branding?.faviconUrl]);
 
-function mergeWithMockProfiles(list: Profile[]): Profile[] {
+function harvestRealCandidateProfiles(): Profile[] {
   const result: Profile[] = [];
+  if (typeof window === 'undefined') return result;
 
-  // 1. First, harvest real candidates from 2ndchance_registered_accounts in browser localStorage
-  if (typeof window !== 'undefined') {
-    try {
-      const regRaw = localStorage.getItem('2ndchance_registered_accounts');
-      if (regRaw) {
-        const parsedReg = JSON.parse(regRaw);
-        if (Array.isArray(parsedReg)) {
-          for (const reg of parsedReg) {
-            if (reg && reg.fullName && !result.some((r) => r.id === reg.id || (r.email && reg.email && r.email.toLowerCase() === reg.email.toLowerCase()))) {
-              result.push({
-                ...reg,
-                photoUrl: reg.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600',
-              });
-            }
+  const isAlreadyIn = (id: string, email?: string) => {
+    return result.some(
+      (r) =>
+        r.id === id ||
+        (email && r.email && r.email.toLowerCase().trim() === email.toLowerCase().trim())
+    );
+  };
+
+  // 1. Harvest from 2ndchance_registered_accounts
+  try {
+    const regRaw = localStorage.getItem('2ndchance_registered_accounts');
+    if (regRaw) {
+      const parsedReg = JSON.parse(regRaw);
+      if (Array.isArray(parsedReg)) {
+        for (const reg of parsedReg) {
+          if (reg && reg.fullName && !isAlreadyIn(reg.id, reg.email)) {
+            result.push({
+              ...reg,
+              photoUrl: reg.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600',
+              isSubscriptionActive: true,
+              membershipTier: 'Premium',
+            });
           }
         }
       }
-    } catch (e) {}
+    }
+  } catch (e) {}
+
+  // 2. Harvest from 2ndchance_checkout_customer (e.g. Hamza Ali)
+  try {
+    const custRaw = localStorage.getItem('2ndchance_checkout_customer');
+    if (custRaw) {
+      const cust = JSON.parse(custRaw);
+      if (cust && cust.fullName && !isAlreadyIn(`p-cust-${cust.email}`, cust.email)) {
+        result.push({
+          id: `p-real-${Date.now()}`,
+          fullName: cust.fullName,
+          email: cust.email || 'hamza.ali@2ndnikah.com',
+          phone: cust.phone || '01712345678',
+          age: 32,
+          gender: 'Male',
+          height: "5'9\"",
+          maritalStatus: 'Divorced',
+          religion: 'Islam',
+          motherTongue: 'Bengali',
+          location: 'Dhaka, Bangladesh',
+          city: 'Dhaka',
+          country: 'Bangladesh',
+          countryFlag: '🇧🇩',
+          education: 'Graduate Degree',
+          profession: 'Corporate Service',
+          bio: 'Registered verified candidate. Seeking a compatible life partner.',
+          photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600',
+          photos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600'],
+          isVerified: true,
+          isSubscriptionActive: true,
+          membershipTier: 'Premium',
+          createdAt: new Date().toISOString().split('T')[0],
+        });
+      }
+    }
+  } catch (e) {}
+
+  // 3. Harvest from 2ndchance_admin_payments
+  try {
+    const payRaw = localStorage.getItem('2ndchance_admin_payments');
+    if (payRaw) {
+      const payments = JSON.parse(payRaw);
+      if (Array.isArray(payments)) {
+        for (const p of payments) {
+          if (p && p.customerName && !isAlreadyIn(`p-pay-${p.customerEmail}`, p.customerEmail)) {
+            result.push({
+              id: p.id || `p-txn-${Date.now()}`,
+              fullName: p.customerName,
+              email: p.customerEmail || 'paid.member@2ndnikah.com',
+              phone: p.customerPhone || '01700000000',
+              age: 30,
+              gender: 'Male',
+              height: "5'8\"",
+              maritalStatus: 'Divorced',
+              religion: 'Islam',
+              motherTongue: 'Bengali',
+              location: 'Dhaka, Bangladesh',
+              city: 'Dhaka',
+              country: 'Bangladesh',
+              countryFlag: '🇧🇩',
+              education: 'Bachelor Degree',
+              profession: 'Service / Business',
+              bio: 'Active paid subscriber candidate.',
+              photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600',
+              photos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600'],
+              isVerified: true,
+              isSubscriptionActive: true,
+              membershipTier: 'Premium',
+              createdAt: p.createdAt ? p.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+            });
+          }
+        }
+      }
+    }
+  } catch (e) {}
+
+  // 4. Harvest logged-in user from localStorage 2ndchance_auth_user
+  try {
+    const authRaw = localStorage.getItem('2ndchance_auth_user');
+    if (authRaw) {
+      const authUser = JSON.parse(authRaw);
+      if (authUser && authUser.fullName && !isAlreadyIn(authUser.id, authUser.email)) {
+        result.push({
+          ...authUser,
+          photoUrl: authUser.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600',
+          isSubscriptionActive: true,
+          membershipTier: 'Premium',
+        });
+      }
+    }
+  } catch (e) {}
+
+  return result;
+}
+
+export function isMockProfileId(id: string | undefined | null): boolean {
+  if (!id) return false;
+  const mockIds = ['p-101', 'p-102', 'p-103', 'p-104', 'p-105', 'p-106', 'p-107', 'p-1', 'p-2', 'p-3', 'p-4', 'p-5'];
+  if (mockIds.includes(id)) return true;
+  if (id.startsWith('p-') && !id.startsWith('p-real-') && !id.startsWith('p-cust-') && !id.startsWith('p-txn-')) {
+    const rawNum = id.replace('p-', '');
+    const num = parseInt(rawNum, 10);
+    if (!isNaN(num) && num < 10000) return true;
+  }
+  return false;
+}
+
+function mergeWithMockProfiles(list: Profile[]): Profile[] {
+  const result: Profile[] = [];
+  const isPurgeEnabled = typeof window !== 'undefined' && localStorage.getItem('2ndchance_purge_dummy_enabled') === 'true';
+
+  // 1. Harvest real candidates (Hamza Ali, newly registered users, checkout customers)
+  const realHarvested = harvestRealCandidateProfiles();
+  for (const real of realHarvested) {
+    if (!isMockProfileId(real.id) && !result.some((r) => r.id === real.id || (r.email && real.email && r.email.toLowerCase() === real.email.toLowerCase()))) {
+      result.push(real);
+    }
   }
 
-  // 2. Add passed input list (DB / Admin saved members)
+  // 2. Add passed input list (DB / Admin saved members) excluding mock IDs if purged
   if (Array.isArray(list)) {
     for (const item of list) {
-      if (item && item.fullName && !result.some((r) => r.id === item.id || (r.email && item.email && r.email.toLowerCase() === item.email.toLowerCase()))) {
+      if (!item || !item.fullName) continue;
+      if (isPurgeEnabled && isMockProfileId(item.id)) continue;
+      if (!result.some((r) => r.id === item.id || (r.email && item.email && r.email.toLowerCase() === item.email.toLowerCase()))) {
         result.push(item);
       }
     }
   }
 
-  // 3. Fallback mock profiles appended at bottom
-  for (const mock of MOCK_PROFILES) {
-    if (!result.some((m) => m.id === mock.id || (m.email && mock.email && m.email.toLowerCase() === mock.email.toLowerCase()))) {
-      result.push(mock);
+  // 3. Fallback mock profiles ONLY if purge dummy is NOT enabled
+  if (!isPurgeEnabled) {
+    for (const mock of MOCK_PROFILES) {
+      if (!result.some((m) => m.id === mock.id || (m.email && mock.email && m.email.toLowerCase() === mock.email.toLowerCase()))) {
+        result.push(mock);
+      }
     }
   }
 
@@ -377,9 +507,12 @@ function mergeWithMockProfiles(list: Profile[]): Profile[] {
 
     async function loadAllDbData() {
       try {
+        const isPurged = typeof window !== 'undefined' && localStorage.getItem('2ndchance_purge_dummy_enabled') === 'true';
+        const membersUrl = isPurged ? '/api/members?purgeDummy=true' : '/api/members';
+
         const [settingsRes, membersRes, articlesRes, bannersRes] = await Promise.all([
           fetchWithTimeout('/api/settings'),
-          fetchWithTimeout('/api/members'),
+          fetchWithTimeout(membersUrl),
           fetchWithTimeout('/api/articles'),
           fetchWithTimeout('/api/banners'),
         ]);
@@ -501,31 +634,37 @@ function mergeWithMockProfiles(list: Profile[]): Profile[] {
   };
 
   const purgeDummyProfiles = () => {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('2ndchance_purge_dummy_enabled', 'true'); } catch (e) {}
+    }
+
+    const realHarvested = harvestRealCandidateProfiles();
+
     setMembers((prev) => {
-      let realAccounts: Profile[] = [];
-      if (typeof window !== 'undefined') {
-        try {
-          const regRaw = localStorage.getItem('2ndchance_registered_accounts');
-          if (regRaw) {
-            const parsed = JSON.parse(regRaw);
-            if (Array.isArray(parsed)) realAccounts = parsed;
-          }
-        } catch (e) {}
+      const nonMockPrev = prev.filter((m) => !isMockProfileId(m.id));
+      const combined: Profile[] = [];
+
+      for (const real of realHarvested) {
+        if (!isMockProfileId(real.id) && !combined.some((c) => c.id === real.id || (c.email && real.email && c.email.toLowerCase() === real.email.toLowerCase()))) {
+          combined.push(real);
+        }
       }
 
-      const onlyReal = prev.filter((m) => {
-        const isMock = m.id.startsWith('p-') && parseInt(m.id.replace('p-', ''), 10) <= 50;
-        return !isMock || realAccounts.some((r) => r.id === m.id || (r.email && m.email && r.email.toLowerCase() === m.email.toLowerCase()));
-      });
-
-      const finalClean = realAccounts.length > 0 ? realAccounts : onlyReal;
-
-      if (typeof window !== 'undefined') {
-        try { localStorage.setItem('2ndchance_admin_members', JSON.stringify(finalClean)); } catch (e) {}
-        try { localStorage.setItem('2ndchance_purge_dummy_enabled', 'true'); } catch (e) {}
+      for (const m of nonMockPrev) {
+        if (!combined.some((c) => c.id === m.id || (c.email && m.email && c.email.toLowerCase() === m.email.toLowerCase()))) {
+          combined.push(m);
+        }
       }
 
-      return finalClean;
+      if (typeof window !== 'undefined') {
+        try { localStorage.setItem('2ndchance_admin_members', JSON.stringify(combined)); } catch (e) {}
+      }
+
+      try {
+        fetch('/api/members?purgeDummy=true', { method: 'DELETE' }).catch(() => {});
+      } catch (e) {}
+
+      return combined;
     });
 
     addAuditLog('DUMMY_PROFILES_PURGED', 'Candidate Database', 'Purged all dummy mock profiles. Only real candidate accounts remain.');

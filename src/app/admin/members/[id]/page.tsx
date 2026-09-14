@@ -35,10 +35,10 @@ interface AdminMemberDetailPageProps {
 
 export default function AdminMemberDetailPage({ params }: AdminMemberDetailPageProps) {
   const router = useRouter();
-  const { addAuditLog } = useAdmin();
+  const { members, addAuditLog } = useAdmin();
   const [activeTab, setActiveTab] = useState<'profile' | 'photos' | 'verification' | 'membership' | 'interests' | 'matches' | 'messages' | 'activity'>('profile');
 
-  const profile = MOCK_PROFILES.find((p) => p.id === params.id) || MOCK_PROFILES[0];
+  const profile = (members && members.find((p) => p.id === params.id)) || MOCK_PROFILES.find((p) => p.id === params.id) || members[0] || MOCK_PROFILES[0];
   const [member, setMember] = useState(profile);
   const [notice, setNotice] = useState<string | null>(null);
 

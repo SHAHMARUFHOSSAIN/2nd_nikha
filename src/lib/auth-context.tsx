@@ -34,7 +34,7 @@ const USER_STORAGE_KEY = '2ndchance_current_user';
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole>('GUEST');
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
-  const [shortlistedIds, setShortlistedIds] = useState<string[]>(['p-101', 'p-102', 'p-103', 'p-104']);
+  const [shortlistedIds, setShortlistedIds] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

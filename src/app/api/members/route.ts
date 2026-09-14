@@ -36,7 +36,22 @@ function writeDiskMembers(members: any[]) {
   } catch (e) {}
 }
 
-export async function GET() {
+export function isMockProfileId(id: string | undefined | null): boolean {
+  if (!id) return false;
+  const mockIds = ['p-101', 'p-102', 'p-103', 'p-104', 'p-105', 'p-106', 'p-107', 'p-1', 'p-2', 'p-3', 'p-4', 'p-5'];
+  if (mockIds.includes(id)) return true;
+  if (id.startsWith('p-') && !id.startsWith('p-real-') && !id.startsWith('p-cust-') && !id.startsWith('p-txn-')) {
+    const rawNum = id.replace('p-', '');
+    const num = parseInt(rawNum, 10);
+    if (!isNaN(num) && num < 10000) return true;
+  }
+  return false;
+}
+
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const purgeDummy = url.searchParams.get('purgeDummy') === 'true';
+
   let diskMembers = readDiskMembers();
   let formattedDbMembers: any[] = [];
 
@@ -78,14 +93,34 @@ export async function GET() {
   } catch (e) {}
 
   // Merge disk members and DB members (disk takes precedence for fresh registered profiles)
-  const combined = [...diskMembers];
+  let combined = [...diskMembers];
   for (const dbm of formattedDbMembers) {
     if (!combined.some((m) => m.id === dbm.id || (m.email && dbm.email && m.email.toLowerCase() === dbm.email.toLowerCase()))) {
       combined.push(dbm);
     }
   }
 
+  if (purgeDummy) {
+    combined = combined.filter((m) => !isMockProfileId(m?.id));
+  }
+
   return NextResponse.json({ success: true, members: combined });
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const purgeDummy = url.searchParams.get('purgeDummy');
+    if (purgeDummy === 'true') {
+      let diskMembers = readDiskMembers();
+      const cleanMembers = diskMembers.filter((m: any) => !isMockProfileId(m?.id));
+      writeDiskMembers(cleanMembers);
+      return NextResponse.json({ success: true, message: 'Purged mock profiles from disk' });
+    }
+    return NextResponse.json({ success: false, error: 'Invalid operation' }, { status: 400 });
+  } catch (e: any) {
+    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {

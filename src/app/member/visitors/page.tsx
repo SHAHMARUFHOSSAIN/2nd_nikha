@@ -47,7 +47,8 @@ export default function ProfileVisitorsPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    let harvestedProfiles: any[] = [...MOCK_PROFILES];
+    const isPurgeEnabled = localStorage.getItem('2ndchance_purge_dummy_enabled') === 'true';
+    let harvestedProfiles: any[] = isPurgeEnabled ? [] : [...MOCK_PROFILES];
 
     try {
       const reg = localStorage.getItem('2ndchance_registered_accounts');
