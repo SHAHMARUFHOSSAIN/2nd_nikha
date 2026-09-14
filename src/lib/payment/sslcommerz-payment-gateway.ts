@@ -68,9 +68,11 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       if (request.currency === 'USD' || request.amount < 50) {
         chargeAmount = Math.round(request.amount * 120);
       }
-      if (chargeAmount < 100) {
-        chargeAmount = 100;
+      if (chargeAmount < 300) {
+        chargeAmount = 300;
       }
+
+      const chargeCurrency = 'BDT';
 
       formData.append('store_id', storeId);
       formData.append('store_passwd', storePassword);
@@ -121,7 +123,7 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
           };
         } else {
           console.error('SSLCommerz Session Init Error:', data.failedreason || data);
-          const errReason = data.failedreason || data.status || 'init_failed';
+          const errReason = `${data.failedreason || data.status || 'init_failed'} [Sent: ${chargeAmount.toFixed(2)} ${chargeCurrency}, Store: ${storeId}]`;
           return {
             success: false,
             gateway: 'sslcommerz',
