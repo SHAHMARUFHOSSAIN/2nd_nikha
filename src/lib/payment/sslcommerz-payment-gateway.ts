@@ -68,8 +68,8 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       if (request.currency === 'USD' || request.amount < 50) {
         chargeAmount = Math.round(request.amount * 120);
       }
-      if (chargeAmount < 500) {
-        chargeAmount = 500;
+      if (chargeAmount < 1000) {
+        chargeAmount = 1000;
       }
 
       const chargeCurrency = 'BDT';
@@ -96,7 +96,7 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       formData.append('shipping_method', 'NO');
       formData.append('product_name', request.planId ? `Matrimonial Subscription (${request.planId})` : 'Matrimonial Service');
       formData.append('product_category', 'Service');
-      formData.append('product_profile', 'general');
+      formData.append('product_profile', 'non-physical-goods');
       formData.append('emi_option', '0');
       formData.append('value_a', request.userId || '');
       formData.append('value_b', request.planId || '');
