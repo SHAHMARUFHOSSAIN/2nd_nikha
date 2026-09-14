@@ -56,6 +56,7 @@ interface AdminContextType {
   addMember: (member: any) => void;
   updateMember: (id: string, member: Partial<Profile>) => void;
   deleteMember: (id: string) => void;
+  purgeDummyProfiles: () => void;
   
   approveVerification: (id: string, notes?: string) => void;
   rejectVerification: (id: string, reason: string) => void;
@@ -498,6 +499,37 @@ function mergeWithMockProfiles(list: Profile[]): Profile[] {
     addAuditLog('MEMBER_DELETED', `Profile ${id}`, `Deleted member profile`);
   };
 
+  const purgeDummyProfiles = () => {
+    setMembers((prev) => {
+      let realAccounts: Profile[] = [];
+      if (typeof window !== 'undefined') {
+        try {
+          const regRaw = localStorage.getItem('2ndchance_registered_accounts');
+          if (regRaw) {
+            const parsed = JSON.parse(regRaw);
+            if (Array.isArray(parsed)) realAccounts = parsed;
+          }
+        } catch (e) {}
+      }
+
+      const onlyReal = prev.filter((m) => {
+        const isMock = m.id.startsWith('p-') && parseInt(m.id.replace('p-', ''), 10) <= 50;
+        return !isMock || realAccounts.some((r) => r.id === m.id || (r.email && m.email && r.email.toLowerCase() === m.email.toLowerCase()));
+      });
+
+      const finalClean = realAccounts.length > 0 ? realAccounts : onlyReal;
+
+      if (typeof window !== 'undefined') {
+        try { localStorage.setItem('2ndchance_admin_members', JSON.stringify(finalClean)); } catch (e) {}
+        try { localStorage.setItem('2ndchance_purge_dummy_enabled', 'true'); } catch (e) {}
+      }
+
+      return finalClean;
+    });
+
+    addAuditLog('DUMMY_PROFILES_PURGED', 'Candidate Database', 'Purged all dummy mock profiles. Only real candidate accounts remain.');
+  };
+
   const approveVerification = (id: string, notes?: string) => {
     setVerificationQueue((prev) =>
       prev.map((v) => (v.id === id ? { ...v, status: 'VERIFIED', reviewNotes: notes } : v))
@@ -814,6 +846,7 @@ function mergeWithMockProfiles(list: Profile[]): Profile[] {
         addMember,
         updateMember,
         deleteMember,
+        purgeDummyProfiles,
         approveVerification,
         rejectVerification,
         requestVerificationChanges,

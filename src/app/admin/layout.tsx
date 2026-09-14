@@ -104,11 +104,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       items: [{ label: 'Dashboard', href: '/admin', icon: LayoutDashboard }],
     },
     {
-      title: 'Members',
+      title: 'Member Management',
       items: [
-        { label: 'All Members', href: '/admin/members', icon: Users },
+        { label: 'All Registered Members', href: '/admin/members', icon: Users },
         {
-          label: 'Verification Queue',
+          label: 'NID Verification Queue',
           href: '/admin/members/verification',
           icon: UserCheck,
           badge: pendingVerificationCount > 0 ? pendingVerificationCount : undefined,
@@ -116,70 +116,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ],
     },
     {
-      title: 'Connections',
+      title: 'Connections & Communication',
       items: [
         { label: 'Express Interests', href: '/admin/connections/interests', icon: Heart },
         { label: 'Active Matches', href: '/admin/connections/matches', icon: CheckCircle2 },
-      ],
-    },
-    {
-      title: 'Communication',
-      items: [
         { label: 'Conversations & Chat', href: '/admin/communication/conversations', icon: MessageSquare },
-        { label: 'Reported Messages', href: '/admin/communication/reported-messages', icon: AlertTriangle },
-        { label: 'Shared Media Audit', href: '/admin/communication/shared-media', icon: Camera },
-      ],
-    },
-    {
-      title: 'Moderation',
-      items: [
         {
-          label: 'User Reports',
+          label: 'User Abuse Reports',
           href: '/admin/moderation/reports',
           icon: ShieldAlert,
           badge: pendingReportsCount > 0 ? pendingReportsCount : undefined,
         },
-        { label: 'Profile Moderation', href: '/admin/moderation/profiles', icon: ShieldCheck },
-        { label: 'Photo Approval Queue', href: '/admin/moderation/photos', icon: Camera },
       ],
     },
     {
-      title: 'Payments',
+      title: 'SSLCommerz Payments & Revenue',
       items: [
-        { label: 'Membership Plans', href: '/admin/membership/plans', icon: Crown },
-        { label: 'Subscribers', href: '/admin/membership/subscribers', icon: Users },
         { label: 'Payment Transactions', href: '/admin/payments/transactions', icon: CreditCard },
-        { label: 'Active Subscriptions', href: '/admin/payments/subscriptions', icon: Zap },
-        {
-          label: 'Refund Requests',
-          href: '/admin/payments/refunds',
-          icon: RotateCcw,
-          badge: pendingRefundsCount > 0 ? pendingRefundsCount : undefined,
-        },
+        { label: 'Subscribers & Passes', href: '/admin/membership/subscribers', icon: Users },
+        { label: 'Membership Pass Pricing', href: '/admin/membership/plans', icon: Crown },
       ],
     },
     {
-      title: 'CMS',
+      title: 'Platform CMS & Settings',
       items: [
-        { label: 'Single Page CRUD Manager', href: '/admin/crud', icon: Database },
-        { label: 'CMS Manager', href: '/admin/cms', icon: Compass },
-        { label: 'Pages & Content', href: '/admin/cms/pages', icon: FileText },
-        { label: 'Homepage Sections', href: '/admin/cms/homepage', icon: Layout },
-        { label: 'Banners & Hero', href: '/admin/cms/banners', icon: Sparkles },
-        { label: 'Safety Guidelines', href: '/admin/cms/safety', icon: ShieldCheck },
-        { label: 'Articles & Blog', href: '/admin/cms/articles', icon: Newspaper },
-        { label: 'FAQ Manager', href: '/admin/cms/faq', icon: HelpCircle },
-        { label: 'Media Library', href: '/admin/cms/media', icon: ImageIcon },
-      ],
-    },
-    {
-      title: 'System & Security',
-      items: [
+        { label: 'Hero Branding & CMS', href: '/admin/settings', icon: Sparkles },
+        { label: 'Supported Countries CMS', href: '/admin/settings', icon: Globe },
+        { label: 'Platform Settings & Gateways', href: '/admin/settings', icon: Settings },
         { label: 'Admin Users & Roles', href: '/admin/admin-users', icon: UserCog },
-        { label: 'Audit Logs', href: '/admin/audit-logs', icon: ClipboardList },
-        { label: 'Broadcast Notifications', href: '/admin/notifications', icon: Bell },
-        { label: 'Roles & Permissions', href: '/admin/roles-permissions', icon: KeyRound },
-        { label: 'Platform Settings', href: '/admin/settings', icon: Settings },
       ],
     },
   ];

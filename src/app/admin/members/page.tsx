@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminMembersDirectoryPage() {
-  const { members, updateMember, addAuditLog } = useAdmin();
+  const { members, updateMember, purgeDummyProfiles, addAuditLog } = useAdmin();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [verificationFilter, setVerificationFilter] = useState<string>('ALL');
@@ -35,6 +35,13 @@ export default function AdminMembersDirectoryPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const membersList = members || MOCK_PROFILES;
+
+  const handlePurgeDummy = () => {
+    if (window.confirm('Are you sure you want to purge all dummy demo profiles? Only real registered user accounts will be kept.')) {
+      purgeDummyProfiles();
+      setNotice('All dummy profiles purged successfully! Only real registered candidate accounts remain in database.');
+    }
+  };
 
   // Filtered members list
   const filteredMembers = membersList.filter((member) => {
@@ -83,12 +90,23 @@ export default function AdminMembersDirectoryPage() {
           </p>
         </div>
 
-        <Link href="/admin/members/verification">
-          <button className="px-4 py-2 rounded-xl bg-purple-900 hover:bg-purple-800 text-purple-100 text-xs font-bold transition-all flex items-center gap-2 border border-purple-700">
-            <UserCheck className="w-4 h-4" />
-            <span>Go to NID Verification Queue</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handlePurgeDummy}
+            className="px-4 py-2 rounded-xl bg-red-950 hover:bg-red-900 text-red-100 text-xs font-bold transition-all flex items-center gap-2 border border-red-800 shadow-md"
+            title="Purge all mock demo profiles and keep only real registered user accounts"
+          >
+            <Trash2 className="w-4 h-4 text-red-400" />
+            <span>Purge Dummy Profiles</span>
           </button>
-        </Link>
+
+          <Link href="/admin/members/verification">
+            <button className="px-4 py-2 rounded-xl bg-purple-900 hover:bg-purple-800 text-purple-100 text-xs font-bold transition-all flex items-center gap-2 border border-purple-700">
+              <UserCheck className="w-4 h-4" />
+              <span>Go to NID Verification Queue</span>
+            </button>
+          </Link>
+        </div>
       </div>
 
       {notice && (
