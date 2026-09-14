@@ -129,6 +129,7 @@ const AdminContext = createContext<AdminContextType>({
   addMember: () => {},
   updateMember: () => {},
   deleteMember: () => {},
+  purgeDummyProfiles: () => {},
   approveVerification: () => {},
   rejectVerification: () => {},
   requestVerificationChanges: () => {},
