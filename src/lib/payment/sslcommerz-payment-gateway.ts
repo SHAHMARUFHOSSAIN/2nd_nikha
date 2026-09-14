@@ -68,8 +68,8 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       if (request.currency === 'USD' || request.amount < 50) {
         chargeAmount = Math.round(request.amount * 120);
       }
-      if (chargeAmount < 300) {
-        chargeAmount = 300;
+      if (chargeAmount < 500) {
+        chargeAmount = 500;
       }
 
       const chargeCurrency = 'BDT';
