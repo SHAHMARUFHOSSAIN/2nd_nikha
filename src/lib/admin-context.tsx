@@ -250,52 +250,17 @@ function readLocalSettings(): Record<string, any> {
   return {};
 }
 
-export function AdminProvider({ children, initialSettings = {} }: { children: React.ReactNode; initialSettings?: Record<string, any> }) {
-  const [members, setMembers] = useState<Profile[]>(MOCK_PROFILES);
-  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(MOCK_ADMIN_USERS);
-  const [verificationQueue, setVerificationQueue] = useState<VerificationQueueItem[]>(MOCK_VERIFICATION_QUEUE);
-  const [moderationReports, setModerationReports] = useState<ModerationReport[]>(MOCK_MODERATION_REPORTS);
-  const [refundRequests, setRefundRequests] = useState<RefundRequest[]>(MOCK_REFUND_REQUESTS);
-  const [membershipPlans, setMembershipPlans] = useState<MembershipPlanAdmin[]>(MOCK_MEMBERSHIP_PLANS_ADMIN);
-  const [cmsPages, setCmsPages] = useState<CmsPage[]>(MOCK_CMS_PAGES);
-  const [cmsFaqs, setCmsFaqs] = useState<CmsFaq[]>(MOCK_CMS_FAQS);
-  const [cmsArticles, setCmsArticles] = useState<CmsArticle[]>(MOCK_CMS_ARTICLES);
-  const [cmsBanners, setCmsBanners] = useState<CmsBanner[]>(MOCK_CMS_BANNERS);
-  const [cmsMedia, setCmsMedia] = useState<CmsMediaItem[]>(MOCK_CMS_MEDIA);
-  const [homepageSections, setHomepageSections] = useState<HomepageSectionConfig[]>(MOCK_HOMEPAGE_SECTIONS);
-  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>(MOCK_ADMIN_NOTIFICATIONS);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(MOCK_AUDIT_LOGS);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  // Initialize settings synchronously: merge SSR-provided DB settings with the
-  // latest browser localStorage so the very first client render already shows
-  // admin-saved hero data (prevents the dummy-to-real flash and hydration mismatches).
-  const [settings, setSettings] = useState<Record<string, any>>(() => {
-    const base = { ...DEFAULT_SETTINGS, ...sanitizeSettings(initialSettings || {}) };
-    const local = readLocalSettings();
-    if (Object.keys(local).length > 0) {
-      return mergeSettingsByFreshness(base, sanitizeSettings(local));
-    }
-    return base;
-  });
-
-  // Dynamic Browser Favicon Updater (React-safe DOM mutation)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && settings?.branding?.faviconUrl) {
-      try {
-        const faviconUrl = settings.branding.faviconUrl;
-        const existingLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-        if (existingLink) {
-          existingLink.href = faviconUrl;
-        } else {
-          const newLink = document.createElement('link');
-          newLink.rel = 'icon';
-          newLink.href = faviconUrl;
-          document.head.appendChild(newLink);
-        }
-      } catch (e) {}
-    }
-  }, [settings?.branding?.faviconUrl]);
+export function isMockProfileId(id: string | undefined | null): boolean {
+  if (!id) return false;
+  const mockIds = ['p-101', 'p-102', 'p-103', 'p-104', 'p-105', 'p-106', 'p-107', 'p-1', 'p-2', 'p-3', 'p-4', 'p-5'];
+  if (mockIds.includes(id)) return true;
+  if (id.startsWith('p-') && !id.startsWith('p-real-') && !id.startsWith('p-cust-') && !id.startsWith('p-txn-')) {
+    const rawNum = id.replace('p-', '');
+    const num = parseInt(rawNum, 10);
+    if (!isNaN(num) && num < 10000) return true;
+  }
+  return false;
+}
 
 function harvestRealCandidateProfiles(): Profile[] {
   const result: Profile[] = [];
@@ -422,18 +387,6 @@ function harvestRealCandidateProfiles(): Profile[] {
   return result;
 }
 
-export function isMockProfileId(id: string | undefined | null): boolean {
-  if (!id) return false;
-  const mockIds = ['p-101', 'p-102', 'p-103', 'p-104', 'p-105', 'p-106', 'p-107', 'p-1', 'p-2', 'p-3', 'p-4', 'p-5'];
-  if (mockIds.includes(id)) return true;
-  if (id.startsWith('p-') && !id.startsWith('p-real-') && !id.startsWith('p-cust-') && !id.startsWith('p-txn-')) {
-    const rawNum = id.replace('p-', '');
-    const num = parseInt(rawNum, 10);
-    if (!isNaN(num) && num < 10000) return true;
-  }
-  return false;
-}
-
 function mergeWithMockProfiles(list: Profile[]): Profile[] {
   const result: Profile[] = [];
   const isPurgeEnabled = typeof window !== 'undefined' && localStorage.getItem('2ndchance_purge_dummy_enabled') === 'true';
@@ -468,6 +421,53 @@ function mergeWithMockProfiles(list: Profile[]): Profile[] {
 
   return result;
 }
+
+export function AdminProvider({ children, initialSettings = {} }: { children: React.ReactNode; initialSettings?: Record<string, any> }) {
+  const [members, setMembers] = useState<Profile[]>(MOCK_PROFILES);
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(MOCK_ADMIN_USERS);
+  const [verificationQueue, setVerificationQueue] = useState<VerificationQueueItem[]>(MOCK_VERIFICATION_QUEUE);
+  const [moderationReports, setModerationReports] = useState<ModerationReport[]>(MOCK_MODERATION_REPORTS);
+  const [refundRequests, setRefundRequests] = useState<RefundRequest[]>(MOCK_REFUND_REQUESTS);
+  const [membershipPlans, setMembershipPlans] = useState<MembershipPlanAdmin[]>(MOCK_MEMBERSHIP_PLANS_ADMIN);
+  const [cmsPages, setCmsPages] = useState<CmsPage[]>(MOCK_CMS_PAGES);
+  const [cmsFaqs, setCmsFaqs] = useState<CmsFaq[]>(MOCK_CMS_FAQS);
+  const [cmsArticles, setCmsArticles] = useState<CmsArticle[]>(MOCK_CMS_ARTICLES);
+  const [cmsBanners, setCmsBanners] = useState<CmsBanner[]>(MOCK_CMS_BANNERS);
+  const [cmsMedia, setCmsMedia] = useState<CmsMediaItem[]>(MOCK_CMS_MEDIA);
+  const [homepageSections, setHomepageSections] = useState<HomepageSectionConfig[]>(MOCK_HOMEPAGE_SECTIONS);
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>(MOCK_ADMIN_NOTIFICATIONS);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(MOCK_AUDIT_LOGS);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Initialize settings synchronously: merge SSR-provided DB settings with the
+  // latest browser localStorage so the very first client render already shows
+  // admin-saved hero data (prevents the dummy-to-real flash and hydration mismatches).
+  const [settings, setSettings] = useState<Record<string, any>>(() => {
+    const base = { ...DEFAULT_SETTINGS, ...sanitizeSettings(initialSettings || {}) };
+    const local = readLocalSettings();
+    if (Object.keys(local).length > 0) {
+      return mergeSettingsByFreshness(base, sanitizeSettings(local));
+    }
+    return base;
+  });
+
+  // Dynamic Browser Favicon Updater (React-safe DOM mutation)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && settings?.branding?.faviconUrl) {
+      try {
+        const faviconUrl = settings.branding.faviconUrl;
+        const existingLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+        if (existingLink) {
+          existingLink.href = faviconUrl;
+        } else {
+          const newLink = document.createElement('link');
+          newLink.rel = 'icon';
+          newLink.href = faviconUrl;
+          document.head.appendChild(newLink);
+        }
+      } catch (e) {}
+    }
+  }, [settings?.branding?.faviconUrl]);
 
   // Hydrate settings, members, articles, banners safely on client after mount
   useEffect(() => {
