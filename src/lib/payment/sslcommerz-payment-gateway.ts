@@ -63,21 +63,19 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       const initUrl = `${this.getApiBaseUrl()}/gwprocess/v4/api.php`;
       const formData = new URLSearchParams();
 
-      // Convert USD/foreign currency amounts to BDT equivalent (e.g. $2.99 -> 359 BDT, $6.99 -> 839 BDT)
+      // Handle currency and pricing
       let chargeAmount = request.amount;
-      if (request.currency === 'USD' || request.amount < 50) {
+      const targetCurrency = 'BDT'; // SSLCommerz store ndnikah0live processes settlements in BDT
+
+      if (request.currency === 'USD') {
+        // Convert USD to BDT equivalent ($2.99 -> ~359 BDT, $6.99 -> ~839 BDT)
         chargeAmount = Math.round(request.amount * 120);
       }
-      if (chargeAmount < 1000) {
-        chargeAmount = 1000;
-      }
-
-      const chargeCurrency = 'BDT';
 
       formData.append('store_id', storeId);
       formData.append('store_passwd', storePassword);
       formData.append('total_amount', chargeAmount.toFixed(2));
-      formData.append('currency', 'BDT');
+      formData.append('currency', targetCurrency);
       formData.append('tran_id', transactionId);
       formData.append('success_url', `${appUrl}/api/payment/sslcommerz/success`);
       formData.append('fail_url', `${appUrl}/api/payment/sslcommerz/fail`);
@@ -96,7 +94,7 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       formData.append('shipping_method', 'NO');
       formData.append('product_name', request.planId ? `Matrimonial Subscription (${request.planId})` : 'Matrimonial Service');
       formData.append('product_category', 'Service');
-      formData.append('product_profile', 'non-physical-goods');
+      formData.append('product_profile', 'general');
       formData.append('emi_option', '0');
       formData.append('value_a', request.userId || '');
       formData.append('value_b', request.planId || '');
@@ -123,7 +121,7 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
           };
         } else {
           console.error('SSLCommerz Session Init Error:', data.failedreason || data);
-          const errReason = `${data.failedreason || data.status || 'init_failed'} [Sent: ${chargeAmount.toFixed(2)} ${chargeCurrency}, Store: ${storeId}]`;
+          const errReason = `${data.failedreason || data.status || 'init_failed'} [Sent: ${chargeAmount.toFixed(2)} ${targetCurrency}, Store: ${storeId}]`;
           return {
             success: false,
             gateway: 'sslcommerz',
