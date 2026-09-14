@@ -1,14 +1,43 @@
 import { NextResponse } from 'next/server';
 import { db, safeQuery } from '@/lib/db';
+import fs from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const SETTINGS_META_KEY = '_settingsUpdatedAt';
+const DATA_DIR = path.join(process.cwd(), '.data');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
-// Session-scoped in-memory store. It carries the most recent writes of the
-// current server process and guarantees saves work even when MySQL is down.
-let inMemorySettings: Record<string, any> = {};
+function ensureDataDir() {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch (e) {}
+}
+
+function readDiskSettings(): Record<string, any> {
+  try {
+    ensureDataDir();
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const content = fs.readFileSync(SETTINGS_FILE, 'utf-8');
+      return JSON.parse(content);
+    }
+  } catch (e) {}
+  return {};
+}
+
+function writeDiskSettings(data: Record<string, any>) {
+  try {
+    ensureDataDir();
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (e) {}
+}
+
+// Session-scoped in-memory store initialized with disk data
+let inMemorySettings: Record<string, any> = readDiskSettings();
 
 function savedAtOf(value: unknown): number {
   if (value && typeof value === 'object' && typeof (value as any)[SETTINGS_META_KEY] === 'number') {
@@ -17,17 +46,12 @@ function savedAtOf(value: unknown): number {
   return 0;
 }
 
-/**
- * Merge two settings objects preferring whichever was updated more recently.
- * Keys missing from the preferred source are filled from the other source.
- */
 function mergeSettingsByFreshness(local: Record<string, any>, remote: Record<string, any>): Record<string, any> {
   const out: Record<string, any> = { ...(local || {}) };
   const localTs = savedAtOf(local);
   const remoteTs = savedAtOf(remote);
 
   if (remoteTs > localTs) {
-    // Remote is newer: remote wins, local fills gaps.
     for (const [key, value] of Object.entries(local || {})) {
       if (key === SETTINGS_META_KEY) continue;
       if (remote[key] === undefined && value !== undefined) out[key] = value;
@@ -35,7 +59,6 @@ function mergeSettingsByFreshness(local: Record<string, any>, remote: Record<str
     return { ...remote };
   }
 
-  // Local/session is newer (or tied): local wins, remote fills gaps.
   for (const [key, value] of Object.entries(remote || {})) {
     if (key === SETTINGS_META_KEY) continue;
     if (out[key] === undefined && value !== undefined) out[key] = value;
@@ -68,8 +91,12 @@ async function readSettingsFromDb(): Promise<Record<string, any>> {
 }
 
 export async function GET() {
+  const diskSettings = readDiskSettings();
   const dbSettings = await readSettingsFromDb();
-  const mergedSettings = mergeSettingsByFreshness(inMemorySettings, dbSettings);
+  const mergedSettings = mergeSettingsByFreshness(
+    mergeSettingsByFreshness(inMemorySettings, diskSettings),
+    dbSettings
+  );
 
   return NextResponse.json(
     { success: true, settings: mergedSettings },
@@ -110,6 +137,7 @@ export async function POST(req: Request) {
         }
       }
       inMemorySettings[SETTINGS_META_KEY] = now;
+      writeDiskSettings(inMemorySettings);
       try {
         await persistCategory(SETTINGS_META_KEY, now);
       } catch (e) {
@@ -125,6 +153,7 @@ export async function POST(req: Request) {
 
     inMemorySettings[category] = values;
     inMemorySettings[SETTINGS_META_KEY] = now;
+    writeDiskSettings(inMemorySettings);
     try {
       await persistCategory(category, values);
       await persistCategory(SETTINGS_META_KEY, now);

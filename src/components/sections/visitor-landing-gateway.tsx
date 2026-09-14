@@ -36,10 +36,19 @@ export function VisitorLandingGateway() {
   const { formatAmount } = useCurrency();
 
   let brandLogoUrl = OFFICIAL_2ND_CHANCE_LOGO;
+  let heroTitleText = 'Make Your Payment & Start Your Beautiful Journey ❤️';
+  let heroSubtitleText = 'A respectful, secure matrimonial sanctuary dedicated to divorced, widowed, single parents, and mature singles seeking a genuine lifelong companion.';
+
   try {
     const admin = useAdmin();
     if (admin?.settings?.branding?.logoUrl) {
       brandLogoUrl = admin.settings.branding.logoUrl;
+    }
+    if (admin?.settings?.branding?.heroTitle) {
+      heroTitleText = admin.settings.branding.heroTitle;
+    }
+    if (admin?.settings?.branding?.heroSubtitle) {
+      heroSubtitleText = admin.settings.branding.heroSubtitle;
     }
   } catch (e) {
     // Context fallback
@@ -144,14 +153,11 @@ export function VisitorLandingGateway() {
               </div>
 
               <h1 className="text-4xl sm:text-6xl lg:text-7xl font-serif font-extrabold text-white leading-tight tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]">
-                Make Your Payment &{' '}
-                <span className="bg-gradient-to-r from-pink-400 via-pink-300 to-rose-400 bg-clip-text text-transparent">
-                  Start Your Beautiful Journey ❤️
-                </span>
+                {heroTitleText}
               </h1>
 
               <p className="text-base sm:text-xl text-stone-100 leading-relaxed font-serif max-w-2xl mx-auto drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)] font-semibold">
-                A respectful, secure matrimonial sanctuary dedicated to divorced, widowed, single parents, and mature singles seeking a genuine lifelong companion.
+                {heroSubtitleText}
               </p>
 
               <div className="pt-3 flex flex-wrap items-center justify-center gap-4">

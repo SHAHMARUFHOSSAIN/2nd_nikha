@@ -296,12 +296,44 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
   }, [settings?.branding?.faviconUrl]);
 
 function mergeWithMockProfiles(list: Profile[]): Profile[] {
-  const result = [...list];
+  const result: Profile[] = [];
+
+  // 1. First, harvest real candidates from 2ndchance_registered_accounts in browser localStorage
+  if (typeof window !== 'undefined') {
+    try {
+      const regRaw = localStorage.getItem('2ndchance_registered_accounts');
+      if (regRaw) {
+        const parsedReg = JSON.parse(regRaw);
+        if (Array.isArray(parsedReg)) {
+          for (const reg of parsedReg) {
+            if (reg && reg.fullName && !result.some((r) => r.id === reg.id || (r.email && reg.email && r.email.toLowerCase() === reg.email.toLowerCase()))) {
+              result.push({
+                ...reg,
+                photoUrl: reg.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600',
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 2. Add passed input list (DB / Admin saved members)
+  if (Array.isArray(list)) {
+    for (const item of list) {
+      if (item && item.fullName && !result.some((r) => r.id === item.id || (r.email && item.email && r.email.toLowerCase() === item.email.toLowerCase()))) {
+        result.push(item);
+      }
+    }
+  }
+
+  // 3. Fallback mock profiles appended at bottom
   for (const mock of MOCK_PROFILES) {
     if (!result.some((m) => m.id === mock.id || (m.email && mock.email && m.email.toLowerCase() === mock.email.toLowerCase()))) {
       result.push(mock);
     }
   }
+
   return result;
 }
 
@@ -310,21 +342,20 @@ function mergeWithMockProfiles(list: Profile[]): Profile[] {
     if (typeof window !== 'undefined') {
       try {
         const savedMembers = localStorage.getItem('2ndchance_admin_members');
-        if (savedMembers) {
-          const parsed = JSON.parse(savedMembers);
-          setMembers(mergeWithMockProfiles(parsed));
-        }
+        const parsedSaved = savedMembers ? JSON.parse(savedMembers) : [];
+        setMembers(mergeWithMockProfiles(parsedSaved));
+
         const savedArticles = localStorage.getItem('2ndchance_admin_articles');
         if (savedArticles) setCmsArticles(JSON.parse(savedArticles));
         const savedBanners = localStorage.getItem('2ndchance_admin_banners');
         if (savedBanners) setCmsBanners(JSON.parse(savedBanners));
       } catch (e) {
-        localStorage.removeItem('2ndchance_admin_members');
+        setMembers(mergeWithMockProfiles([]));
       }
     }
 
     // 2. Fetch fresh data from MySQL Database APIs with timeout to prevent page hanging
-    async function fetchWithTimeout(url: string, timeoutMs: number = 800) {
+    async function fetchWithTimeout(url: string, timeoutMs: number = 1000) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       try {
@@ -363,7 +394,7 @@ function mergeWithMockProfiles(list: Profile[]): Profile[] {
           });
         }
 
-        if (membersRes?.success && membersRes?.members && membersRes.members.length > 0) {
+        if (membersRes?.success && membersRes?.members) {
           const merged = mergeWithMockProfiles(membersRes.members);
           setMembers(merged);
           if (typeof window !== 'undefined') {
