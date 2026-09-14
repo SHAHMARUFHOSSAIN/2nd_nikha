@@ -294,6 +294,7 @@ function harvestRealCandidateProfiles(): Profile[] {
     }
   } catch (e) {}
 
+
   // 2. Harvest from 2ndchance_checkout_customer (e.g. Hamza Ali)
   try {
     const custRaw = localStorage.getItem('2ndchance_checkout_customer');
@@ -307,10 +308,11 @@ function harvestRealCandidateProfiles(): Profile[] {
           phone: cust.phone || '01712345678',
           age: 32,
           gender: 'Male',
-          height: "5'9\"",
           maritalStatus: 'Divorced',
+          hasChildren: false,
           religion: 'Islam',
           motherTongue: 'Bengali',
+          height: "5'9\"",
           location: 'Dhaka, Bangladesh',
           city: 'Dhaka',
           country: 'Bangladesh',
@@ -319,10 +321,14 @@ function harvestRealCandidateProfiles(): Profile[] {
           profession: 'Corporate Service',
           bio: 'Registered verified candidate. Seeking a compatible life partner.',
           photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600',
+          additionalPhotos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600'],
           photos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600'],
+          photoPrivacy: 'PUBLIC',
           isVerified: true,
           isSubscriptionActive: true,
           membershipTier: 'Premium',
+          matchPercentage: 95,
+          matchReasons: ['Verified Registered Member', 'Location Matched (Dhaka)'],
           createdAt: new Date().toISOString().split('T')[0],
         });
       }
@@ -344,10 +350,11 @@ function harvestRealCandidateProfiles(): Profile[] {
               phone: p.customerPhone || '01700000000',
               age: 30,
               gender: 'Male',
-              height: "5'8\"",
               maritalStatus: 'Divorced',
+              hasChildren: false,
               religion: 'Islam',
               motherTongue: 'Bengali',
+              height: "5'8\"",
               location: 'Dhaka, Bangladesh',
               city: 'Dhaka',
               country: 'Bangladesh',
@@ -356,10 +363,14 @@ function harvestRealCandidateProfiles(): Profile[] {
               profession: 'Service / Business',
               bio: 'Active paid subscriber candidate.',
               photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600',
+              additionalPhotos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600'],
               photos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600'],
+              photoPrivacy: 'PUBLIC',
               isVerified: true,
               isSubscriptionActive: true,
               membershipTier: 'Premium',
+              matchPercentage: 92,
+              matchReasons: ['Paid Premium Member', 'Verified Contact'],
               createdAt: p.createdAt ? p.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
             });
           }
@@ -375,6 +386,10 @@ function harvestRealCandidateProfiles(): Profile[] {
       const authUser = JSON.parse(authRaw);
       if (authUser && authUser.fullName && !isAlreadyIn(authUser.id, authUser.email)) {
         result.push({
+          hasChildren: false,
+          photoPrivacy: 'PUBLIC',
+          matchPercentage: 90,
+          matchReasons: ['Logged in member'],
           ...authUser,
           photoUrl: authUser.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600',
           isSubscriptionActive: true,

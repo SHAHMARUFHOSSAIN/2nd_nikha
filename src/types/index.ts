@@ -70,6 +70,7 @@ export interface Profile {
   residencyStatus?: string;
   photoUrl: string;
   additionalPhotos?: string[];
+  photos?: string[];
   photoPrivacy: PhotoPrivacy;
   isVerified: boolean;
   isNidVerified?: boolean;
