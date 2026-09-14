@@ -63,14 +63,9 @@ export class SSLCommerzPaymentGateway implements PaymentGateway {
       const initUrl = `${this.getApiBaseUrl()}/gwprocess/v4/api.php`;
       const formData = new URLSearchParams();
 
-      // Handle currency and pricing
-      let chargeAmount = request.amount;
-      const targetCurrency = 'BDT'; // SSLCommerz store ndnikah0live processes settlements in BDT
-
-      if (request.currency === 'USD') {
-        // Convert USD to BDT equivalent ($2.99 -> ~359 BDT, $6.99 -> ~839 BDT)
-        chargeAmount = Math.round(request.amount * 120);
-      }
+      // Handle native currency (USD or BDT) according to SSLCommerz multi-currency specification
+      const targetCurrency = (request.currency || 'BDT').toUpperCase();
+      const chargeAmount = request.amount;
 
       formData.append('store_id', storeId);
       formData.append('store_passwd', storePassword);
