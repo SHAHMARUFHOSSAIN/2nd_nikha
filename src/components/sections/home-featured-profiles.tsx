@@ -34,22 +34,17 @@ export function HomeFeaturedProfiles() {
       );
     }
 
-    // Build rich pool of diverse candidates
-    const pool: Profile[] = [];
-    const iterations = Math.max(3, Math.ceil(24 / (rawList.length || 1)));
-
-    for (let i = 0; i < iterations; i++) {
-      for (const p of rawList) {
-        pool.push({
-          ...p,
-          id: i === 0 ? p.id : `${p.id}-rand-${i}`,
-          matchPercentage: Math.min(99, Math.max(84, p.matchPercentage + ((i * 4) % 11) - 5)),
-        });
+    // Deduplicate profiles by ID
+    const uniqueMap = new Map<string, Profile>();
+    for (const p of rawList) {
+      if (p && p.id && !uniqueMap.has(p.id)) {
+        uniqueMap.set(p.id, p);
       }
     }
+    const uniqueProfiles = Array.from(uniqueMap.values());
 
     // True Fisher-Yates random shuffle on every refresh / load
-    const shuffled = [...pool];
+    const shuffled = [...uniqueProfiles];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
