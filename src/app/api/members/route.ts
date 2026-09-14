@@ -36,7 +36,7 @@ function writeDiskMembers(members: any[]) {
   } catch (e) {}
 }
 
-export function isMockProfileId(id: string | undefined | null): boolean {
+function isMockProfileId(id: string | undefined | null): boolean {
   if (!id) return false;
   const mockIds = ['p-101', 'p-102', 'p-103', 'p-104', 'p-105', 'p-106', 'p-107', 'p-1', 'p-2', 'p-3', 'p-4', 'p-5'];
   if (mockIds.includes(id)) return true;
