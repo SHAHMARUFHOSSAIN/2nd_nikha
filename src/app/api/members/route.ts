@@ -201,7 +201,7 @@ export async function POST(req: Request) {
       if (existingProfile) {
         await db.profile.update({
           where: { id: existingProfile.id },
-          update: {
+          data: {
             age: age ? Number(age) : 30,
             gender: gender || 'Female',
             height: height || "5'4\"",
