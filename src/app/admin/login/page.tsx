@@ -31,63 +31,62 @@ export default function AdminLoginPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const VALID_ADMIN_EMAILS = [
-    'admin@2ndnikah.com',
-    'admin@2ndchance.com',
-    'superadmin@2ndnikah.com',
-  ];
-
-  const VALID_ADMIN_PASSWORDS = ['admin123', 'admin2026', '2ndnikah2026'];
-
-  const handleAdminSubmit = (e: React.FormEvent) => {
+  const handleAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPassword = password.trim();
+    const cleanPassword = password;
 
     if (!cleanEmail || !cleanPassword) {
       setErrorMsg('Please enter both your Administrator Email and Password.');
       return;
     }
 
-    // Validate email and password credentials
-    const isEmailValid =
-      VALID_ADMIN_EMAILS.includes(cleanEmail) ||
-      cleanEmail.includes('admin');
-    const isPasswordValid =
-      VALID_ADMIN_PASSWORDS.includes(cleanPassword) ||
-      cleanPassword.length >= 6;
-
-    if (!isEmailValid || !isPasswordValid) {
-      setErrorMsg(
-        'Invalid Admin Credentials. Please enter a valid administrator email (e.g. admin@2ndnikah.com) and password.'
-      );
-      return;
-    }
-
     setIsLoading(true);
 
-    // Simulate authentic encrypted SSL handshake
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identifier: cleanEmail,
+          password: cleanPassword.replace(/\s+/g, ''),
+          isAdmin: 'true',
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.error || 'Invalid admin credentials.');
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.user?.userRole !== 'ADMIN') {
+        setErrorMsg('This account does not have administrator access.');
+        setIsLoading(false);
+        return;
+      }
+
       login(
         {
-          id: 'admin-super-01',
-          fullName: 'System Administrator',
-          email: cleanEmail,
+          id: data.user.id,
+          fullName: data.user.fullName,
+          email: data.user.email,
           role: 'ADMIN',
-          avatar:
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+          avatar: data.user.photoUrl || '',
         },
         'ADMIN'
       );
       setRole('ADMIN');
-      if (typeof window !== 'undefined' && rememberMe) {
-        localStorage.setItem('2ndnikah_admin_authenticated', 'true');
-      }
       setIsLoading(false);
       router.push('/admin');
-    }, 600);
+    } catch (err) {
+      setErrorMsg('Unable to reach the authentication service. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   const handleAutoFillCredentials = () => {

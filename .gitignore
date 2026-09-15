@@ -21,6 +21,15 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.production
+.env.production.local
+.env.development.local
+
+# runtime data (never commit live member/settings data)
+.data/
+
+# build artifacts
+tsconfig.tsbuildinfo
 
 # vercel
 .vercel

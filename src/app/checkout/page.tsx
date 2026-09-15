@@ -11,6 +11,7 @@ import { PaymentService } from '@/lib/payment/payment-service';
 import { ShieldCheck, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useAdmin } from '@/lib/admin-context';
 import { useCurrency } from '@/lib/currency-context';
+import { useAuth } from '@/lib/auth-context';
 import { CurrencySwitcher } from '@/components/ui/currency-switcher';
 
 function CheckoutContent() {
@@ -19,6 +20,7 @@ function CheckoutContent() {
   const [isHandoffOpen, setIsHandoffOpen] = useState(false);
   const { membershipPlans } = useAdmin();
   const { selectedCountry, currency, formatAmount, getNumericAmount } = useCurrency();
+  const { currentUser } = useAuth();
 
   // Read URL query params or default to monthly plan
   const planIdParam = searchParams.get('plan') || 'monthly';
@@ -54,34 +56,40 @@ function CheckoutContent() {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('2ndchance_checkout_customer', JSON.stringify(customerDetails));
-        const existingTxns = JSON.parse(localStorage.getItem('2ndchance_admin_payments') || '[]');
-        const newTxn = {
-          id: `TXN-SSL-${Date.now()}`,
-          customerName: customerInfo.fullName,
-          customerEmail: customerInfo.email,
-          customerPhone: customerInfo.phone,
-          planId: planIdParam,
-          amount: numericAmountToCharge,
-          currency: currency,
-          gateway: 'SSLCommerz',
-          status: 'PAID',
-          createdAt: new Date().toISOString(),
-        };
-        localStorage.setItem('2ndchance_admin_payments', JSON.stringify([newTxn, ...existingTxns]));
       } catch (e) {}
     }
 
     const amountToCharge = currency === 'USD' ? usdPrice : bdtPrice;
 
+    // Use the real signed-in user id; force login before checkout otherwise.
+    let userId = currentUser?.id || '';
+    if (!userId) {
+      try {
+        const me = await fetch('/api/auth/me', { credentials: 'include' });
+        const meData = await me.json();
+        if (me.ok && meData.success && meData.user?.id) {
+          userId = meData.user.id;
+        }
+      } catch (e) {}
+    }
+
+    if (!userId) {
+      setIsHandoffOpen(false);
+      router.push('/login?redirect=checkout');
+      return;
+    }
+
     const session = await PaymentService.initiatePayment({
-      userId: 'p-101',
+      userId,
       planId: planIdParam,
       purpose: 'subscription',
       amount: amountToCharge,
-      currency: currency,
+      currency,
       customerName: customerInfo.fullName,
       customerEmail: customerInfo.email,
       customerPhone: customerInfo.phone,
+      customerCountry: currency === 'USD' ? 'United States' : 'Bangladesh',
+      customerCity: currency === 'USD' ? 'New York' : 'Dhaka',
     });
 
     setTimeout(() => {

@@ -1,4 +1,4 @@
-import { PaymentStatus, PaymentPurpose } from '@/types';
+export type PaymentPurpose = 'subscription' | 'interest' | 'verification' | 'boost';
 
 export interface PaymentRequest {
   userId: string;
@@ -10,6 +10,11 @@ export interface PaymentRequest {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  customerCountry?: string;
+  customerCity?: string;
+  customerState?: string;
+  customerAddress?: string;
+  customerPostcode?: string;
 }
 
 export interface PaymentInitResult {
@@ -17,20 +22,21 @@ export interface PaymentInitResult {
   gateway: string;
   redirectUrl: string;
   transactionId: string;
-  status: PaymentStatus;
+  status: string;
 }
 
 export interface PaymentVerificationResult {
   verified: boolean;
-  status: PaymentStatus;
+  status: string;
   transactionId: string;
   amount: number;
+  currency?: string;
   paidAt: string;
 }
 
 export interface PaymentResult {
   success: boolean;
-  status: PaymentStatus;
+  status: string;
   transactionId: string;
 }
 

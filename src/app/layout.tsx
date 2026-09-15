@@ -44,55 +44,20 @@ export default async function RootLayout({
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" id="dynamic-favicon" />
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              tailwind.config = {
-                theme: {
-                  extend: {
-                    colors: {
-                      brand: {
-                        blush: '#FDF2F8',
-                        blushLight: '#FFF1F2',
-                        pinkSoft: '#FCE7F3',
-                        pink: '#EC4899',
-                        pinkHot: '#DB2777',
-                        pinkDark: '#BE185D',
-                        rose: '#E11D48',
-                        roseHover: '#9F1239',
-                        wine: '#831843',
-                        wineDark: '#500724',
-                        wineHover: '#701A75',
-                        textMain: '#1C1917',
-                        textMuted: '#78716C',
-                        borderSoft: '#FBCFE8',
-                      }
-                    },
-                    fontFamily: {
-                      serif: ['Georgia', 'Cambria', 'serif'],
-                      sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                    }
-                  }
-                }
-              }
-            `,
-          }}
-        />
       </head>
       <body className="min-h-screen flex flex-col antialiased bg-white text-stone-900 selection:bg-pink-100 selection:text-pink-900 pb-16 lg:pb-0">
         <AuthProvider>
           <ConnectionProvider>
-            <CommunicationProvider>
-              <AdminProvider initialSettings={initialSettings}>
+            <AdminProvider initialSettings={initialSettings}>
+              <CommunicationProvider>
                 <CurrencyProvider>
                   <Navbar />
                   <main className="flex-1">{children}</main>
                   <Footer />
                   <MobileBottomNav />
                 </CurrencyProvider>
-              </AdminProvider>
-            </CommunicationProvider>
+              </CommunicationProvider>
+            </AdminProvider>
           </ConnectionProvider>
         </AuthProvider>
       </body>

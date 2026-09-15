@@ -1,4 +1,4 @@
-// Prisma Schema for 2nd Chance Matrimonial Platform (MySQL)
+// Prisma Schema for 2nd Chance / 2nd Nikah Matrimonial Platform (MySQL)
 
 generator client {
   provider = "prisma-client-js"
@@ -30,74 +30,131 @@ enum MessageType {
   SYSTEM
 }
 
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
 enum PaymentStatus {
   VALIDATED
+  SUCCESS
+  PAID
   PENDING
   FAILED
   CANCELLED
+  REFUNDED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+  CLOSED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  CHANGES_REQUESTED
 }
 
 model User {
-  id              String       @id @default(uuid())
+  id              String   @id @default(uuid())
   fullName        String
-  email           String       @unique
-  phone           String       @unique
+  email           String   @unique
+  phone           String   @unique
   passwordHash    String
-  userRole        Role         @default(FREE)
-  isVerified      Boolean      @default(false)
+  userRole        Role     @default(FREE)
+  isVerified      Boolean  @default(false)
   nidNumber       String?
   nidDocumentUrl  String?
-  country         String       @default("Bangladesh")
-  countryFlag     String       @default("🇧🇩")
+  country         String   @default("Bangladesh")
+  countryFlag     String   @default("🇧🇩")
   residencyStatus String?
-  
+  photoUrl        String?  @db.Text
+
   profile         Profile?
   interestsSent   Interest[]   @relation("Sender")
   interestsRecv   Interest[]   @relation("Receiver")
   messagesSent    Message[]    @relation("MessageSender")
   messagesRecv    Message[]    @relation("MessageReceiver")
   payments        Payment[]
+  subscriptions   Subscription[]
+  shortlists      Shortlist[]
+  matches         Match[]      @relation("MatchUserA")
+  matchesOther    Match[]      @relation("MatchUserB")
+  verifications   VerificationRequest[]
+  reportsMade     Report[]     @relation("Reporter")
+  reportsRecv     Report[]     @relation("Reported")
+  blocks          BlockedUser[] @relation("Blocker")
+  blockedBy       BlockedUser[] @relation("Blocked")
+  notifications   Notification[] @relation("NotificationOwner")
+  refreshTokens   RefreshToken[]
+  auditLogs       AuditLog[]
 
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
+  @@index([userRole])
+  @@index([isVerified])
+  @@index([country])
   @@map("users")
 }
 
 model Profile {
-  id                 String   @id @default(uuid())
-  userId             String   @unique
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  age                Int
-  gender             String
-  height             String
-  maritalStatus      String
-  religion           String
-  motherTongue       String?  @default("Bengali")
-  location           String
-  education          String
-  institution        String?
-  profession         String
-  company            String?
-  bio                String   @db.Text
-  photoUrl           String   @db.Text
-  additionalPhotos   Json?    // Stored as JSON array of photo URLs
-  
-  familyType         String?  @default("Nuclear Family")
-  familyLocation     String?
-  parentsOccupation  String?
-  siblings           String?
-  lifestyle          Json?    // Stored as JSON array of lifestyle tags
-  
-  partnerPreferences Json?    // Stored as JSON object of partner preferences
-  matchPercentage    Int      @default(85)
-  matchReasons       Json?    // Stored as JSON array of match reasons
-  trustScore         Int      @default(95)
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  age                   Int
+  gender                String
+  height                String
+  maritalStatus         String
+  religion              String
+  motherTongue          String?  @default("Bengali")
+  location              String
+  education             String
+  institution           String?
+  profession            String
+  company               String?
+  bio                   String   @db.Text
+  photoUrl              String   @db.Text
+  additionalPhotos      Json?
+  dateOfBirth           DateTime?
+  subscriptionExpiresAt DateTime?
+  subscriptionPlan      String?  @default("MONTHLY")
 
+  familyType            String?  @default("Nuclear Family")
+  familyLocation        String?
+  parentsOccupation     String?
+  siblings              String?
+  lifestyle             Json?
+  photoPrivacy          String?  @default("PUBLIC")
+
+  partnerPreferences    Json?
+  matchPercentage       Int      @default(85)
+  matchReasons          Json?
+  trustScore            Int      @default(95)
+  isSubscriptionActive  Boolean  @default(false)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([gender])
+  @@index([maritalStatus])
+  @@index([religion])
+  @@index([location])
+  @@index([age])
+  @@index([isSubscriptionActive])
   @@map("profiles")
 }
 
@@ -107,54 +164,241 @@ model Interest {
   receiverId      String
   sender          User           @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
   receiver        User           @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
-  
+
   status          InterestStatus @default(PENDING)
   message         String?        @db.Text
 
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
+  @@unique([senderId, receiverId])
+  @@index([receiverId, status])
+  @@index([createdAt])
   @@map("interests")
 }
 
+model Conversation {
+  id              String    @id @default(uuid())
+  userAId         String
+  userBId         String
+  lastMessageAt   DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  messages        Message[]
+
+  @@index([userAId])
+  @@index([userBId])
+  @@unique([userAId, userBId])
+  @@map("conversations")
+}
+
 model Message {
-  id              String      @id @default(uuid())
+  id              String        @id @default(uuid())
   matchId         String
+  conversationId  String?
+  conversation    Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
   senderId        String
   receiverId      String
-  sender          User        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver        User        @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
-  
-  content         String      @db.Text
-  type            MessageType @default(TEXT)
-  status          String      @default("SENT") // SENT, DELIVERED, READ
-  mediaUrl        String?     @db.Text
-  contactDetails  Json?       // Stored phone/whatsapp/email object
+  sender          User          @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver        User          @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime    @default(now())
+  content         String        @db.Text
+  type            MessageType   @default(TEXT)
+  status          MessageStatus @default(SENT)
+  mediaUrl        String?       @db.Text
+  contactDetails  Json?
 
+  createdAt       DateTime      @default(now())
+
+  @@index([matchId])
+  @@index([senderId])
+  @@index([receiverId, createdAt])
   @@map("messages")
+}
+
+model Match {
+  id         String   @id @default(uuid())
+  userAId    String
+  userBId    String
+  userA      User     @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB      User     @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  matchScore Int      @default(85)
+  status     String   @default("ACTIVE")
+  createdAt  DateTime @default(now())
+
+  @@index([userAId])
+  @@index([userBId])
+  @@unique([userAId, userBId])
+  @@map("matches")
+}
+
+model Shortlist {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetProfileId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, targetProfileId])
+  @@index([userId])
+  @@map("shortlists")
 }
 
 model Payment {
   id               String        @id @default(uuid())
   userId           String
   user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   transactionId    String        @unique
-  amount           Float
-  currency         String        @default("BDT") // BDT or USD
-  paymentMethod    String        @default("bKash") // bKash, Nagad, Visa, Mastercard, AMEX
+  valId            String?
+  purpose          String        @default("subscription")
+  planId           String?
+  gateway          String        @default("sslcommerz")
+  amount           Decimal       @db.Decimal(10, 2)
+  currency         String        @default("BDT")
   status           PaymentStatus @default(PENDING)
-  packageType      String        @default("MONTHLY") // WEEKLY, MONTHLY, ANNUAL
+  paidAt           DateTime?
+  email            String?
+  paymentMethod    String        @default("sslcommerz")
+  packageType      String        @default("MONTHLY")
   sslResponseRaw   Json?
+  customerName     String?
+  customerPhone    String?
 
   createdAt        DateTime      @default(now())
 
+  @@index([userId, status])
+  @@index([createdAt])
+  @@index([transactionId])
   @@map("payments")
 }
 
-// CMS Models for Admin Management
+model Subscription {
+  id               String             @id @default(uuid())
+  userId           String
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId           String
+  planName         String             @default("Monthly Pass")
+  amount           Decimal            @db.Decimal(10, 2)
+  currency         String             @default("BDT")
+  status           SubscriptionStatus @default(ACTIVE)
+  packageType      String             @default("MONTHLY")
+  startsAt         DateTime           @default(now())
+  expiresAt        DateTime
+  paymentId        String?
+  transactionId    String?
+
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@map("subscriptions")
+}
+
+model VerificationRequest {
+  id               String             @id @default(uuid())
+  userId           String
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nidNumber        String
+  nidFrontUrl      String             @db.Text
+  nidBackUrl       String?            @db.Text
+  status           VerificationStatus @default(PENDING)
+  reviewNotes      String?            @db.Text
+  reviewedById     String?
+  reviewedAt       DateTime?
+  createdAt        DateTime           @default(now())
+
+  @@index([userId, status])
+  @@map("verification_requests")
+}
+
+model BlockedUser {
+  id         String   @id @default(uuid())
+  blockerId  String
+  blocker    User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId  String
+  blocked    User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  reason     String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@map("blocked_users")
+}
+
+model Report {
+  id               String       @id @default(uuid())
+  reporterId       String
+  reporter         User         @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUserId   String
+  reportedUser     User         @relation("Reported", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reason           String       @db.Text
+  status           ReportStatus @default(OPEN)
+  resolutionNotes  String?      @db.Text
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([reportedUserId, status])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+model Notification {
+  id       String   @id @default(uuid())
+  ownerId  String
+  owner    User     @relation("NotificationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  title    String
+  body     String   @db.Text
+  type     String   @default("SYSTEM")
+  targetUrl String?
+  isRead   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([ownerId, isRead])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  adminId     String?
+  admin       User?    @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  action      String
+  target      String?
+  description String?  @db.Text
+  ipAddress   String?
+  adminName   String?
+  createdAt   DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model ProfilePhoto {
+  id       String   @id @default(uuid())
+  profileId String
+  url      String   @db.Text
+  sortOrder Int     @default(0)
+  isPrimary Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([profileId])
+  @@map("profile_photos")
+}
+
 model Article {
   id           String   @id @default(uuid())
   title        String
@@ -167,6 +411,8 @@ model Article {
   isPublished  Boolean  @default(true)
   publishedAt  DateTime @default(now())
 
+  @@index([isPublished, publishedAt])
+  @@index([category])
   @@map("articles")
 }
 
@@ -187,7 +433,9 @@ model Banner {
   imageUrl     String   @db.Text
   targetUrl    String?
   isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
 
+  @@index([isActive])
   @@map("banners")
 }
 
@@ -195,6 +443,7 @@ model Setting {
   id           String   @id @default(uuid())
   key          String   @unique
   value        String   @db.LongText
+  updatedAt    DateTime @updatedAt
 
   @@map("settings")
 }

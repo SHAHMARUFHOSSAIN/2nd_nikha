@@ -28,7 +28,7 @@ export type SubscriptionStatus = 'ACTIVE' | 'PENDING' | 'EXPIRED' | 'CANCELLED';
 
 export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'PAID' | 'FAILED' | 'CANCELLED' | 'REFUNDED';
 
-export type PaymentPurpose = 'subscription' | 'interest';
+export type PaymentPurpose = 'subscription' | 'interest' | 'verification' | 'boost';
 
 export type MessageType = 'TEXT' | 'IMAGE' | 'CONTACT' | 'SYSTEM';
 
@@ -96,6 +96,7 @@ export interface Profile {
   isShortlisted?: boolean;
   lastActive?: string;
   isSubscriptionActive?: boolean;
+  subscriptionExpiresAt?: string;
   userRole?: UserRole;
 }
 

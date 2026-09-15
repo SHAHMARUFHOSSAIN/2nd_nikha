@@ -79,11 +79,11 @@ export default function LoginPage() {
     }, 200);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorState(null);
 
-    const searchKey = emailOrPhone.trim().toLowerCase();
+    const searchKey = emailOrPhone.trim();
     if (!searchKey) {
       setErrorState('Please enter your email or registered phone number.');
       return;
@@ -93,37 +93,52 @@ export default function LoginPage() {
       return;
     }
 
-    if (password === 'blocked') {
-      setErrorState('This account has been suspended or blocked due to policy review.');
-      return;
-    }
-
     setIsLoading(true);
-    setTimeout(() => {
-      // Exact account search by email, phone, or ID
-      const foundProfile = allAvailableProfiles.find(
-        (p) =>
-          (p.email && p.email.toLowerCase() === searchKey) ||
-          (p.phone && p.phone.trim() === searchKey) ||
-          (p.id && p.id.toLowerCase() === searchKey) ||
-          (p.fullName && p.fullName.toLowerCase() === searchKey)
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: searchKey, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setIsLoading(false);
+        setErrorState(data.error || 'Login failed. Please check your credentials and try again.');
+        return;
+      }
+
+      const u = data.user;
+      const isSubExpired =
+        u.profile?.subscriptionExpiresAt && new Date(u.profile.subscriptionExpiresAt).getTime() < Date.now();
+      const roleToSet: UserRole = isSubExpired
+        ? 'EXPIRED'
+        : u.userRole === 'PAID' || u.profile?.isSubscriptionActive
+        ? 'PREMIUM'
+        : 'FREE';
+
+      login(
+        {
+          id: u.id,
+          fullName: u.fullName,
+          email: u.email,
+          phone: u.phone,
+          userRole: roleToSet,
+          subscriptionExpiresAt: u.profile?.subscriptionExpiresAt,
+          photoUrl: u.photoUrl,
+          avatar: u.photoUrl,
+          membershipTier: roleToSet === 'PREMIUM' ? 'Premium' : 'Free',
+        },
+        roleToSet
       );
 
-      if (!foundProfile) {
-        setIsLoading(false);
-        setErrorState('No registered account found matching this email or phone number. Please check your credentials or register a new profile.');
-        return;
-      }
-
-      // Password validation (if password was set on account during registration)
-      if (foundProfile.password && foundProfile.password !== password) {
-        setIsLoading(false);
-        setErrorState('Incorrect password. Please verify your password and try again.');
-        return;
-      }
-
-      handleLoginProfile(foundProfile);
-    }, 300);
+      router.push('/member');
+    } catch (err) {
+      setIsLoading(false);
+      setErrorState('Unable to reach the authentication service. Please try again.');
+    }
   };
 
   return (

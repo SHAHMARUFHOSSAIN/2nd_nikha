@@ -27,14 +27,12 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
-import { useAdmin } from '@/lib/admin-context';
-
 export default function RegistrationWizardPage() {
   const router = useRouter();
   const { login, userRole } = useAuth();
-  const { addMember } = useAdmin();
   const [currentStep, setCurrentStep] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -130,7 +128,7 @@ export default function RegistrationWizardPage() {
       if (!formData.fullName.trim()) { setStepError('Full Name is required for profile creation.'); return false; }
       if (!formData.email.trim() || !formData.email.includes('@')) { setStepError('A valid Email Address is required.'); return false; }
       if (!formData.phone.trim() || formData.phone.length < 10) { setStepError('A valid Phone Number is required.'); return false; }
-      if (!formData.password || formData.password.length < 6) { setStepError('Password must be at least 6 characters.'); return false; }
+      if (!formData.password || formData.password.length < 8) { setStepError('Password must be at least 8 characters.'); return false; }
     }
     if (currentStep === 2) {
       if (!formData.dob) { setStepError('Date of Birth is required.'); return false; }
@@ -244,29 +242,61 @@ export default function RegistrationWizardPage() {
         createdAt: new Date().toISOString().split('T')[0],
       };
 
-      // Save to registered accounts database in localStorage
-      try {
-        if (typeof window !== 'undefined') {
-          const storedReg = localStorage.getItem('2ndchance_registered_accounts');
-          const regAccounts = storedReg ? JSON.parse(storedReg) : [];
-          regAccounts.push(newProfile);
-          localStorage.setItem('2ndchance_registered_accounts', JSON.stringify(regAccounts));
-        }
-      } catch (e) {}
-
-      login(newProfile, 'PREMIUM');
-      try {
-        addMember(newProfile);
-      } catch (e) {}
-      setIsCompleted(true);
-
-      try {
-        fetch('/api/members', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newProfile),
-        }).catch(() => {});
-      } catch (e) {}
+      // Create the account server-side (bcrypt hashed, MySQL persisted, httpOnly session cookie)
+      setIsSubmitting(true);
+      fetch('/api/auth/register', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          gender: formData.gender || 'Female',
+          country: formData.country || 'Bangladesh',
+          countryFlag: formData.country === 'Bangladesh' ? '🇧🇩' : '🌐',
+          age: formData.dob ? Math.max(18, new Date().getFullYear() - new Date(formData.dob).getFullYear()) : 28,
+          maritalStatus: formData.maritalStatus || 'Divorced',
+          religion: formData.religion || 'Islam',
+          location: `${formData.city || 'Dhaka'}, ${formData.country || 'Bangladesh'}`,
+          education: formData.education || 'Graduate',
+          profession: formData.profession || 'Professional',
+          bio: formData.bio || 'Seeking a genuine, respectful life partner for remarriage.',
+          photoUrl: avatarUrl,
+          height: formData.height || "5'5\"",
+        }),
+      })
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            setStepError(data.error || 'Registration failed. Please try again.');
+            setIsSubmitting(false);
+            return;
+          }
+          const u = data.user;
+          login(
+            {
+              id: u.id,
+              fullName: u.fullName,
+              email: u.email,
+              phone: u.phone,
+              userRole: 'FREE',
+              photoUrl: avatarUrl,
+              avatar: avatarUrl,
+              membershipTier: 'Free',
+              subscriptionExpiresAt: null,
+            },
+            'FREE'
+          );
+          setIsCompleted(true);
+          setIsSubmitting(false);
+          router.push('/membership');
+        })
+        .catch(() => {
+          setStepError('Unable to reach the registration service. Please try again.');
+          setIsSubmitting(false);
+        });
     }
   };
 
