@@ -420,9 +420,11 @@ function harvestRealCandidateProfiles(): Profile[] {
   return result;
 }
 
-function mergeWithMockProfiles(list: Profile[]): Profile[] {
+function mergeWithMockProfiles(list: Profile[], settings?: Record<string, any>): Profile[] {
   const result: Profile[] = [];
-  const isPurgeEnabled = typeof window !== 'undefined' && localStorage.getItem('2ndchance_purge_dummy_enabled') === 'true';
+  const isPurgeEnabled =
+    (settings?.general?.purgeDummy === true) ||
+    (typeof window !== 'undefined' && localStorage.getItem('2ndchance_purge_dummy_enabled') === 'true');
 
   // 1. Harvest real candidates (Hamza Ali, newly registered users, checkout customers)
   const realHarvested = harvestRealCandidateProfiles();
@@ -508,14 +510,14 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
       try {
         const savedMembers = localStorage.getItem('2ndchance_admin_members');
         const parsedSaved = savedMembers ? JSON.parse(savedMembers) : [];
-        setMembers(mergeWithMockProfiles(parsedSaved));
+        setMembers(mergeWithMockProfiles(parsedSaved, settings));
 
         const savedArticles = localStorage.getItem('2ndchance_admin_articles');
         if (savedArticles) setCmsArticles(JSON.parse(savedArticles));
         const savedBanners = localStorage.getItem('2ndchance_admin_banners');
         if (savedBanners) setCmsBanners(JSON.parse(savedBanners));
       } catch (e) {
-        setMembers(mergeWithMockProfiles([]));
+        setMembers(mergeWithMockProfiles([], settings));
       }
     }
 
@@ -540,30 +542,37 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
 
     async function loadAllDbData() {
       try {
-        const isPurged = typeof window !== 'undefined' && localStorage.getItem('2ndchance_purge_dummy_enabled') === 'true';
+        const settingsRes = await fetchWithTimeout('/api/settings');
+        let currentSettings = settings;
+
+        if (settingsRes?.success && settingsRes?.settings) {
+          const remote = sanitizeSettings(settingsRes.settings);
+          if (Object.keys(remote).length > 0) {
+            currentSettings = remote;
+            setSettings((prev) => {
+              const merged = mergeSettingsByFreshness(prev, remote);
+              if (typeof window !== 'undefined') {
+                try { localStorage.setItem('2ndchance_admin_settings', JSON.stringify(merged)); } catch (e) {}
+              }
+              return merged;
+            });
+          }
+        }
+
+        const isPurged =
+          (currentSettings?.general?.purgeDummy === true) ||
+          (typeof window !== 'undefined' && localStorage.getItem('2ndchance_purge_dummy_enabled') === 'true');
+
         const membersUrl = isPurged ? '/api/members?purgeDummy=true' : '/api/members';
 
-        const [settingsRes, membersRes, articlesRes, bannersRes] = await Promise.all([
-          fetchWithTimeout('/api/settings'),
+        const [membersRes, articlesRes, bannersRes] = await Promise.all([
           fetchWithTimeout(membersUrl),
           fetchWithTimeout('/api/articles'),
           fetchWithTimeout('/api/banners'),
         ]);
 
-        if (settingsRes?.success && settingsRes?.settings) {
-          setSettings((prev) => {
-            const remote = sanitizeSettings(settingsRes.settings);
-            if (Object.keys(remote).length === 0) return prev;
-            const merged = mergeSettingsByFreshness(prev, remote);
-            if (typeof window !== 'undefined') {
-              try { localStorage.setItem('2ndchance_admin_settings', JSON.stringify(merged)); } catch (e) {}
-            }
-            return merged;
-          });
-        }
-
         if (membersRes?.success && membersRes?.members) {
-          const merged = mergeWithMockProfiles(membersRes.members);
+          const merged = mergeWithMockProfiles(membersRes.members, currentSettings);
           setMembers(merged);
           if (typeof window !== 'undefined') {
             try { localStorage.setItem('2ndchance_admin_members', JSON.stringify(merged)); } catch (e) {}
@@ -670,6 +679,10 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
     if (typeof window !== 'undefined') {
       try { localStorage.setItem('2ndchance_purge_dummy_enabled', 'true'); } catch (e) {}
     }
+
+    try {
+      updateSettings('general', { purgeDummy: true });
+    } catch (e) {}
 
     const realHarvested = harvestRealCandidateProfiles();
 

@@ -194,27 +194,17 @@ export async function POST(req: Request) {
         });
       }
 
-      if (id && !id.startsWith('p-')) {
-        await db.profile.upsert({
-          where: { id: memberId },
+      const existingProfile = await db.profile.findFirst({
+        where: { OR: [{ id: memberId }, { userId: user.id }] },
+      });
+
+      if (existingProfile) {
+        await db.profile.update({
+          where: { id: existingProfile.id },
           update: {
-            age: age || 30,
+            age: age ? Number(age) : 30,
             gender: gender || 'Female',
-            height: height || '5ft 4in',
-            maritalStatus: maritalStatus || 'Divorced',
-            religion: religion || 'Islam',
-            location: location || 'Dhaka, Bangladesh',
-            education: education || 'Bachelor Degree',
-            profession: profession || 'Professional',
-            bio: bio || '',
-            photoUrl: newMemberRecord.photoUrl,
-          },
-          create: {
-            id: memberId,
-            userId: user.id,
-            age: age || 30,
-            gender: gender || 'Female',
-            height: height || '5ft 4in',
+            height: height || "5'4\"",
             maritalStatus: maritalStatus || 'Divorced',
             religion: religion || 'Islam',
             location: location || 'Dhaka, Bangladesh',
@@ -227,10 +217,11 @@ export async function POST(req: Request) {
       } else {
         await db.profile.create({
           data: {
+            id: memberId,
             userId: user.id,
-            age: age || 30,
+            age: age ? Number(age) : 30,
             gender: gender || 'Female',
-            height: height || '5ft 4in',
+            height: height || "5'4\"",
             maritalStatus: maritalStatus || 'Divorced',
             religion: religion || 'Islam',
             location: location || 'Dhaka, Bangladesh',
