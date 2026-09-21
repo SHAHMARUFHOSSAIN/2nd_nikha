@@ -66,6 +66,14 @@ function CheckoutContent() {
 
     const amountToCharge = currency === 'USD' ? usdPrice : bdtPrice;
 
+    // SSLCommerz is a BDT-native gateway; even for international (USD) visitors
+    // the charge must be sent in BDT, otherwise SSLCommerz rejects with
+    // "Transaction amount is not allowed as per admin configuration!"
+    // Use the BDT plan price and force currency=customerCountry=Bangladesh.
+    const chargeCurrency = 'BDT';
+    const chargeAmount = bdtPrice;
+    const chargeCountry = 'Bangladesh';
+
     // Pay-before-register: guests may pay using email only; no login required.
     // If signed in, pass the user id so benefits apply immediately on success.
     let userId = currentUser?.id || '';
@@ -83,13 +91,13 @@ function CheckoutContent() {
       userId,
       planId: planIdParam,
       purpose: 'subscription',
-      amount: amountToCharge,
-      currency,
+      amount: chargeAmount,
+      currency: chargeCurrency,
       customerName: customerInfo.fullName,
       customerEmail: customerInfo.email,
       customerPhone: customerInfo.phone,
-      customerCountry: currency === 'USD' ? 'United States' : 'Bangladesh',
-      customerCity: currency === 'USD' ? 'New York' : 'Dhaka',
+      customerCountry: chargeCountry,
+      customerCity: 'Dhaka',
     });
 
     setTimeout(() => {
