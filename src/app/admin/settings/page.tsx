@@ -9,15 +9,24 @@ import { OFFICIAL_2ND_CHANCE_LOGO } from '@/lib/official-logo-data';
 export default function AdminSettingsPage() {
   const { settings, updateSettings, batchUpdateSettings } = useAdmin();
 
-  const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'countries' | 'membership' | 'payment' | 'notifications' | 'security' | 'privacy'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'company' | 'branding' | 'countries' | 'membership' | 'payment' | 'notifications' | 'security' | 'privacy'>('general');
   const [siteName, setSiteName] = useState(settings.general?.siteName || '2nd Chance Matrimonial');
   const [supportEmail, setSupportEmail] = useState(settings.general?.supportEmail || 'support@2ndchance.com');
   const [gateway, setGateway] = useState(settings.payment?.activeGateway || 'SSLCOMMERZ');
   const [currency, setCurrency] = useState(settings.payment?.currency || 'BDT');
-  const [paystationMerchantId, setPaystationMerchantId] = useState(settings.payment?.paystationMerchantId || 'ndnikah0live');
-  const [paystationApiKey, setPaystationApiKey] = useState(settings.payment?.paystationApiKey || '6AA67B2A4DD6B64213');
+  const [paystationMerchantId, setPaystationMerchantId] = useState(settings.payment?.paystationMerchantId || '');
+  const [paystationApiKey, setPaystationApiKey] = useState(settings.payment?.paystationApiKey || '');
   const [paystationSecretKey, setPaystationSecretKey] = useState(settings.payment?.paystationSecretKey || '');
   const [paystationMode, setPaystationMode] = useState(settings.payment?.paystationMode || 'live');
+
+  // Company / Legal Settings (DB-backed, used by the footer)
+  const companySettings = settings.company || {};
+  const [legalName, setLegalName] = useState(companySettings.legalName || '');
+  const [registeredAddress, setRegisteredAddress] = useState(companySettings.registeredAddress || '');
+  const [tradeLicense, setTradeLicense] = useState(companySettings.tradeLicense || '');
+  const [managementDetails, setManagementDetails] = useState(companySettings.managementDetails || '');
+  const [companySupportEmail, setCompanySupportEmail] = useState(companySettings.supportEmail || settings.general?.supportEmail || '');
+  const [companySupportPhone, setCompanySupportPhone] = useState(companySettings.supportPhone || '');
 
   // Hero CMS Fields
   const initialLogo = settings.branding?.logoUrl || OFFICIAL_2ND_CHANCE_LOGO;
@@ -62,6 +71,14 @@ export default function AdminSettingsPage() {
       if (settings.general) {
         if (settings.general.siteName) setSiteName(settings.general.siteName);
         if (settings.general.supportEmail) setSupportEmail(settings.general.supportEmail);
+      }
+      if (settings.company) {
+        if (settings.company.legalName !== undefined) setLegalName(settings.company.legalName);
+        if (settings.company.registeredAddress !== undefined) setRegisteredAddress(settings.company.registeredAddress);
+        if (settings.company.tradeLicense !== undefined) setTradeLicense(settings.company.tradeLicense);
+        if (settings.company.managementDetails !== undefined) setManagementDetails(settings.company.managementDetails);
+        if (settings.company.supportEmail !== undefined) setCompanySupportEmail(settings.company.supportEmail);
+        if (settings.company.supportPhone !== undefined) setCompanySupportPhone(settings.company.supportPhone);
       }
       if (settings.payment) {
         if (settings.payment.activeGateway) setGateway(settings.payment.activeGateway);
@@ -128,10 +145,19 @@ export default function AdminSettingsPage() {
     setNotice(`Country "${name}" deleted from database.`);
   };
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    batchUpdateSettings({
+    setNotice(null);
+    const result = await batchUpdateSettings({
       general: { siteName, supportEmail },
+      company: {
+        legalName,
+        registeredAddress,
+        tradeLicense,
+        managementDetails,
+        supportEmail: companySupportEmail,
+        supportPhone: companySupportPhone,
+      },
       payment: {
         activeGateway: gateway,
         currency,
@@ -143,8 +169,12 @@ export default function AdminSettingsPage() {
       branding: { logoUrl, faviconUrl, heroTitle, heroSubtitle, heroImageUrl },
       countries: countryList,
     });
-    isDirty.current = false;
-    setNotice(`PayStation Gateway credentials, Hero CMS, and platform settings saved successfully.`);
+    if (result.success) {
+      isDirty.current = false;
+      setNotice('Settings saved to the database successfully.');
+    } else {
+      setNotice(`Could not save settings: ${result.error || 'unknown error'}`);
+    }
   };
 
   return (
@@ -175,6 +205,7 @@ export default function AdminSettingsPage() {
       <div className="flex items-center gap-2 border-b border-stone-800 pb-2 overflow-x-auto">
         {[
           { key: 'general', label: 'General' },
+          { key: 'company', label: 'Company & Legal' },
           { key: 'branding', label: 'Hero 1st & Hero 2nd Images' },
           { key: 'countries', label: 'Supported Countries CMS' },
           { key: 'membership', label: 'Membership' },
@@ -220,6 +251,39 @@ export default function AdminSettingsPage() {
                 className="w-full bg-stone-950 border border-stone-800 rounded-2xl p-3 text-xs text-stone-200"
               />
             </div>
+          </div>
+        )}
+
+        {activeTab === 'company' && (
+          <div className="space-y-4 text-xs">
+            <div className="flex items-start gap-2 p-3 bg-stone-950 rounded-2xl border border-stone-800 text-[11px] text-stone-400">
+              <Shield className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+              <span>
+                Company &amp; legal details shown in the public footer. Only the fields
+                you fill in are displayed — leave a field empty to hide it. Never
+                enter information you cannot substantiate.
+              </span>
+            </div>
+            <h3 className="font-serif font-bold text-base text-white">Company &amp; Legal Information</h3>
+            {[
+              { key: 'legalName', label: 'Legal / Company Name:', value: legalName, set: setLegalName },
+              { key: 'registeredAddress', label: 'Registered Address:', value: registeredAddress, set: setRegisteredAddress },
+              { key: 'tradeLicense', label: 'Trade License Number:', value: tradeLicense, set: setTradeLicense },
+              { key: 'managementDetails', label: 'Management / Company Details:', value: managementDetails, set: setManagementDetails },
+              { key: 'supportEmail', label: 'Support Email:', value: companySupportEmail, set: setCompanySupportEmail },
+              { key: 'supportPhone', label: 'Support Phone:', value: companySupportPhone, set: setCompanySupportPhone },
+            ].map((f) => (
+              <div key={f.key} className="space-y-1">
+                <label className="font-bold text-stone-300">{f.label}</label>
+                <input
+                  type="text"
+                  value={f.value}
+                  onChange={(e) => { isDirty.current = true; f.set(e.target.value); }}
+                  className="w-full bg-stone-950 border border-stone-800 rounded-2xl p-3 text-xs text-stone-200"
+                  placeholder="—"
+                />
+              </div>
+            ))}
           </div>
         )}
 
@@ -445,10 +509,10 @@ export default function AdminSettingsPage() {
                   <label className="text-[10px] text-stone-400 font-bold block mb-1">SSLCommerz Store ID:</label>
                   <input
                     type="text"
-                    value={paystationMerchantId || 'ndnikah0live'}
+                    value={paystationMerchantId}
                     onChange={(e) => { isDirty.current = true; setPaystationMerchantId(e.target.value); }}
                     className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-200 font-mono"
-                    placeholder="e.g. ndnikah0live"
+                    placeholder="e.g. your_store_id"
                   />
                 </div>
                 <div>
@@ -466,11 +530,15 @@ export default function AdminSettingsPage() {
                   <label className="text-[10px] text-stone-400 font-bold block mb-1">SSLCommerz Store Password:</label>
                   <input
                     type="password"
-                    value={paystationApiKey || '6AA67B2A4DD6B64213'}
+                    value={paystationApiKey}
                     onChange={(e) => { isDirty.current = true; setPaystationApiKey(e.target.value); }}
                     className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-200 font-mono"
-                    placeholder="••••••••••••••••"
+                    placeholder="Leave blank to keep current password"
+                    autoComplete="new-password"
                   />
+                  <p className="text-[10px] text-stone-500 mt-1">
+                    Stored server-side and never sent back to the browser.
+                  </p>
                 </div>
                 <div>
                   <label className="text-[10px] text-stone-400 font-bold block mb-1">Default Settlement Currency:</label>

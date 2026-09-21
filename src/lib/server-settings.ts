@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { maskSettingsSecrets } from '@/lib/settings-secrets';
 
 /**
  * Server-side (SSR) settings loader used by the root layout so the very first
@@ -52,6 +53,9 @@ export async function getServerSettings(): Promise<Record<string, any>> {
     }
   }
   const settings = await readSettingsFromDb();
-  serverSettingsCache = { settings, fetchedAt: Date.now() };
-  return settings;
+  // Never expose gateway/SMTP secrets to the browser — these settings are
+  // serialized into the client bundle via the root layout.
+  const masked = maskSettingsSecrets(settings);
+  serverSettingsCache = { settings: masked, fetchedAt: Date.now() };
+  return masked;
 }

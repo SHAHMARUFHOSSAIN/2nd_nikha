@@ -7,81 +7,58 @@ import { Container } from '@/components/layout/container';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth-context';
-import { PaymentService } from '@/lib/payment/payment-service';
-import { PaymentVerificationResult } from '@/lib/payment/gateway-interface';
 import { MEMBERSHIP_CONFIG } from '@/lib/constants';
 import { formatCurrency } from '@/lib/utils';
 import { CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
-  const { currentUser, login, setRole } = useAuth();
-  const txnId = searchParams.get('txn') || 'TXN-SSL-884920';
+  const { refreshSession } = useAuth();
+  const txnId = searchParams.get('txn') || '';
   const queryAmount = searchParams.get('amount');
   const queryCurrency = searchParams.get('currency');
+  const queryGateway = searchParams.get('gateway') || '';
 
   const [isVerifying, setIsVerifying] = useState(true);
-  const [verificationResult, setVerificationResult] = useState<PaymentVerificationResult | null>(null);
+  const [verified, setVerified] = useState(false);
+  const [verifyNote, setVerifyNote] = useState('');
   const [paidDetails, setPaidDetails] = useState<{ amount: number | string; currency: string }>({
-    amount: queryAmount || 299,
+    amount: queryAmount || 0,
     currency: queryCurrency || 'BDT',
   });
 
   useEffect(() => {
-    PaymentService.verifyPayment(txnId).then((res) => {
-      setVerificationResult(res);
-      setIsVerifying(false);
-      if (res.verified) {
-        setRole('PREMIUM');
-        if (currentUser) {
-          const newExpDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-          const updatedUser = {
-            ...currentUser,
-            subscriptionExpiresAt: newExpDate,
-            isSubscriptionActive: true,
-          };
-          login(updatedUser, 'PREMIUM');
-
-          // Update in registered accounts database
-          try {
-            if (typeof window !== 'undefined') {
-              const regStr = localStorage.getItem('2ndchance_registered_accounts');
-              if (regStr) {
-                const parsed = JSON.parse(regStr);
-                if (Array.isArray(parsed)) {
-                  const idx = parsed.findIndex((p: any) => p.id === currentUser.id || p.email === currentUser.email);
-                  if (idx !== -1) {
-                    parsed[idx] = updatedUser;
-                    localStorage.setItem('2ndchance_registered_accounts', JSON.stringify(parsed));
-                  }
-                }
-              }
-            }
-          } catch (e) {}
-        }
-      }
-    });
-
-    if (typeof window !== 'undefined' && txnId) {
+    (async () => {
       try {
-        const savedTxns = JSON.parse(localStorage.getItem('2ndchance_admin_payments') || '[]');
-        const match = savedTxns.find((t: any) => t.id === txnId || t.transactionId === txnId);
-        if (match) {
-          setPaidDetails({
-            amount: match.amount || queryAmount || 299,
-            currency: match.currency || queryCurrency || 'BDT',
-          });
-        } else if (queryAmount || queryCurrency) {
-          setPaidDetails({
-            amount: queryAmount || 299,
-            currency: queryCurrency || 'BDT',
-          });
-        }
-      } catch (e) {}
-    }
-  }, [txnId, queryAmount, queryCurrency, setRole, currentUser, login]);
+        const res = await fetch(`/api/payment/verify?txn=${encodeURIComponent(txnId)}&gateway=${encodeURIComponent(queryGateway)}`, {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        const json = await res.json().catch(() => null);
 
-  const displayPriceFormatted = formatCurrency(paidDetails.amount, paidDetails.currency);
+        if (json?.success) {
+          setVerified(Boolean(json.verified));
+          if (json.amount || json.currency) {
+            setPaidDetails({ amount: json.amount, currency: json.currency });
+          }
+          if (!json.verified && (json.status === 'MISSING' || json.status === 'UNKNOWN')) {
+            setVerifyNote('Your payment was recorded by the demo gateway and is displayed for testing purposes.');
+          }
+        }
+
+        const isDemoGateway =
+          queryGateway.toLowerCase().includes('mock') || queryGateway.toLowerCase().includes('demo');
+        if ((json?.success && json?.verified) || isDemoGateway) {
+          await refreshSession().catch(() => {});
+        }
+      } catch (err) {
+        // show verification failed state
+      }
+      setIsVerifying(false);
+    })();
+  }, [txnId, queryAmount, queryCurrency, queryGateway, refreshSession]);
+
+  const displayPriceFormatted = formatCurrency(paidDetails.amount, paidDetails.currency || 'BDT');
 
   return (
     <div className="bg-white rounded-3xl p-8 sm:p-10 border border-rose-100 shadow-2xl text-center space-y-6">
@@ -94,7 +71,7 @@ function PaymentSuccessContent() {
             Verifying Payment with Gateway...
           </h2>
           <p className="text-xs text-stone-500 max-w-xs mx-auto">
-            Securely confirming transaction ID <strong>{txnId}</strong> with payment verification server.
+            Securely confirming transaction ID <strong>{txnId || '—'}</strong> with the payment verification server.
           </p>
         </div>
       ) : (
@@ -104,14 +81,20 @@ function PaymentSuccessContent() {
           </div>
 
           <div className="space-y-2">
-            <Badge variant="success">Verified Paid ({paidDetails.currency})</Badge>
+            <Badge variant="success">Verified Paid ({paidDetails.currency || 'BDT'})</Badge>
             <h1 className="text-3xl font-serif font-bold text-stone-900">
               Payment Successful ❤️
             </h1>
             <p className="text-xs text-stone-600 max-w-xs mx-auto leading-relaxed">
-              Your payment has been verified. Express interest and Premium benefits are now active!
+              Your payment has been recorded. Express interest and Premium benefits are now active!
             </p>
           </div>
+
+          {verifyNote && (
+            <div className="p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-2xl text-xs font-semibold">
+              {verifyNote}
+            </div>
+          )}
 
           <div className="bg-rose-50/60 p-4 rounded-2xl border border-rose-100 text-xs text-stone-700 text-left space-y-2">
             <div className="flex justify-between border-b border-rose-100 pb-1.5">

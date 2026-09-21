@@ -49,6 +49,7 @@ export interface Profile {
   fullName: string;
   email?: string;
   phone?: string;
+  emailVerifiedAt?: string | null;
   age: number;
   gender: Gender;
   maritalStatus: MaritalStatus;

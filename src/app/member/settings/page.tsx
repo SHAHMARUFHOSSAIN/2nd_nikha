@@ -20,19 +20,59 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
+const PHOTO_PRIVACY_OPTIONS = [
+  'Public - Viewable by all verified members',
+  'Premium Only - Visible to active Premium members',
+  'Match Only - Visible after mutual interest acceptance',
+  'Private - Locked until explicit permission',
+];
+
+const PRIVACY_TO_CODE: Record<string, string> = {
+  'Public - Viewable by all verified members': 'PUBLIC',
+  'Premium Only - Visible to active Premium members': 'PREMIUM',
+  'Match Only - Visible after mutual interest acceptance': 'MATCH',
+  'Private - Locked until explicit permission': 'PRIVATE',
+};
+
+const CODE_TO_PRIVACY: Record<string, string> = {
+  PUBLIC: 'Public - Viewable by all verified members',
+  PREMIUM: 'Premium Only - Visible to active Premium members',
+  MATCH: 'Match Only - Visible after mutual interest acceptance',
+  PRIVATE: 'Private - Locked until explicit permission',
+};
+
 export default function MemberSettingsPage() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, currentUser, refreshSession } = useAuth();
 
   const [profileVisibility, setProfileVisibility] = useState('Visible to Registered Members');
-  const [photoPrivacy, setPhotoPrivacy] = useState('Public');
+  const [photoPrivacy, setPhotoPrivacy] = useState(
+    CODE_TO_PRIVACY[currentUser?.photoPrivacy || 'PUBLIC'] || PHOTO_PRIVACY_OPTIONS[0]
+  );
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const handleSaveSettings = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSaveSettings = async () => {
+    setSaveError('');
+    try {
+      const res = await fetch('/api/profile/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ photoPrivacy: PRIVACY_TO_CODE[photoPrivacy] || 'PUBLIC' }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error || 'Failed to save settings');
+      }
+      await refreshSession();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      setSaveError(err?.message || 'Failed to save settings');
+    }
   };
 
   const handleLogout = () => {
@@ -42,9 +82,6 @@ export default function MemberSettingsPage() {
 
   const handleConfirmDeleteAccount = () => {
     logout();
-    if (typeof window !== 'undefined') {
-      localStorage.clear();
-    }
     router.push('/');
   };
 
@@ -64,6 +101,13 @@ export default function MemberSettingsPage() {
           <div className="p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl text-xs font-semibold flex items-center gap-2 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span>Settings saved successfully!</span>
+          </div>
+        )}
+
+        {saveError && (
+          <div className="p-3 bg-red-50 text-red-800 border border-red-200 rounded-2xl text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+            <AlertTriangle className="w-4 h-4 text-red-600" />
+            <span>{saveError}</span>
           </div>
         )}
 
@@ -95,12 +139,7 @@ export default function MemberSettingsPage() {
 
           <Select
             label="Photo Protection Mode"
-            options={[
-              'Public - Viewable by all verified members',
-              'Premium Only - Visible to active Premium members',
-              'Match Only - Visible after mutual interest acceptance',
-              'Private - Locked until explicit permission',
-            ]}
+            options={PHOTO_PRIVACY_OPTIONS}
             value={photoPrivacy}
             onChange={(e) => setPhotoPrivacy(e.target.value)}
           />

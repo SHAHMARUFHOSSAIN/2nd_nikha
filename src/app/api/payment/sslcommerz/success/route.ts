@@ -29,7 +29,10 @@ export async function POST(request: Request) {
     }
 
     const verification = await sslCommerzGatewayInstance.verifyPayment(val_id);
-    const isVerified = verification.verified || status === 'VALID' || status === 'VALIDATED';
+    // Security: the SSLCommerz gateway response is the ONLY authority for a
+    // successful payment. Client/browser-supplied form fields (amount, status,
+    // currency) are never trusted for the verified decision or credited amount.
+    const isVerified = verification.verified;
 
     if (isVerified) {
       const verifiedAmount = verification.amount > 0 ? verification.amount : amount;

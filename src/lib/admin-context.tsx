@@ -17,7 +17,6 @@ import {
   HomepageSectionConfig,
 } from '@/types/admin';
 import { Profile } from '@/types';
-import { MOCK_PROFILES } from '@/data/mock-data';
 import { OFFICIAL_2ND_CHANCE_LOGO } from '@/lib/official-logo-data';
 import {
   MOCK_ADMIN_USERS,
@@ -53,10 +52,10 @@ interface AdminContextType {
   settings: Record<string, any>;
   
   // Full CRUD Actions for Single Page Manager
-  addMember: (member: any) => void;
-  updateMember: (id: string, member: Partial<Profile>) => void;
-  deleteMember: (id: string) => void;
-  purgeDummyProfiles: () => void;
+  addMember: (member: any) => Promise<{ success: boolean; error?: string }>;
+  updateMember: (id: string, member: Partial<Profile>) => Promise<{ success: boolean; error?: string }>;
+  deleteMember: (id: string) => Promise<{ success: boolean; error?: string }>;
+  purgeDummyProfiles: () => Promise<{ success: boolean; error?: string }>;
   
   approveVerification: (id: string, notes?: string) => void;
   rejectVerification: (id: string, reason: string) => void;
@@ -82,10 +81,10 @@ interface AdminContextType {
   deleteCmsPage: (id: string) => void;
   saveCmsFaq: (faq: CmsFaq) => void;
   deleteCmsFaq: (id: string) => void;
-  saveCmsArticle: (article: CmsArticle) => void;
-  deleteCmsArticle: (id: string) => void;
-  saveCmsBanner: (banner: CmsBanner) => void;
-  deleteCmsBanner: (id: string) => void;
+  saveCmsArticle: (article: CmsArticle) => Promise<{ success: boolean; error?: string }>;
+  deleteCmsArticle: (id: string) => Promise<{ success: boolean; error?: string }>;
+  saveCmsBanner: (banner: CmsBanner) => Promise<{ success: boolean; error?: string }>;
+  deleteCmsBanner: (id: string) => Promise<{ success: boolean; error?: string }>;
   toggleHomepageSection: (id: string) => void;
   
   addAdminUser: (user: Omit<AdminUser, 'id' | 'createdAt' | 'lastLogin'>) => void;
@@ -94,13 +93,13 @@ interface AdminContextType {
   deleteAdminUser: (id: string) => void;
   
   isLoaded: boolean;
-  updateSettings: (category: string, values: Record<string, any>) => void;
-  batchUpdateSettings: (allUpdates: Record<string, any>) => void;
+  updateSettings: (category: string, values: Record<string, any>) => Promise<{ success: boolean; error?: string }>;
+  batchUpdateSettings: (allUpdates: Record<string, any>) => Promise<{ success: boolean; error?: string }>;
   addAuditLog: (action: string, target: string, description: string) => void;
 }
 
 const AdminContext = createContext<AdminContextType>({
-  members: MOCK_PROFILES,
+  members: [],
   adminUsers: MOCK_ADMIN_USERS,
   verificationQueue: MOCK_VERIFICATION_QUEUE,
   moderationReports: MOCK_MODERATION_REPORTS,
@@ -126,10 +125,10 @@ const AdminContext = createContext<AdminContextType>({
       heroImageUrl: '',
     },
   },
-  addMember: () => {},
-  updateMember: () => {},
-  deleteMember: () => {},
-  purgeDummyProfiles: () => {},
+  addMember: async () => ({ success: false }),
+  updateMember: async () => ({ success: false }),
+  deleteMember: async () => ({ success: false }),
+  purgeDummyProfiles: async () => ({ success: false }),
   approveVerification: () => {},
   rejectVerification: () => {},
   requestVerificationChanges: () => {},
@@ -149,17 +148,17 @@ const AdminContext = createContext<AdminContextType>({
   deleteCmsPage: () => {},
   saveCmsFaq: () => {},
   deleteCmsFaq: () => {},
-  saveCmsArticle: () => {},
-  deleteCmsArticle: () => {},
-  saveCmsBanner: () => {},
-  deleteCmsBanner: () => {},
+  saveCmsArticle: async () => ({ success: false }),
+  deleteCmsArticle: async () => ({ success: false }),
+  saveCmsBanner: async () => ({ success: false }),
+  deleteCmsBanner: async () => ({ success: false }),
   toggleHomepageSection: () => {},
   addAdminUser: () => {},
   updateAdminUser: () => {},
   toggleAdminUserStatus: () => {},
   deleteAdminUser: () => {},
-  updateSettings: () => {},
-  batchUpdateSettings: () => {},
+  updateSettings: async () => ({ success: false }),
+  batchUpdateSettings: async () => ({ success: false }),
   addAuditLog: () => {},
 });
 
@@ -177,36 +176,6 @@ const DEFAULT_SETTINGS = {
 
 const SETTINGS_META_KEY = '_settingsUpdatedAt';
 
-function savedAtOf(value: unknown): number {
-  if (value && typeof value === 'object' && typeof (value as any)[SETTINGS_META_KEY] === 'number') {
-    return (value as any)[SETTINGS_META_KEY] as number;
-  }
-  return 0;
-}
-
-function mergeSettingsByFreshness(local: Record<string, any>, remote: Record<string, any>): Record<string, any> {
-  const out: Record<string, any> = { ...(local || {}) };
-  const localTs = savedAtOf(local);
-  const remoteTs = savedAtOf(remote);
-
-  if (remoteTs > localTs) {
-    // Remote (DB/other source) is newer: remote wins, local fills gaps.
-    const merged: Record<string, any> = { ...(remote || {}) };
-    for (const [key, value] of Object.entries(local || {})) {
-      if (key === SETTINGS_META_KEY) continue;
-      if (merged[key] === undefined && value !== undefined) merged[key] = value;
-    }
-    return merged;
-  }
-
-  // Local/session is newer (or tied): local wins, remote fills gaps.
-  for (const [key, value] of Object.entries(remote || {})) {
-    if (key === SETTINGS_META_KEY) continue;
-    if (out[key] === undefined && value !== undefined) out[key] = value;
-  }
-  return out;
-}
-
 function normalizeBranding(branding: any): any {
   if (branding && typeof branding === 'object') {
     if (branding.heroImageUrl && branding.heroImageUrl.includes('unsplash.com')) {
@@ -222,32 +191,7 @@ function normalizeBranding(branding: any): any {
 function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
   const copy = { ...(settings || {}) };
   if (copy.branding) copy.branding = normalizeBranding({ ...copy.branding });
-  copy.payment = {
-    ...(copy.payment || {}),
-    activeGateway: 'SSLCOMMERZ',
-    currency: 'BDT',
-    sslCommerzMode: 'LIVE',
-    sslCommerzStoreId: 'ndnikah0live',
-    paystationMerchantId: 'ndnikah0live',
-    paystationMode: 'live',
-  };
   return copy;
-}
-
-function readLocalSettings(): Record<string, any> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const saved = localStorage.getItem('2ndchance_admin_settings');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed && typeof parsed === 'object') {
-        return sanitizeSettings(parsed);
-      }
-    }
-  } catch (e) {
-    try { localStorage.removeItem('2ndchance_admin_settings'); } catch {}
-  }
-  return {};
 }
 
 export function isMockProfileId(id: string | undefined | null): boolean {
@@ -262,203 +206,72 @@ export function isMockProfileId(id: string | undefined | null): boolean {
   return false;
 }
 
-function harvestRealCandidateProfiles(): Profile[] {
-  const result: Profile[] = [];
-  if (typeof window === 'undefined') return result;
-
-  const isAlreadyIn = (id: string, email?: string) => {
-    return result.some(
-      (r) =>
-        r.id === id ||
-        (email && r.email && r.email.toLowerCase().trim() === email.toLowerCase().trim())
-    );
-  };
-
-  // 1. Harvest from 2ndchance_registered_accounts
-  try {
-    const regRaw = localStorage.getItem('2ndchance_registered_accounts');
-    if (regRaw) {
-      const parsedReg = JSON.parse(regRaw);
-      if (Array.isArray(parsedReg)) {
-        for (const reg of parsedReg) {
-          if (reg && reg.fullName && !isAlreadyIn(reg.id, reg.email)) {
-            result.push({
-              ...reg,
-              photoUrl: reg.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600',
-              isSubscriptionActive: true,
-              membershipTier: 'Premium',
-            });
-          }
-        }
-      }
-    }
-  } catch (e) {}
-
-
-  // 2. Harvest from 2ndchance_checkout_customer (e.g. Hamza Ali)
-  try {
-    const custRaw = localStorage.getItem('2ndchance_checkout_customer');
-    if (custRaw) {
-      const cust = JSON.parse(custRaw);
-      if (cust && cust.fullName && !isAlreadyIn(`p-cust-${cust.email}`, cust.email)) {
-        result.push({
-          id: `p-real-${Date.now()}`,
-          fullName: cust.fullName,
-          email: cust.email || 'hamza.ali@2ndnikah.com',
-          phone: cust.phone || '01712345678',
-          age: 32,
-          gender: 'Male',
-          maritalStatus: 'Divorced',
-          hasChildren: false,
-          religion: 'Islam',
-          motherTongue: 'Bengali',
-          height: "5'9\"",
-          location: 'Dhaka, Bangladesh',
-          city: 'Dhaka',
-          country: 'Bangladesh',
-          countryFlag: '🇧🇩',
-          education: 'Graduate Degree',
-          profession: 'Corporate Service',
-          bio: 'Registered verified candidate. Seeking a compatible life partner.',
-          photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600',
-          additionalPhotos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600'],
-          photos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600'],
-          photoPrivacy: 'PUBLIC',
-          isVerified: true,
-          isSubscriptionActive: true,
-          membershipTier: 'Premium',
-          trustScore: 95,
-          partnerPreferences: {
-            ageRange: '25 - 40',
-            maritalStatuses: ['Divorced', 'Widowed', 'Single Parent'],
-            religion: 'Islam',
-            minHeight: "5'2\"",
-            education: "Bachelor's / Master's",
-            location: 'Dhaka / Bangladesh',
-          },
-          matchPercentage: 95,
-          matchReasons: ['Verified Registered Member', 'Location Matched (Dhaka)'],
-          createdAt: new Date().toISOString().split('T')[0],
-        });
-      }
-    }
-  } catch (e) {}
-
-  // 3. Harvest from 2ndchance_admin_payments
-  try {
-    const payRaw = localStorage.getItem('2ndchance_admin_payments');
-    if (payRaw) {
-      const payments = JSON.parse(payRaw);
-      if (Array.isArray(payments)) {
-        for (const p of payments) {
-          if (p && p.customerName && !isAlreadyIn(`p-pay-${p.customerEmail}`, p.customerEmail)) {
-            result.push({
-              id: p.id || `p-txn-${Date.now()}`,
-              fullName: p.customerName,
-              email: p.customerEmail || 'paid.member@2ndnikah.com',
-              phone: p.customerPhone || '01700000000',
-              age: 30,
-              gender: 'Male',
-              maritalStatus: 'Divorced',
-              hasChildren: false,
-              religion: 'Islam',
-              motherTongue: 'Bengali',
-              height: "5'8\"",
-              location: 'Dhaka, Bangladesh',
-              city: 'Dhaka',
-              country: 'Bangladesh',
-              countryFlag: '🇧🇩',
-              education: 'Bachelor Degree',
-              profession: 'Service / Business',
-              bio: 'Active paid subscriber candidate.',
-              photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600',
-              additionalPhotos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600'],
-              photos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600'],
-              photoPrivacy: 'PUBLIC',
-              isVerified: true,
-              isSubscriptionActive: true,
-              membershipTier: 'Premium',
-              trustScore: 92,
-              partnerPreferences: {
-                ageRange: '24 - 38',
-                maritalStatuses: ['Divorced', 'Widowed', 'Single Parent'],
-                religion: 'Islam',
-                minHeight: "5'2\"",
-                education: "Bachelor's / Master's",
-                location: 'Dhaka / Bangladesh',
-              },
-              matchPercentage: 92,
-              matchReasons: ['Paid Premium Member', 'Verified Contact'],
-              createdAt: p.createdAt ? p.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
-            });
-          }
-        }
-      }
-    }
-  } catch (e) {}
-
-  // 4. Harvest logged-in user from localStorage 2ndchance_auth_user
-  try {
-    const authRaw = localStorage.getItem('2ndchance_auth_user');
-    if (authRaw) {
-      const authUser = JSON.parse(authRaw);
-      if (authUser && authUser.fullName && !isAlreadyIn(authUser.id, authUser.email)) {
-        result.push({
-          hasChildren: false,
-          photoPrivacy: 'PUBLIC',
-          matchPercentage: 90,
-          matchReasons: ['Logged in member'],
-          ...authUser,
-          photoUrl: authUser.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600',
-          isSubscriptionActive: true,
-          membershipTier: 'Premium',
-        });
-      }
-    }
-  } catch (e) {}
-
-  return result;
+function mergeWithMockProfiles(list: Profile[], _settings?: Record<string, any>): Profile[] {
+  // Production member listing is database-only. Mock/demo profiles must never
+  // be mixed into the real member directory — they are only used by clearly
+  // labelled marketing/demo surfaces, never here.
+  return Array.isArray(list) ? list.filter((item) => item && item.fullName) : [];
 }
 
-function mergeWithMockProfiles(list: Profile[], settings?: Record<string, any>): Profile[] {
-  const result: Profile[] = [];
-  const isPurgeEnabled =
-    (settings?.general?.purgeDummy === true) ||
-    (typeof window !== 'undefined' && localStorage.getItem('2ndchance_purge_dummy_enabled') === 'true');
+function mapArticleFromDb(a: any): CmsArticle {
+  const publishedAt = a?.publishedAt ? new Date(a.publishedAt).toISOString().split('T')[0] : '';
+  return {
+    id: a?.id,
+    title: a?.title || '',
+    slug: a?.slug || '',
+    content: a?.content || '',
+    excerpt: a?.excerpt || '',
+    category: a?.category || 'Marriage Advice',
+    featuredImage: a?.coverImage || '',
+    author: a?.author || 'Editorial Team',
+    status: a?.isPublished === false ? 'DRAFT' : 'PUBLISHED',
+    publishedAt,
+    createdAt: publishedAt,
+    updatedAt: publishedAt,
+  };
+}
 
-  // 1. Harvest real candidates (Hamza Ali, newly registered users, checkout customers)
-  const realHarvested = harvestRealCandidateProfiles();
-  for (const real of realHarvested) {
-    if (!isMockProfileId(real.id) && !result.some((r) => r.id === real.id || (r.email && real.email && r.email.toLowerCase() === real.email.toLowerCase()))) {
-      result.push(real);
-    }
-  }
+function mapArticleToApi(a: CmsArticle) {
+  return {
+    id: a?.id && !a.id.startsWith('art-temp-') ? a.id : undefined,
+    title: a?.title || '',
+    slug: a?.slug || '',
+    content: a?.content || '',
+    excerpt: a?.excerpt || '',
+    coverImage: a?.featuredImage || '',
+    category: a?.category || 'Marriage Advice',
+    author: a?.author || 'Editorial Team',
+    isPublished: a?.status !== 'DRAFT',
+  };
+}
 
-  // 2. Add passed input list (DB / Admin saved members) excluding mock IDs if purged
-  if (Array.isArray(list)) {
-    for (const item of list) {
-      if (!item || !item.fullName) continue;
-      if (isPurgeEnabled && isMockProfileId(item.id)) continue;
-      if (!result.some((r) => r.id === item.id || (r.email && item.email && r.email.toLowerCase() === item.email.toLowerCase()))) {
-        result.push(item);
-      }
-    }
-  }
+function mapBannerFromDb(b: any): CmsBanner {
+  return {
+    id: b?.id,
+    title: b?.title || '',
+    description: b?.subtitle || '',
+    image: b?.imageUrl || '',
+    ctaText: '',
+    ctaUrl: b?.targetUrl || '',
+    targetAudience: 'ALL',
+    sortOrder: 0,
+    status: b?.isActive === false ? 'INACTIVE' : 'ACTIVE',
+  };
+}
 
-  // 3. Fallback mock profiles ONLY if purge dummy is NOT enabled
-  if (!isPurgeEnabled) {
-    for (const mock of MOCK_PROFILES) {
-      if (!result.some((m) => m.id === mock.id || (m.email && mock.email && m.email.toLowerCase() === mock.email.toLowerCase()))) {
-        result.push(mock);
-      }
-    }
-  }
-
-  return result;
+function mapBannerToApi(b: CmsBanner) {
+  return {
+    id: b?.id && !b.id.startsWith('banner-temp-') ? b.id : undefined,
+    title: b?.title || '',
+    subtitle: b?.description || '',
+    imageUrl: b?.image || '',
+    targetUrl: b?.ctaUrl || '',
+    isActive: b?.status !== 'INACTIVE',
+  };
 }
 
 export function AdminProvider({ children, initialSettings = {} }: { children: React.ReactNode; initialSettings?: Record<string, any> }) {
-  const [members, setMembers] = useState<Profile[]>(MOCK_PROFILES);
+  const [members, setMembers] = useState<Profile[]>([]);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(MOCK_ADMIN_USERS);
   const [verificationQueue, setVerificationQueue] = useState<VerificationQueueItem[]>(MOCK_VERIFICATION_QUEUE);
   const [moderationReports, setModerationReports] = useState<ModerationReport[]>(MOCK_MODERATION_REPORTS);
@@ -466,25 +279,19 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlanAdmin[]>(MOCK_MEMBERSHIP_PLANS_ADMIN);
   const [cmsPages, setCmsPages] = useState<CmsPage[]>(MOCK_CMS_PAGES);
   const [cmsFaqs, setCmsFaqs] = useState<CmsFaq[]>(MOCK_CMS_FAQS);
-  const [cmsArticles, setCmsArticles] = useState<CmsArticle[]>(MOCK_CMS_ARTICLES);
-  const [cmsBanners, setCmsBanners] = useState<CmsBanner[]>(MOCK_CMS_BANNERS);
+  const [cmsArticles, setCmsArticles] = useState<CmsArticle[]>([]);
+  const [cmsBanners, setCmsBanners] = useState<CmsBanner[]>([]);
   const [cmsMedia, setCmsMedia] = useState<CmsMediaItem[]>(MOCK_CMS_MEDIA);
   const [homepageSections, setHomepageSections] = useState<HomepageSectionConfig[]>(MOCK_HOMEPAGE_SECTIONS);
   const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>(MOCK_ADMIN_NOTIFICATIONS);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(MOCK_AUDIT_LOGS);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Initialize settings synchronously: merge SSR-provided DB settings with the
-  // latest browser localStorage so the very first client render already shows
-  // admin-saved hero data (prevents the dummy-to-real flash and hydration mismatches).
-  const [settings, setSettings] = useState<Record<string, any>>(() => {
-    const base = { ...DEFAULT_SETTINGS, ...sanitizeSettings(initialSettings || {}) };
-    const local = readLocalSettings();
-    if (Object.keys(local).length > 0) {
-      return mergeSettingsByFreshness(base, sanitizeSettings(local));
-    }
-    return base;
-  });
+  // Initialize settings from the SSR-provided database settings. No browser
+  // storage is consulted — the database is the single source of truth.
+  const [settings, setSettings] = useState<Record<string, any>>(() =>
+    ({ ...DEFAULT_SETTINGS, ...sanitizeSettings(initialSettings || {}) })
+  );
 
   // Dynamic Browser Favicon Updater (React-safe DOM mutation)
   useEffect(() => {
@@ -504,25 +311,10 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
     }
   }, [settings?.branding?.faviconUrl]);
 
-  // Hydrate settings, members, articles, banners safely on client after mount
+  // Hydrate settings, members, articles and banners from MySQL. The database is
+  // the single source of truth; localStorage is never consulted for these.
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedMembers = localStorage.getItem('2ndchance_admin_members');
-        const parsedSaved = savedMembers ? JSON.parse(savedMembers) : [];
-        setMembers(mergeWithMockProfiles(parsedSaved, settings));
-
-        const savedArticles = localStorage.getItem('2ndchance_admin_articles');
-        if (savedArticles) setCmsArticles(JSON.parse(savedArticles));
-        const savedBanners = localStorage.getItem('2ndchance_admin_banners');
-        if (savedBanners) setCmsBanners(JSON.parse(savedBanners));
-      } catch (e) {
-        setMembers(mergeWithMockProfiles([], settings));
-      }
-    }
-
-    // 2. Fetch fresh data from MySQL Database APIs with timeout to prevent page hanging
-    async function fetchWithTimeout(url: string, timeoutMs: number = 1000) {
+    async function fetchJson(url: string, timeoutMs = 8000) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       try {
@@ -530,61 +322,38 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
         const res = await fetch(cacheBustedUrl, {
           signal: controller.signal,
           cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
+          credentials: 'include',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' },
         });
-        clearTimeout(timeoutId);
+        if (!res.ok) return null;
         return await res.json();
-      } catch (e) {
-        clearTimeout(timeoutId);
+      } catch {
         return null;
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 
     async function loadAllDbData() {
       try {
-        const settingsRes = await fetchWithTimeout('/api/settings');
-        let currentSettings = settings;
-
-        if (settingsRes?.success && settingsRes?.settings) {
-          const remote = sanitizeSettings(settingsRes.settings);
-          if (Object.keys(remote).length > 0) {
-            currentSettings = remote;
-            setSettings((prev) => {
-              const merged = mergeSettingsByFreshness(prev, remote);
-              if (typeof window !== 'undefined') {
-                try { localStorage.setItem('2ndchance_admin_settings', JSON.stringify(merged)); } catch (e) {}
-              }
-              return merged;
-            });
-          }
-        }
-
-        const isPurged =
-          (currentSettings?.general?.purgeDummy === true) ||
-          (typeof window !== 'undefined' && localStorage.getItem('2ndchance_purge_dummy_enabled') === 'true');
-
-        const membersUrl = isPurged ? '/api/members?purgeDummy=true' : '/api/members';
-
-        const [membersRes, articlesRes, bannersRes] = await Promise.all([
-          fetchWithTimeout(membersUrl),
-          fetchWithTimeout('/api/articles'),
-          fetchWithTimeout('/api/banners'),
+        const [settingsRes, membersRes, articlesRes, bannersRes] = await Promise.all([
+          fetchJson('/api/settings'),
+          fetchJson('/api/members'),
+          fetchJson('/api/articles'),
+          fetchJson('/api/banners'),
         ]);
 
-        if (membersRes?.success && membersRes?.members) {
-          const merged = mergeWithMockProfiles(membersRes.members, currentSettings);
-          setMembers(merged);
-          if (typeof window !== 'undefined') {
-            try { localStorage.setItem('2ndchance_admin_members', JSON.stringify(merged)); } catch (e) {}
-          }
+        if (settingsRes?.success && settingsRes?.settings) {
+          setSettings((prev) => ({ ...prev, ...sanitizeSettings(settingsRes.settings) }));
         }
-
-        if (articlesRes?.success && articlesRes?.articles && articlesRes.articles.length > 0) {
-          setCmsArticles(articlesRes.articles);
+        if (membersRes?.success && Array.isArray(membersRes.members)) {
+          setMembers(membersRes.members);
         }
-
-        if (bannersRes?.success && bannersRes?.banners && bannersRes.banners.length > 0) {
-          setCmsBanners(bannersRes.banners);
+        if (articlesRes?.success && Array.isArray(articlesRes.articles)) {
+          setCmsArticles(articlesRes.articles.map(mapArticleFromDb));
+        }
+        if (bannersRes?.success && Array.isArray(bannersRes.banners)) {
+          setCmsBanners(bannersRes.banners.map(mapBannerFromDb));
         }
       } catch (e) {
         console.warn('Could not load initial data from DB APIs:', e);
@@ -592,11 +361,7 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
         setIsLoaded(true);
       }
     }
-    const timerId = setTimeout(() => {
-      loadAllDbData();
-    }, 100);
-
-    return () => clearTimeout(timerId);
+    loadAllDbData();
   }, []);
 
   const addAuditLog = (action: string, target: string, description: string) => {
@@ -614,106 +379,91 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
     setAuditLogs((prev) => [newLog, ...prev]);
   };
 
-  const addMember = (m: any) => {
-    const newMember: Profile = {
-      ...m,
-      id: `p-${Date.now()}`,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setMembers((prev) => {
-      const updated = [newMember, ...prev];
-      if (typeof window !== 'undefined') {
-        try { localStorage.setItem('2ndchance_admin_members', JSON.stringify(updated)); } catch (e) {}
-      }
-      return updated;
-    });
+  const refreshMembers = async () => {
     try {
-      fetch('/api/members', {
+      const res = await fetch('/api/members', { cache: 'no-store', credentials: 'include' });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success && Array.isArray(data.members)) {
+        setMembers(data.members);
+      }
+    } catch {
+      /* ignore refresh errors — the caller already reports save failures */
+    }
+  };
+
+  const addMember = async (m: any): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/members', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newMember),
-      }).catch(() => {});
-    } catch (e) {}
-    addAuditLog('MEMBER_CREATED', newMember.fullName, `Created new member profile ${newMember.id}`);
-  };
-
-  const updateMember = (id: string, data: Partial<Profile>) => {
-    let updatedMember: Profile | undefined;
-    setMembers((prev) => {
-      const updated = prev.map((m) => {
-        if (m.id === id) {
-          updatedMember = { ...m, ...data };
-          return updatedMember;
-        }
-        return m;
+        credentials: 'include',
+        body: JSON.stringify(m),
       });
-      if (typeof window !== 'undefined') {
-        try { localStorage.setItem('2ndchance_admin_members', JSON.stringify(updated)); } catch (e) {}
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        return { success: false, error: data?.error || `Server responded ${res.status}` };
       }
-      return updated;
-    });
-    if (updatedMember) {
-      try {
-        fetch('/api/members', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedMember),
-        }).catch(() => {});
-      } catch (e) {}
+      if (data.member) {
+        setMembers((prev) => [data.member, ...prev.filter((x) => x.id !== data.member.id)]);
+      } else {
+        await refreshMembers();
+      }
+      addAuditLog('MEMBER_CREATED', m?.fullName || 'Member', 'Created new member profile');
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Network error' };
     }
-    addAuditLog('MEMBER_UPDATED', `Profile ${id}`, `Updated profile details`);
   };
 
-  const deleteMember = (id: string) => {
-    setMembers((prev) => {
-      const updated = prev.filter((m) => m.id !== id);
-      if (typeof window !== 'undefined') {
-        try { localStorage.setItem('2ndchance_admin_members', JSON.stringify(updated)); } catch (e) {}
-      }
-      return updated;
-    });
-    addAuditLog('MEMBER_DELETED', `Profile ${id}`, `Deleted member profile`);
-  };
-
-  const purgeDummyProfiles = () => {
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('2ndchance_purge_dummy_enabled', 'true'); } catch (e) {}
-    }
-
+  const updateMember = async (id: string, data: Partial<Profile>): Promise<{ success: boolean; error?: string }> => {
     try {
-      updateSettings('general', { purgeDummy: true });
-    } catch (e) {}
-
-    const realHarvested = harvestRealCandidateProfiles();
-
-    setMembers((prev) => {
-      const nonMockPrev = prev.filter((m) => !isMockProfileId(m.id));
-      const combined: Profile[] = [];
-
-      for (const real of realHarvested) {
-        if (!isMockProfileId(real.id) && !combined.some((c) => c.id === real.id || (c.email && real.email && c.email.toLowerCase() === real.email.toLowerCase()))) {
-          combined.push(real);
-        }
+      const res = await fetch('/api/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ...data, id }),
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok || !result?.success) {
+        return { success: false, error: result?.error || `Server responded ${res.status}` };
       }
-
-      for (const m of nonMockPrev) {
-        if (!combined.some((c) => c.id === m.id || (c.email && m.email && c.email.toLowerCase() === m.email.toLowerCase()))) {
-          combined.push(m);
-        }
+      if (result.member) {
+        setMembers((prev) => prev.map((m) => (m.id === result.member.id ? { ...m, ...result.member } : m)));
+      } else {
+        await refreshMembers();
       }
+      addAuditLog('MEMBER_UPDATED', `Profile ${id}`, 'Updated profile details');
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Network error' };
+    }
+  };
 
-      if (typeof window !== 'undefined') {
-        try { localStorage.setItem('2ndchance_admin_members', JSON.stringify(combined)); } catch (e) {}
+  const deleteMember = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch(`/api/members?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        return { success: false, error: data?.error || `Server responded ${res.status}` };
       }
+      setMembers((prev) => prev.filter((m) => m.id !== id));
+      addAuditLog('MEMBER_DELETED', `Profile ${id}`, 'Deleted member profile');
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Network error' };
+    }
+  };
 
-      try {
-        fetch('/api/members?purgeDummy=true', { method: 'DELETE' }).catch(() => {});
-      } catch (e) {}
-
-      return combined;
-    });
-
-    addAuditLog('DUMMY_PROFILES_PURGED', 'Candidate Database', 'Purged all dummy mock profiles. Only real candidate accounts remain.');
+  const purgeDummyProfiles = async (): Promise<{ success: boolean; error?: string }> => {
+    // Demo/mock profiles are no longer stored in the member directory at all, so
+    // this now simply records the admin preference and reloads the real data.
+    const settingsResult = await updateSettings('general', { purgeDummy: true });
+    await refreshMembers();
+    addAuditLog('DUMMY_PROFILES_PURGED', 'Candidate Database', 'Confirmed member directory contains real database records only.');
+    return settingsResult;
   };
 
   const approveVerification = (id: string, notes?: string) => {
@@ -860,56 +610,98 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
     addAuditLog('CMS_FAQ_DELETED', `FAQ ${id}`, 'Deleted FAQ record');
   };
 
-  const saveCmsArticle = (article: CmsArticle) => {
-    setCmsArticles((prev) => {
-      const idx = prev.findIndex((a) => a.id === article.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = article;
-        return copy;
-      }
-      return [article, ...prev];
-    });
+  const saveCmsArticle = async (article: CmsArticle): Promise<{ success: boolean; error?: string }> => {
     try {
-      fetch('/api/articles', {
+      const res = await fetch('/api/articles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(article),
-      }).catch(() => {});
-    } catch (e) {}
-    addAuditLog('CMS_ARTICLE_SAVED', `Article ${article.title}`, 'Saved blog article');
-  };
-
-  const deleteCmsArticle = (id: string) => {
-    setCmsArticles((prev) => prev.filter((a) => a.id !== id));
-    try { fetch(`/api/articles?id=${id}`, { method: 'DELETE' }).catch(() => {}); } catch (e) {}
-    addAuditLog('CMS_ARTICLE_DELETED', `Article ${id}`, 'Deleted blog article');
-  };
-
-  const saveCmsBanner = (banner: CmsBanner) => {
-    setCmsBanners((prev) => {
-      const idx = prev.findIndex((b) => b.id === banner.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = banner;
-        return copy;
+        credentials: 'include',
+        body: JSON.stringify(mapArticleToApi(article)),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        return { success: false, error: data?.error || `Server responded ${res.status}` };
       }
-      return [banner, ...prev];
-    });
+      const saved = data.article ? mapArticleFromDb(data.article) : article;
+      setCmsArticles((prev) => {
+        const idx = prev.findIndex((a) => a.id === saved.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = saved;
+          return copy;
+        }
+        return [saved, ...prev];
+      });
+      addAuditLog('CMS_ARTICLE_SAVED', `Article ${article.title}`, 'Saved blog article');
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Network error' };
+    }
+  };
+
+  const deleteCmsArticle = async (id: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      fetch('/api/banners', {
+      const res = await fetch(`/api/articles?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        return { success: false, error: data?.error || `Server responded ${res.status}` };
+      }
+      setCmsArticles((prev) => prev.filter((a) => a.id !== id));
+      addAuditLog('CMS_ARTICLE_DELETED', `Article ${id}`, 'Deleted blog article');
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Network error' };
+    }
+  };
+
+  const saveCmsBanner = async (banner: CmsBanner): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/banners', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(banner),
-      }).catch(() => {});
-    } catch (e) {}
-    addAuditLog('CMS_BANNER_SAVED', `Banner ${banner.title}`, 'Saved banner');
+        credentials: 'include',
+        body: JSON.stringify(mapBannerToApi(banner)),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        return { success: false, error: data?.error || `Server responded ${res.status}` };
+      }
+      const saved = data.banner ? mapBannerFromDb(data.banner) : banner;
+      setCmsBanners((prev) => {
+        const idx = prev.findIndex((b) => b.id === saved.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = saved;
+          return copy;
+        }
+        return [saved, ...prev];
+      });
+      addAuditLog('CMS_BANNER_SAVED', `Banner ${banner.title}`, 'Saved banner');
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Network error' };
+    }
   };
 
-  const deleteCmsBanner = (id: string) => {
-    setCmsBanners((prev) => prev.filter((b) => b.id !== id));
-    try { fetch(`/api/banners?id=${id}`, { method: 'DELETE' }).catch(() => {}); } catch (e) {}
-    addAuditLog('CMS_BANNER_DELETED', `Banner ${id}`, 'Deleted banner');
+  const deleteCmsBanner = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch(`/api/banners?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        return { success: false, error: data?.error || `Server responded ${res.status}` };
+      }
+      setCmsBanners((prev) => prev.filter((b) => b.id !== id));
+      addAuditLog('CMS_BANNER_DELETED', `Banner ${id}`, 'Deleted banner');
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Network error' };
+    }
   };
 
   const toggleHomepageSection = (id: string) => {
@@ -947,67 +739,58 @@ export function AdminProvider({ children, initialSettings = {} }: { children: Re
     addAuditLog('ADMIN_USER_DELETED', `Admin ${id}`, 'Deleted admin user account');
   };
 
-  const updateSettings = (category: string, values: Record<string, any>) => {
-    const savedAt = Date.now();
-    setSettings((prev) => {
-      const updated = {
+  const updateSettings = async (category: string, values: Record<string, any>): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ category, values }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        return { success: false, error: data?.error || `Server responded ${res.status}` };
+      }
+      setSettings((prev) => ({
         ...prev,
         [category]: { ...(prev[category] || {}), ...values },
-        [SETTINGS_META_KEY]: savedAt,
-      };
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('2ndchance_admin_settings', JSON.stringify(updated));
-        } catch (e) {
-          console.warn('Could not persist admin settings to localStorage due to browser quota limits:', e);
-        }
-      }
-      return updated;
-    });
-
-    // Save directly to MySQL Database (2ndchance_db) via Next.js API Route
-    try {
-      fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, values }),
-      }).catch((err) => console.warn('DB settings save background error:', err));
-    } catch (e) {}
-
-    addAuditLog('SETTINGS_UPDATED', `Settings Category ${category}`, 'Updated platform configuration');
+        ...(data.settings || {}),
+      }));
+      addAuditLog('SETTINGS_UPDATED', `Settings Category ${category}`, 'Updated platform configuration');
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Network error' };
+    }
   };
 
-  const batchUpdateSettings = (allUpdates: Record<string, any>) => {
-    const savedAt = Date.now();
-    setSettings((prev) => {
-      const updated = { ...prev };
-      for (const [key, val] of Object.entries(allUpdates)) {
-        if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
-          updated[key] = { ...(prev[key] || {}), ...val };
-        } else {
-          updated[key] = val;
-        }
-      }
-      updated[SETTINGS_META_KEY] = savedAt;
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('2ndchance_admin_settings', JSON.stringify(updated));
-        } catch (e) {
-          console.warn('Could not persist admin settings to localStorage:', e);
-        }
-      }
-      return updated;
-    });
-
+  const batchUpdateSettings = async (allUpdates: Record<string, any>): Promise<{ success: boolean; error?: string }> => {
     try {
-      fetch('/api/settings', {
+      const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ settings: allUpdates }),
-      }).catch((err) => console.warn('DB batch settings save background error:', err));
-    } catch (e) {}
-
-    addAuditLog('SETTINGS_BATCH_UPDATED', 'Platform Settings', 'Updated platform configuration in batch');
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        return { success: false, error: data?.error || `Server responded ${res.status}` };
+      }
+      setSettings((prev) => {
+        const updated = { ...prev };
+        for (const [key, val] of Object.entries(allUpdates)) {
+          if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+            updated[key] = { ...(prev[key] || {}), ...val };
+          } else {
+            updated[key] = val;
+          }
+        }
+        return { ...updated, ...(data.settings || {}) };
+      });
+      addAuditLog('SETTINGS_BATCH_UPDATED', 'Platform Settings', 'Updated platform configuration in batch');
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Network error' };
+    }
   };
 
   return (

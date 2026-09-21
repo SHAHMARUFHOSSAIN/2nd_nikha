@@ -24,7 +24,6 @@ import {
   CheckCircle2,
   User,
 } from 'lucide-react';
-import { MOCK_PROFILES } from '@/data/mock-data';
 import { ProfileDetailModal } from '@/components/profile/profile-detail-modal';
 
 interface VisitorItem {
@@ -32,113 +31,39 @@ interface VisitorItem {
   visitedAt: string;
   visitedTimeAgo: string;
   isNew: boolean;
-  profile: (typeof MOCK_PROFILES)[0];
+  profile: any;
 }
 
 export default function ProfileVisitorsPage() {
   const router = useRouter();
   const { currentUser } = useAuth();
-  const { sendInterestRequest, interests } = useConnection();
   const [filter, setFilter] = useState<'all' | 'today' | 'new'>('all');
   const [visitorsList, setVisitorsList] = useState<VisitorItem[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<any | null>(null);
 
-  // Harvest real registered user profiles & profile visits
+  // Real, stored ProfileVisit records (DB) for the signed-in member.
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const isPurgeEnabled = localStorage.getItem('2ndchance_purge_dummy_enabled') === 'true';
-    let harvestedProfiles: any[] = isPurgeEnabled ? [] : [...MOCK_PROFILES];
-
-    try {
-      const reg = localStorage.getItem('2ndchance_registered_accounts');
-      if (reg) {
-        const parsed = JSON.parse(reg);
-        if (Array.isArray(parsed)) {
-          parsed.forEach((p) => {
-            if (p && p.id && !harvestedProfiles.some((item) => item.id === p.id)) {
-              harvestedProfiles.push({
-                id: p.id,
-                fullName: p.fullName || p.name || 'Registered Candidate',
-                age: p.age || 28,
-                gender: p.gender || 'FEMALE',
-                profession: p.profession || 'Verified Candidate',
-                education: p.education || 'Higher Education',
-                location: p.location || p.city || 'Dhaka, Bangladesh',
-                photoUrl: p.photoUrl || p.avatar || '/images/default-avatar.jpg',
-                isVerified: true,
-              });
-            }
-          });
-        }
-      }
-
-      const checkoutCust = localStorage.getItem('2ndchance_checkout_customer');
-      if (checkoutCust) {
-        const parsed = JSON.parse(checkoutCust);
-        if (parsed && parsed.id && !harvestedProfiles.some((item) => item.id === parsed.id)) {
-          harvestedProfiles.push({
-            id: parsed.id,
-            fullName: parsed.fullName || parsed.name || 'Member',
-            age: parsed.age || 27,
-            gender: parsed.gender || 'FEMALE',
-            profession: parsed.profession || 'Member Candidate',
-            education: parsed.education || 'BSc Degree',
-            location: parsed.location || 'Dhaka',
-            photoUrl: parsed.photoUrl || '/images/default-avatar.jpg',
-            isVerified: true,
-          });
-        }
-      }
-    } catch (e) {
-      console.error('Error harvesting visitor profiles:', e);
-    }
-
-    // Filter out current user from visitors list
-    const otherCandidates = harvestedProfiles.filter(
-      (p) => !currentUser || (p.id !== currentUser.id && p.email !== currentUser.email)
-    );
-
-    // Read stored visitors or format dynamic visitors
-    const storedVisitors = localStorage.getItem('2ndchance_profile_visitors');
-    let visitsData: VisitorItem[] = [];
-
-    if (storedVisitors) {
+    (async () => {
+      if (typeof window === 'undefined') return;
       try {
-        const parsed = JSON.parse(storedVisitors);
-        if (Array.isArray(parsed)) {
-          visitsData = parsed.map((item: any, idx: number) => {
-            const matchedProfile = otherCandidates.find((c) => c.id === item.visitorId) || otherCandidates[idx % otherCandidates.length] || MOCK_PROFILES[0];
-            return {
-              id: item.id || `v-${idx}`,
-              visitedAt: item.visitedAt || new Date().toISOString(),
-              visitedTimeAgo: item.visitedTimeAgo || 'Recently',
-              isNew: Boolean(item.isNew),
-              profile: matchedProfile,
-            };
-          });
-        }
-      } catch (e) {}
-    }
-
-    // Fallback dynamic real profiles if no custom visit log exists yet
-    if (visitsData.length === 0) {
-      const timeAgos = ['15 mins ago', '2 hours ago', '8 hours ago', 'Yesterday', '2 days ago'];
-      visitsData = otherCandidates.slice(0, 6).map((prof, idx) => ({
-        id: `v-real-${idx}`,
-        visitedAt: new Date(Date.now() - idx * 3600 * 1000).toISOString(),
-        visitedTimeAgo: timeAgos[idx % timeAgos.length],
-        isNew: idx < 2,
-        profile: prof,
-      }));
-    }
-
-    setVisitorsList(visitsData);
+        const res = await fetch('/api/visits', { cache: 'no-store', credentials: 'include' });
+        const json = await res.json().catch(() => null);
+        const rows: any[] = Array.isArray(json?.visitors) ? json.visitors : [];
+        const visits: VisitorItem[] = rows.map((v: any) => ({
+          id: v?.id || `v-${v?.visitorId}`,
+          visitedAt: v?.visitedAt,
+          visitedTimeAgo: v?.visitedTimeAgo || v?.visitedAt || 'Recently',
+          isNew: !!v?.isNew,
+          profile: v?.profile,
+        }));
+        setVisitorsList(visits);
+      } catch (err) {}
+    })();
   }, [currentUser]);
 
   const filteredVisitors = visitorsList.filter((v) => {
     if (filter === 'new') return v.isNew;
-    if (filter === 'today') return v.visitedTimeAgo.includes('ago');
+    if (filter === 'today') return (v.visitedTimeAgo || '').includes('ago');
     return true;
   });
 
@@ -186,7 +111,7 @@ export default function ProfileVisitorsPage() {
                   : 'text-stone-600 hover:text-stone-900'
               }`}
             >
-              New (2)
+              New ({visitorsList.filter((v) => v.isNew).length})
             </button>
           </div>
         </div>

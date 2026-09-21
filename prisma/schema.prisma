@@ -75,6 +75,9 @@ model User {
   passwordHash    String
   userRole        Role     @default(FREE)
   isVerified      Boolean  @default(false)
+  emailVerifiedAt DateTime?
+  emailVerificationToken String?
+  emailVerificationTokenExpiry DateTime?
   nidNumber       String?
   nidDocumentUrl  String?
   country         String   @default("Bangladesh")
@@ -100,6 +103,9 @@ model User {
   notifications   Notification[] @relation("NotificationOwner")
   refreshTokens   RefreshToken[]
   auditLogs       AuditLog[]
+
+  profileVisitsMade ProfileVisit[] @relation("Visitor")
+  profileVisitsRecv ProfileVisit[] @relation("Visited")
 
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
@@ -256,11 +262,13 @@ model Payment {
   amount           Decimal       @db.Decimal(10, 2)
   currency         String        @default("BDT")
   status           PaymentStatus @default(PENDING)
-  paidAt           DateTime?
-  email            String?
-  paymentMethod    String        @default("sslcommerz")
-  packageType      String        @default("MONTHLY")
-  sslResponseRaw   Json?
+  paidAt          DateTime?
+  email           String?
+  paymentMethod   String        @default("sslcommerz")
+  packageType     String        @default("MONTHLY")
+  termsAcceptedAt DateTime?
+  consentIp       String?
+  sslResponseRaw  Json?
   customerName     String?
   customerPhone    String?
 
@@ -388,15 +396,28 @@ model RefreshToken {
 }
 
 model ProfilePhoto {
-  id       String   @id @default(uuid())
+  id        String   @id @default(uuid())
   profileId String
-  url      String   @db.Text
-  sortOrder Int     @default(0)
-  isPrimary Boolean @default(false)
+  url       String   @db.Text
+  sortOrder Int      @default(0)
+  isPrimary Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@index([profileId])
   @@map("profile_photos")
+}
+
+model ProfileVisit {
+  id            String   @id @default(uuid())
+  visitorId     String
+  visitor       User     @relation("Visitor", fields: [visitorId], references: [id], onDelete: Cascade)
+  visitedUserId String
+  visitedUser   User     @relation("Visited", fields: [visitedUserId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@index([visitedUserId, createdAt])
+  @@index([visitorId, createdAt])
+  @@map("profile_visits")
 }
 
 model Article {

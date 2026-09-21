@@ -15,6 +15,10 @@ export interface PaymentRequest {
   customerState?: string;
   customerAddress?: string;
   customerPostcode?: string;
+  /** Mandatory, server-authoritative: must be exactly `true` for the server to
+   *  initiate the payment. The server records the authoritative consent
+   *  timestamp + IP itself; this flag only clears the server gate. */
+  acceptedTerms?: boolean;
 }
 
 export interface PaymentInitResult {

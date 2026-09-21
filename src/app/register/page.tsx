@@ -16,6 +16,7 @@ import {
   Heart,
   ShieldCheck,
   Lock,
+  Mail,
   ArrowRight,
   ArrowLeft,
   Upload,
@@ -209,53 +210,6 @@ export default function RegistrationWizardPage() {
         ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600'
         : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600');
 
-      const daysPass = 30;
-      const passExpiresAt = new Date(Date.now() + daysPass * 24 * 60 * 60 * 1000).toISOString();
-
-      const newProfile = {
-        id: `p-${Date.now()}`,
-        fullName: formData.fullName || 'New Member',
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password || '123456',
-        subscriptionExpiresAt: passExpiresAt,
-        isSubscriptionActive: true,
-        age: formData.dob ? Math.max(18, new Date().getFullYear() - new Date(formData.dob).getFullYear()) : 28,
-        gender: formData.gender || 'Female',
-        height: formData.height || "5'5\"",
-        maritalStatus: formData.maritalStatus || 'Divorced',
-        religion: formData.religion || 'Islam',
-        motherTongue: formData.motherTongue || 'Bengali',
-        location: `${formData.city || 'Dhaka'}, ${formData.country || 'Bangladesh'}`,
-        city: formData.city || 'Dhaka',
-        country: formData.country || 'Bangladesh',
-        countryFlag: formData.country === 'Bangladesh' ? '🇧🇩' : '🌐',
-        education: formData.education || 'Graduate',
-        institution: formData.institution || 'University',
-        profession: formData.profession || 'Professional',
-        company: formData.company || 'Enterprise',
-        income: formData.income || '৳1,00,000 / month',
-        bio: formData.bio || 'Seeking a genuine, respectful life partner for remarriage.',
-        photoUrl: avatarUrl,
-        photos: validPhotosList.length > 0 ? validPhotosList : [avatarUrl],
-        isVerified: false,
-        matchPercentage: 92,
-        trustScore: 88,
-        hasChildren: Boolean(formData.childrenCount && Number(formData.childrenCount) > 0),
-        photoPrivacy: 'PUBLIC' as const,
-        membershipTier: 'Premium' as any,
-        matchReasons: ['Location Match', 'Education Compatibility', 'Religiosity'],
-        partnerPreferences: {
-          ageRange: `${formData.prefMinAge || '26'} - ${formData.prefMaxAge || '40'} yrs`,
-          maritalStatuses: formData.prefMaritalStatus ? formData.prefMaritalStatus.split(',').map((s) => s.trim() as any) : ['Divorced', 'Single Parent'],
-          religion: formData.prefReligion || 'Islam',
-          minHeight: "5'2\"",
-          education: formData.prefEducation || 'Graduate',
-          location: formData.prefLocation || 'Dhaka',
-        },
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-
       // Create the account server-side (bcrypt hashed, MySQL persisted, httpOnly session cookie)
       setIsSubmitting(true);
       fetch('/api/auth/register', {
@@ -317,9 +271,11 @@ export default function RegistrationWizardPage() {
             },
             roleFromServer
           );
-          setIsCompleted(true);
+          // Show the email-verification notice briefly before handing over.
+          setStepError(data.message || 'Please check your email to verify your account.');
           setIsSubmitting(false);
-          router.push(roleFromServer === 'PREMIUM' ? '/member' : '/membership');
+          setIsCompleted(true);
+          setTimeout(() => router.push(roleFromServer === 'PREMIUM' ? '/member' : '/membership'), 1400);
         })
         .catch(() => {
           setStepError('Unable to reach the registration service. Please try again.');
@@ -355,6 +311,14 @@ export default function RegistrationWizardPage() {
                   ? 'Your profile setup is complete! Please wait for your perfect match — our smart AI engine & verification team are matching your profile with verified candidates.'
                   : 'Your profile registration is complete! Please select a subscription pass below to activate your account and view your perfect matches.'}
               </p>
+            </div>
+
+            <div className="bg-sky-50/70 p-4 rounded-2xl border border-sky-200 text-xs text-stone-700 text-left space-y-1.5">
+              <p className="font-bold text-sky-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Mail className="w-4 h-4 text-sky-700" />
+                <span>Verify Your Email</span>
+              </p>
+              <p>Please check your email to verify your account. Until your email is verified, some platform features may remain restricted.</p>
             </div>
 
             {isPaid ? (

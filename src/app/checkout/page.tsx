@@ -48,8 +48,18 @@ function CheckoutContent() {
         }
   );
 
+  // Mandatory payment consent. MUST be unchecked by default; the user must
+  // manually opt in and re-issued for every payment. The server init route is
+  // the authoritative arbiter (it rejects inconsistently too).
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [consentTouched, setConsentTouched] = useState(false);
+
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptedTerms) {
+      setConsentTouched(true);
+      return;
+    }
     setIsHandoffOpen(true);
 
     const customerDetails = {
@@ -98,6 +108,7 @@ function CheckoutContent() {
       customerPhone: customerInfo.phone,
       customerCountry: chargeCountry,
       customerCity: 'Dhaka',
+      acceptedTerms: acceptedTerms === true,
     });
 
     setTimeout(() => {
@@ -176,11 +187,45 @@ function CheckoutContent() {
                 </p>
               </div>
 
+              <label className="flex items-start gap-2.5 p-3 rounded-xl border border-stone-200 bg-white cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => {
+                    setAcceptedTerms(e.target.checked);
+                    setConsentTouched(true);
+                  }}
+                  className="mt-0.5 w-4 h-4 rounded border-stone-300 text-pink-600 focus:ring-pink-500"
+                  aria-required="true"
+                />
+                <span className="text-[11px] leading-relaxed text-stone-600">
+                  I have read and agree to the{' '}
+                  <Link href="/terms" target="_blank" rel="noopener noreferrer" className="underline text-pink-700 hover:text-pink-900">
+                    Terms & Conditions
+                  </Link>
+                  ,{' '}
+                  <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="underline text-pink-700 hover:text-pink-900">
+                    Privacy Policy
+                  </Link>
+                  , and{' '}
+                  <Link href="/refund-policy" target="_blank" rel="noopener noreferrer" className="underline text-pink-700 hover:text-pink-900">
+                    Subscription & Refund Policy
+                  </Link>
+                  .
+                </span>
+              </label>
+              {consentTouched && !acceptedTerms && (
+                <p className="text-[11px] font-medium text-red-600" role="alert">
+                  Please review and accept the Terms &amp; Conditions, Privacy Policy, and Subscription &amp; Refund Policy before proceeding.
+                </p>
+              )}
+
               <Button
                 type="submit"
                 variant="wine"
                 size="lg"
-                className="w-full justify-center shadow-lg shadow-pink-900/20"
+                className="w-full justify-center shadow-lg shadow-pink-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!acceptedTerms}
                 rightIcon={<ArrowRight className="w-4 h-4 text-white" />}
               >
                 Pay {currentPriceFormatted} via SSLCommerz Gateway

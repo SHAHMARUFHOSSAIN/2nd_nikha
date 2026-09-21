@@ -1,10 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
-import { Interest, Match, Profile, InterestStatus, Payment } from '@/types';
-import { MOCK_INTERESTS, MOCK_MATCHES } from '@/data/connection-data';
-import { MOCK_PAYMENTS } from '@/data/subscription-data';
-import { MOCK_PROFILES } from '@/data/mock-data';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { Interest, Match, Profile, InterestStatus } from '@/types';
 import { PaymentService } from './payment/payment-service';
 import { MEMBERSHIP_CONFIG } from './constants';
 import { useAuth } from './auth-context';
@@ -30,8 +27,8 @@ interface ConnectionContextType {
 }
 
 const ConnectionContext = createContext<ConnectionContextType>({
-  interests: MOCK_INTERESTS,
-  matches: MOCK_MATCHES,
+  interests: [],
+  matches: [],
   blockedUserIds: [],
   reportedUserIds: [],
   activeMatchModal: null,
@@ -49,6 +46,13 @@ const ConnectionContext = createContext<ConnectionContextType>({
   getMatchByProfileId: () => undefined,
 });
 
+const api = async (url: string, init?: RequestInit) => {
+  const res = await fetch(url, { credentials: 'include', cache: 'no-store', ...init });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json?.success) throw new Error(json?.error || `Request failed: ${res.status}`);
+  return json;
+};
+
 export function ConnectionProvider({ children }: { children: React.ReactNode }) {
   const [interests, setInterests] = useState<Interest[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -59,14 +63,61 @@ export function ConnectionProvider({ children }: { children: React.ReactNode }) 
     { id: string; title: string; message: string; date: string; read: boolean }[]
   >([]);
 
-  const { currentUser: authUser } = useAuth();
-  const currentUser = authUser || MOCK_PROFILES[0];
+  const { currentUser: authUser, sessionReady } = useAuth();
+  const currentUser = authUser;
+
+  const refreshInterests = useCallback(async () => {
+    if (!currentUser?.id) return;
+    try {
+      const json = await api('/api/interests');
+      setInterests(json.interests || []);
+    } catch {}
+  }, [currentUser?.id]);
+
+  const refreshMatches = useCallback(async () => {
+    if (!currentUser?.id) return;
+    try {
+      const json = await api('/api/matches');
+      setMatches(json.matches || []);
+    } catch {}
+  }, [currentUser?.id]);
+
+  const refreshNotifications = useCallback(async () => {
+    if (!currentUser?.id) return;
+    try {
+      const json = await api('/api/notifications');
+      setNotifications(json.notifications || []);
+    } catch {}
+  }, [currentUser?.id]);
+
+  const refreshBlocks = useCallback(async () => {
+    if (!currentUser?.id) return;
+    try {
+      const json = await api('/api/blocks');
+      setBlockedUserIds(json.blockedUserIds || []);
+    } catch {}
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    if (!currentUser?.id) {
+      setInterests([]);
+      setMatches([]);
+      setBlockedUserIds([]);
+      setNotifications([]);
+      return;
+    }
+    refreshInterests();
+    refreshMatches();
+    refreshNotifications();
+    refreshBlocks();
+  }, [sessionReady, currentUser?.id, refreshInterests, refreshMatches, refreshNotifications, refreshBlocks]);
 
   const closeMatchModal = () => setActiveMatchModal(null);
 
   const getInterestStatus = (profileId: string): InterestStatus | 'NONE' => {
-    const safeInterests = Array.isArray(interests) ? interests : MOCK_INTERESTS;
-    const found = safeInterests.find(
+    if (!currentUser?.id) return 'NONE';
+    const found = interests.find(
       (i) =>
         (i.senderId === currentUser.id && i.receiverId === profileId) ||
         (i.receiverId === currentUser.id && i.senderId === profileId)
@@ -75,8 +126,8 @@ export function ConnectionProvider({ children }: { children: React.ReactNode }) 
   };
 
   const isMatched = (profileId: string): boolean => {
-    const safeMatches = Array.isArray(matches) ? matches : MOCK_MATCHES;
-    return safeMatches.some(
+    if (!currentUser?.id) return false;
+    return matches.some(
       (m) =>
         (m.userOneId === currentUser.id && m.userTwoId === profileId) ||
         (m.userTwoId === currentUser.id && m.userOneId === profileId)
@@ -84,8 +135,8 @@ export function ConnectionProvider({ children }: { children: React.ReactNode }) 
   };
 
   const getMatchByProfileId = (profileId: string): Match | undefined => {
-    const safeMatches = Array.isArray(matches) ? matches : MOCK_MATCHES;
-    return safeMatches.find(
+    if (!currentUser?.id) return undefined;
+    return matches.find(
       (m) =>
         (m.userOneId === currentUser.id && m.userTwoId === profileId) ||
         (m.userTwoId === currentUser.id && m.userOneId === profileId)
@@ -93,139 +144,129 @@ export function ConnectionProvider({ children }: { children: React.ReactNode }) 
   };
 
   const sendInterestRequest = async (targetProfile: Profile) => {
-    const existingStatus = getInterestStatus(targetProfile.id);
+    if (!currentUser?.id) {
+      return { success: false, message: 'Please log in to send an interest.' };
+    }
 
-    if (existingStatus === 'SENT' || existingStatus === 'ACCEPTED') {
+    const existingStatus = getInterestStatus(targetProfile.id);
+    if (existingStatus === 'SENT' || existingStatus === 'ACCEPTED' || existingStatus === 'PENDING') {
       return {
         success: false,
         message: `Interest already sent to ${targetProfile.fullName}.`,
       };
     }
 
-    // Initiate Mock Payment Session
-    const paymentInit = await PaymentService.initiatePayment({
-      userId: currentUser.id,
-      recipientId: targetProfile.id,
-      purpose: 'interest',
-      amount: MEMBERSHIP_CONFIG.PREMIUM_MONTHLY_BDT,
-      currency: 'BDT',
-      customerName: currentUser.fullName,
-      customerEmail: 'anika.rahman@example.com',
-      customerPhone: '01712345678',
-    });
+    let redirectUrl: string | undefined;
+    try {
+      const paymentInit = await PaymentService.initiatePayment({
+        userId: currentUser.id,
+        recipientId: targetProfile.id,
+        purpose: 'interest',
+        amount: MEMBERSHIP_CONFIG.PREMIUM_MONTHLY_BDT,
+        currency: 'BDT',
+        customerName: currentUser.fullName,
+        customerEmail: currentUser.email || '',
+        customerPhone: currentUser.phone || '',
+      });
+      redirectUrl = paymentInit?.redirectUrl;
+    } catch (err) {
+      // payment gateway is optional; continue to record the interest
+    }
 
-    const newInterest: Interest = {
-      id: `int-${Date.now()}`,
-      senderId: currentUser.id,
-      receiverId: targetProfile.id,
-      senderProfile: currentUser,
-      receiverProfile: targetProfile,
-      status: 'PAYMENT_PENDING',
-      paymentTransactionId: paymentInit.transactionId,
-      createdAt: 'Just now',
-    };
+    try {
+      await api('/api/interests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ receiverId: targetProfile.id }),
+      });
+      await refreshInterests();
+      await refreshNotifications();
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Failed to send interest.' };
+    }
 
-    setInterests((prev) => [newInterest, ...prev]);
-
-    return {
-      success: true,
-      redirectUrl: paymentInit.redirectUrl,
-    };
+    return { success: true, redirectUrl };
   };
 
   const activateInterestAfterPayment = (txnId: string, recipientId: string) => {
-    const recipientProfile = MOCK_PROFILES.find((p) => p.id === recipientId) || MOCK_PROFILES[1];
-
-    setInterests((prev) =>
-      (Array.isArray(prev) ? prev : MOCK_INTERESTS).map((i) =>
-        i.paymentTransactionId === txnId || i.receiverId === recipientId
-          ? { ...i, status: 'SENT' }
-          : i
-      )
-    );
-
-    // Record Payment in Payment History
-    const newPayment: Payment = {
-      id: `pay-${Date.now()}`,
-      userId: currentUser.id,
-      transactionId: txnId,
-      amount: MEMBERSHIP_CONFIG.PREMIUM_MONTHLY_BDT,
-      currency: 'BDT',
-      gateway: 'MockPaymentGateway',
-      status: 'PAID',
-      paidAt: 'Just now',
-      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      purpose: 'interest',
-    };
-
-    MOCK_PAYMENTS.unshift(newPayment);
-
-    // Add Notifications
-    setNotifications((prev) => [
-      {
-        id: `n-${Date.now()}`,
-        title: 'Interest Sent ❤️',
-        message: `Your payment was successful and express interest has been sent to ${recipientProfile.fullName}.`,
-        date: 'Just now',
-        read: false,
-      },
-      ...prev,
-    ]);
+    if (!currentUser?.id) return;
+    (async () => {
+      try {
+        await api('/api/interests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ receiverId: recipientId }),
+        });
+      } catch {}
+      await refreshInterests();
+      await refreshNotifications();
+    })();
   };
 
   const acceptInterest = (interestId: string) => {
-    const safeInterests = Array.isArray(interests) ? interests : MOCK_INTERESTS;
-    const targetInterest = safeInterests.find((i) => i.id === interestId);
-    if (!targetInterest) return;
-
-    setInterests((prev) =>
-      prev.map((i) => (i.id === interestId ? { ...i, status: 'ACCEPTED' } : i))
-    );
-
-    const otherProfile =
-      targetInterest.senderId === currentUser.id
-        ? targetInterest.receiverProfile
-        : targetInterest.senderProfile;
-
-    const newMatch: Match = {
-      id: `match-${Date.now()}`,
-      userOneId: currentUser.id,
-      userTwoId: otherProfile.id,
-      profile: otherProfile,
-      compatibilityScore: otherProfile.matchPercentage || 92,
-      matchedAt: 'Just now',
-      status: 'ACTIVE',
-    };
-
-    setMatches((prev) => [newMatch, ...prev]);
-    setActiveMatchModal(newMatch);
+    (async () => {
+      try {
+        const json = await api(`/api/interests/${encodeURIComponent(interestId)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'ACCEPTED' }),
+        });
+        await refreshInterests();
+        if (json.match) {
+          setMatches((prev) => {
+            const others = prev.filter((m) => m.id !== json.match.id);
+            return [json.match, ...others];
+          });
+          setActiveMatchModal(json.match);
+        } else {
+          await refreshMatches();
+        }
+        await refreshNotifications();
+      } catch {}
+    })();
   };
 
   const declineInterest = (interestId: string) => {
-    setInterests((prev) =>
-      prev.map((i) => (i.id === interestId ? { ...i, status: 'REJECTED' } : i))
-    );
+    setInterests((prev) => prev.map((i) => (i.id === interestId ? { ...i, status: 'REJECTED' } : i)));
+    api(`/api/interests/${encodeURIComponent(interestId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'REJECTED' }),
+    }).catch(() => {});
   };
 
   const cancelInterest = (interestId: string) => {
-    setInterests((prev) =>
-      prev.map((i) => (i.id === interestId ? { ...i, status: 'CANCELLED' } : i))
-    );
+    setInterests((prev) => prev.map((i) => (i.id === interestId ? { ...i, status: 'CANCELLED' } : i)));
+    api(`/api/interests/${encodeURIComponent(interestId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'CANCELLED' }),
+    }).catch(() => {});
   };
 
   const blockUser = (userId: string) => {
-    setBlockedUserIds((prev) => [...prev, userId]);
+    setBlockedUserIds((prev) => (prev.includes(userId) ? prev : [...prev, userId]));
+    api('/api/blocks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    }).catch(() => {});
   };
 
   const reportUser = (userId: string, reason: string, details?: string) => {
-    setReportedUserIds((prev) => [...prev, userId]);
+    setReportedUserIds((prev) => (prev.includes(userId) ? prev : [...prev, userId]));
+    api('/api/reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, reason, details }),
+    }).catch(() => {});
   };
 
   return (
     <ConnectionContext.Provider
       value={{
-        interests: Array.isArray(interests) ? interests : [],
-        matches: Array.isArray(matches) ? matches : [],
+        interests,
+        matches,
         blockedUserIds,
         reportedUserIds,
         activeMatchModal,

@@ -11,7 +11,12 @@ export interface SessionUser {
   role: Role;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'insecure-default-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production'
+  ? (() => {
+      console.error('FATAL: JWT_SECRET must be set in production. Refusing to start with an insecure default.');
+      throw new Error('JWT_SECRET is required in production');
+    })()
+  : 'dev-insecure-secret-not-for-production');
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 const TOKEN_KEY = '2ndnikah_session';
 const TOKEN_MAX_AGE = 60 * 60 * 24 * 7; // 7 days

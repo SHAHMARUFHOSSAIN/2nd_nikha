@@ -1,9 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { MemberLayout } from '@/components/member/member-layout';
 import { useAuth } from '@/lib/auth-context';
-import { MOCK_PROFILES } from '@/data/mock-data';
 import { ProfileCard } from '@/components/ui/profile-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Star, Sparkles } from 'lucide-react';
@@ -12,10 +11,18 @@ import { useRouter } from 'next/navigation';
 export default function MemberShortlistPage() {
   const router = useRouter();
   const { shortlistedIds } = useAuth();
+  const [shortlistedProfiles, setShortlistedProfiles] = useState<any[]>([]);
 
-  const shortlistedProfiles = MOCK_PROFILES.filter((p) =>
-    shortlistedIds.includes(p.id)
-  );
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/members', { cache: 'no-store' });
+        const json = await res.json().catch(() => null);
+        const members = Array.isArray(json?.members) ? json.members : [];
+        setShortlistedProfiles(members.filter((p: any) => shortlistedIds.includes(p.id)));
+      } catch (err) {}
+    })();
+  }, [shortlistedIds]);
 
   return (
     <MemberLayout>

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { createSessionToken, setSessionCookie, SessionUser } from '@/lib/auth';
 import { claimPaymentsByEmail } from '@/lib/payment/persist-payment';
+import { issueVerificationToken, sendVerificationEmail } from '@/lib/email-verification';
 import { isValidEmail, isValidName, isValidPassword, isValidPhone, sanitizeString, sanitizeText, toInt } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
@@ -111,6 +112,7 @@ export async function POST(req: NextRequest) {
         phone: true,
         userRole: true,
         isVerified: true,
+        emailVerifiedAt: true,
         country: true,
         countryFlag: true,
         createdAt: true,
@@ -119,6 +121,23 @@ export async function POST(req: NextRequest) {
 
     // Link the guest payment to this account and activate the subscription.
     await claimPaymentsByEmail(email, user.id).catch((e) => console.error('[Register] claimPaymentsByEmail failed:', e));
+
+    // Email verification: issue a single-use, expiring token and send the
+    // verification email. Verified status is server-authoritative; this never
+    // auto-verifies the account even if delivery is disabled (dev log).
+    let verificationSent = false;
+    let verificationSkipped = false;
+    try {
+      const { raw, expiresAt } = await issueVerificationToken(user.id);
+      const result = await sendVerificationEmail(user.email, raw);
+      verificationSent = result.sent;
+      verificationSkipped = !!result.skipped;
+      if (!result.sent && !result.skipped) {
+        console.warn('[Register] Verification email not delivered:', result.reason || 'unknown');
+      }
+    } catch (e) {
+      console.error('[Register] Verification email failed:', e);
+    }
 
     const sessionUser: SessionUser = {
       id: user.id,
@@ -129,7 +148,16 @@ export async function POST(req: NextRequest) {
 
     const token = await createSessionToken(sessionUser);
     const response = NextResponse.json(
-      { success: true, user: { ...user, role: user.userRole } },
+      {
+        success: true,
+        user: { ...user, role: user.userRole },
+        message: 'Please check your email to verify your account.',
+        emailVerification: {
+          pending: !user.emailVerifiedAt,
+          sent: verificationSent,
+          skipped: verificationSkipped,
+        },
+      },
       { status: 201 }
     );
     await setSessionCookie(response, token);

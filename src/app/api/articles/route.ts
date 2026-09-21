@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getSession, isAdmin, unauthorized } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -18,6 +19,11 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session = await getSession();
+    if (!session || !isAdmin(session)) {
+      return unauthorized('Admin access required');
+    }
+
     const body = await req.json();
     const { id, title, slug, content, excerpt, coverImage, category, author, isPublished } = body;
 
@@ -77,6 +83,11 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const session = await getSession();
+    if (!session || !isAdmin(session)) {
+      return unauthorized('Admin access required');
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     if (!id) {

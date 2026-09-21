@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Circle, Sparkles, ArrowRight, ShieldCheck, Check } from 'lucide-react';
-import Link from 'next/link';
+import { CheckCircle2, Circle, Sparkles, ArrowRight, Check } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 
 export interface ProfileCompletionCardProps {
@@ -10,9 +10,9 @@ export interface ProfileCompletionCardProps {
 }
 
 export function ProfileCompletionCard({ percentage: overridePercentage, user: propUser }: ProfileCompletionCardProps) {
-  const { currentUser: authUser, login, userRole } = useAuth();
+  const { currentUser: authUser } = useAuth();
+  const router = useRouter();
   const user = propUser || authUser;
-  const [justCompleted, setJustCompleted] = useState(false);
 
   const hasBasicInfo = user ? Boolean(user?.fullName || user?.name || user?.email) : true;
   const hasEdu = user ? Boolean(user?.education || user?.profession || user?.occupation) : true;
@@ -35,42 +35,13 @@ export function ProfileCompletionCard({ percentage: overridePercentage, user: pr
   const percentage = overridePercentage ?? (computedPercentage >= 100 ? 100 : computedPercentage);
 
   const handleCompleteTo100 = () => {
-    const baseObj = user || { fullName: 'Member Candidate' };
-    const updatedUser = {
-      ...baseObj,
-      isNidVerified: true,
-      isVerified: true,
-      nidStatus: 'VERIFIED',
-      verificationDetails: {
-        identityVerified: true,
-        backgroundChecked: true,
-        educationVerified: true,
-      },
-    };
-    login(updatedUser, userRole);
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('2ndchance_current_user', JSON.stringify(updatedUser));
-      }
-    } catch (e) {}
-    setJustCompleted(true);
-    setTimeout(() => setJustCompleted(false), 4000);
+    router.push('/member/settings');
   };
 
   const isFullyComplete = percentage >= 100 || steps.every((s) => s.completed);
 
   return (
     <div className="bg-gradient-to-br from-rose-50/90 via-white to-pink-50/50 rounded-3xl p-6 border border-rose-200 shadow-sm space-y-4 relative">
-      {justCompleted && (
-        <div className="p-3 bg-emerald-600 text-white rounded-2xl text-xs font-bold flex items-center justify-between shadow-lg animate-in fade-in">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-            <span>🎉 Congratulations! Your profile is now 100% Complete & NID Verified!</span>
-          </div>
-          <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">100% Done</span>
-        </div>
-      )}
-
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <span className="text-xs font-semibold uppercase tracking-wider text-rose-800 flex items-center gap-1">

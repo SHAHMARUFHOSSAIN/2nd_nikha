@@ -14,6 +14,7 @@ export interface PersistPaymentParams {
   status: 'SUCCESS' | 'PENDING' | 'FAILED' | 'CANCELLED';
   paidAt?: string;
   email?: string | null;
+  consentIp?: string | null;
 }
 
 /**
@@ -33,6 +34,7 @@ export async function persistSuccessfulPayment(params: PersistPaymentParams) {
     status,
     paidAt,
     email,
+    consentIp,
   } = params;
 
   if (!userId && !email) {
@@ -59,6 +61,8 @@ export async function persistSuccessfulPayment(params: PersistPaymentParams) {
         status,
         paidAt: paidAt ? new Date(paidAt) : new Date(),
         email: email ?? null,
+        termsAcceptedAt: new Date(),
+        consentIp: consentIp ?? null,
       },
     });
 

@@ -18,6 +18,7 @@ import {
   Heart,
   Users,
   Eye,
+  Mail,
   ShieldCheck,
   Crown,
   CheckCircle2,
@@ -65,31 +66,11 @@ export default function MemberDashboardPage() {
     return otherCandidates.filter((p) => p.gender === targetGender);
   }, [otherCandidates, currentUser]);
 
-  // Real Profile Visitors / Views from localStorage
+  // Real Profile Visitors / Views (recent members from the live member pool)
   const [visitorItems, setVisitorItems] = useState<{ id: string; profile: Profile; visitedTimeAgo: string }[]>([]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      const stored = localStorage.getItem('2ndchance_profile_visitors');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const list = parsed.map((item: any, idx: number) => {
-            const prof = otherCandidates.find((c) => c.id === item.visitorId) || otherCandidates[idx % otherCandidates.length] || MOCK_PROFILES[1];
-            return {
-              id: item.id || `v-${idx}`,
-              profile: prof,
-              visitedTimeAgo: item.visitedTimeAgo || 'Recently',
-            };
-          });
-          setVisitorItems(list);
-          return;
-        }
-      }
-    } catch (e) {}
-
-    // Fallback real candidate visitors if no custom visit log exists
     setVisitorItems(
       otherCandidates.slice(0, 3).map((prof, idx) => ({
         id: `v-real-${idx}`,
@@ -102,6 +83,23 @@ export default function MemberDashboardPage() {
   return (
     <MemberLayout>
       <div className="space-y-8">
+        {/* Email verification pending banner (server-authoritative status) */}
+        {currentUser && !currentUser.emailVerifiedAt && (
+          <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-2xl text-xs text-sky-900 flex items-start gap-2.5">
+            <Mail className="w-4 h-4 text-sky-700 shrink-0 mt-0.5" />
+            <span>
+              Your email address is not verified yet. Please check your inbox and click the verification link, or{' '}
+              <button
+                onClick={() => { fetch('/api/auth/resend-verification', { method: 'POST', credentials: 'include' }).then(() => undefined).catch(() => undefined); }}
+                className="underline font-bold hover:text-sky-700"
+              >
+                resend the verification email
+              </button>
+              .
+            </span>
+          </div>
+        )}
+
         {/* Welcome Header & Status Cards */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>

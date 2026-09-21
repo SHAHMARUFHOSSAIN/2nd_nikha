@@ -6,8 +6,7 @@ import { Heart, Sparkles, Eye, ShieldCheck, Crown, Bell, MessageSquare, Trash2, 
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useCommunication } from '@/lib/communication-context';
-import { useAdmin } from '@/lib/admin-context';
-import { MOCK_PROFILES } from '@/data/mock-data';
+import { useConnection } from '@/lib/connection-context';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 
@@ -24,104 +23,61 @@ interface DynamicNotificationItem {
 export default function MemberNotificationsPage() {
   const { currentUser } = useAuth();
   const communication = useCommunication();
+  const connection = useConnection();
   const [notificationsList, setNotificationsList] = useState<DynamicNotificationItem[]>([]);
   const [isCleared, setIsCleared] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Build real live notifications list
     const realNotifications: DynamicNotificationItem[] = [];
 
-    // 1. Dynamic Profile Views / Visitors from localStorage
-    try {
-      const storedVisitors = localStorage.getItem('2ndchance_profile_visitors');
-      if (storedVisitors) {
-        const parsed = JSON.parse(storedVisitors);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          parsed.slice(0, 5).forEach((item: any, idx: number) => {
-            const visitorName = item.visitorName || 'A member candidate';
-            realNotifications.push({
-              id: item.id || `notif-v-${idx}`,
-              title: `${visitorName} viewed your profile details`,
-              type: 'Profile Viewed',
-              date: item.visitedTimeAgo || 'Recently',
-              icon: <Eye className="w-5 h-5 text-emerald-600" />,
-              link: '/member/visitors',
-            });
-          });
-        }
-      }
-    } catch (e) {}
+    // 1. DB-backed notifications (interests, matches, system alerts)
+    if (connection?.notifications && connection.notifications.length > 0) {
+      connection.notifications.slice(0, 20).forEach((n: any) => {
+        const isInterest = /interest/i.test(`${n.title} ${n.message}`);
+        const isMatch = /match|accept/i.test(`${n.title} ${n.message}`);
+        realNotifications.push({
+          id: n.id,
+          title: n.title || n.message,
+          type: isInterest ? 'Interest' : isMatch ? 'Match' : n.title?.includes('Subscript') ? 'Subscription' : 'System',
+          date: n.date || 'Recently',
+          icon: isInterest ? <Heart className="w-5 h-5 text-rose-600" /> :
+                 isMatch ? <Sparkles className="w-5 h-5 text-amber-500" /> :
+                 <Crown className="w-5 h-5 text-amber-500" />,
+          link: n.targetUrl || '/member',
+          isRead: n.read,
+        });
+      });
+    }
 
     // 2. Dynamic Direct Messages / Active Conversations
     if (communication?.conversations && communication.conversations.length > 0) {
       communication.conversations.slice(0, 4).forEach((conv: any, idx: number) => {
-        const partnerName = conv.partnerName || 'Member';
+        const partnerName = conv.profile?.fullName || 'Member';
         realNotifications.push({
           id: `notif-msg-${conv.id || idx}`,
           title: `Active message conversation with ${partnerName}`,
           type: 'Direct Message',
-          date: conv.lastMessageTimeAgo || 'Active',
+          date: conv.lastMessageAt || 'Active',
           icon: <MessageSquare className="w-5 h-5 text-pink-600" />,
           link: `/member/messages?matchId=${conv.matchId || conv.partnerId}`,
         });
       });
     }
 
-    // 3. Dynamic NID Verification Status Notification
-    if (currentUser?.isNidVerified || currentUser?.isVerified) {
-      realNotifications.push({
-        id: 'notif-nid-badge',
-        title: 'Identity Verification Badge awarded (NID Verified)',
-        type: 'System Badge',
-        date: 'Verified',
-        icon: <ShieldCheck className="w-5 h-5 text-emerald-600" />,
-        link: '/member/profile',
-      });
-    }
-
-    // 4. Dynamic Subscription Pass Active Notification
-    realNotifications.push({
-      id: 'notif-sub-pass',
-      title: 'Active Matrimonial Subscription Pass & Premium Benefits',
-      type: 'Subscription',
-      date: 'Active',
-      icon: <Crown className="w-5 h-5 text-amber-500" />,
-      link: '/member',
-    });
-
-    // 5. Custom notifications stored in localStorage
-    try {
-      const storedCustom = localStorage.getItem('2ndchance_user_notifications');
-      if (storedCustom) {
-        const parsed = JSON.parse(storedCustom);
-        if (Array.isArray(parsed)) {
-          parsed.forEach((customNotif: any, idx: number) => {
-            realNotifications.unshift({
-              id: customNotif.id || `custom-n-${idx}`,
-              title: customNotif.title || 'System Notification',
-              type: customNotif.type || 'Alert',
-              date: customNotif.date || 'Just now',
-              icon: <Sparkles className="w-5 h-5 text-rose-500" />,
-              link: customNotif.link || '/member',
-            });
-          });
-        }
-      }
-    } catch (e) {}
-
     setNotificationsList(realNotifications);
-  }, [currentUser, communication?.conversations]);
+  }, [currentUser, communication?.conversations, connection?.notifications]);
 
   const handleClearAll = () => {
     setNotificationsList([]);
     setIsCleared(true);
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('2ndchance_user_notifications', JSON.stringify([]));
-      }
-    } catch (e) {}
+    fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({}),
+    }).catch(() => {});
   };
 
   return (

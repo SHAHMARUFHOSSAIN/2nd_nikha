@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Profile } from '@/types';
@@ -57,6 +57,29 @@ export function ProfileDetailModal({
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const profileId = profile?.id || '';
+
+  useEffect(() => {
+    if (!profileId || !isOpen) return;
+    let cancelled = false;
+    const t = setTimeout(() => {
+      (async () => {
+        try {
+          await fetch('/api/visits', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ profileId }),
+          });
+        } catch {}
+      })();
+    }, 900);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [profileId, isOpen]);
 
   if (!profile) return null;
 

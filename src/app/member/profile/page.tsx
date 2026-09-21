@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { VerifiedBadge } from '@/components/ui/verified-badge';
-import { MOCK_PROFILES } from '@/data/mock-data';
 import {
   Heart,
   Edit,
@@ -30,78 +29,90 @@ import { SubscriptionValidityBanner } from '@/components/subscription/subscripti
 
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400';
 
+const FALLBACK_PROFILE: any = {
+  fullName: '',
+  age: 0,
+  photoUrl: DEFAULT_AVATAR,
+  bio: '',
+  profession: '',
+  education: '',
+  city: '',
+  maritalStatus: '',
+  religion: '',
+  height: '',
+  income: '',
+};
+
 export default function MemberProfilePage() {
   const router = useRouter();
-  const { currentUser: authUser, login, logout, userRole } = useAuth();
-  const profile = authUser || MOCK_PROFILES[0];
+  const { currentUser: authUser, logout, userRole, refreshSession, sessionReady } = useAuth();
+  const profile: any = authUser || FALLBACK_PROFILE;
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [noticeMessage, setNoticeMessage] = useState('Profile updated successfully!');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [photoUrl, setPhotoUrl] = useState(profile.photoUrl || DEFAULT_AVATAR);
-  const [bio, setBio] = useState(profile.bio);
-  const [profession, setProfession] = useState(profile.profession);
-  const [education, setEducation] = useState(profile.education);
-  const [city, setCity] = useState(profile.city);
+  const [bio, setBio] = useState(profile.bio || '');
+  const [profession, setProfession] = useState(profile.profession || '');
+  const [education, setEducation] = useState(profile.education || '');
+  const [city, setCity] = useState(profile.city || '');
+
+  const showNotice = (message: string, error = false) => {
+    setNoticeMessage(message);
+    setIsError(error);
+    setSavedNotice(true);
+    setTimeout(() => setSavedNotice(false), 3000);
+  };
+
+  const patchProfile = async (data: Record<string, any>): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/profile/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error || 'Failed to save profile');
+      }
+      await refreshSession();
+      return true;
+    } catch (err: any) {
+      showNotice(err?.message || 'Failed to save profile', true);
+      return false;
+    }
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         if (event.target?.result) {
           const newUrl = event.target.result as string;
           setPhotoUrl(newUrl);
-          const updated = { ...profile, photoUrl: newUrl };
-          login(updated, userRole);
-          try {
-            fetch('/api/members', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(updated),
-            }).catch(() => {});
-          } catch (err) {}
-          setNoticeMessage('Profile picture updated successfully!');
-          setSavedNotice(true);
-          setTimeout(() => setSavedNotice(false), 3000);
+          const ok = await patchProfile({ photoUrl: newUrl });
+          if (ok) showNotice('Profile picture updated successfully!');
         }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleDeletePhoto = () => {
+  const handleDeletePhoto = async () => {
     setPhotoUrl(DEFAULT_AVATAR);
-    const updated = { ...profile, photoUrl: DEFAULT_AVATAR };
-    login(updated, userRole);
-    setNoticeMessage('Profile picture removed. Default avatar set.');
-    setSavedNotice(true);
-    setTimeout(() => setSavedNotice(false), 3000);
+    const ok = await patchProfile({ photoUrl: DEFAULT_AVATAR });
+    if (ok) showNotice('Profile picture removed. Default avatar set.');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsEditing(false);
-    const updated = {
-      ...profile,
-      photoUrl,
-      bio,
-      profession,
-      education,
-      city,
-    };
-    login(updated, userRole);
-    try {
-      fetch('/api/members', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-      }).catch(() => {});
-    } catch (err) {}
-    setNoticeMessage('Profile details saved successfully!');
-    setSavedNotice(true);
-    setTimeout(() => setSavedNotice(false), 3000);
+    const ok = await patchProfile({ photoUrl, bio, profession, education, city });
+    if (ok) showNotice('Profile details saved successfully!');
   };
 
   const handleLogout = () => {
@@ -111,9 +122,6 @@ export default function MemberProfilePage() {
 
   const handleConfirmDeleteAccount = () => {
     logout();
-    if (typeof window !== 'undefined') {
-      localStorage.clear();
-    }
     router.push('/');
   };
 
@@ -155,8 +163,8 @@ export default function MemberProfilePage() {
         </div>
 
         {savedNotice && (
-          <div className="p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className={`p-3 border rounded-2xl text-xs font-semibold flex items-center gap-2 animate-in fade-in ${isError ? 'bg-red-50 text-red-800 border-red-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
+            <CheckCircle2 className={`w-4 h-4 shrink-0 ${isError ? 'text-red-600' : 'text-emerald-600'}`} />
             <span>{noticeMessage}</span>
           </div>
         )}
