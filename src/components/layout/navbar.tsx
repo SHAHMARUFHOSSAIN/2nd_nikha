@@ -255,7 +255,7 @@ export function Navbar() {
                   </Button>
                 </Link>
 
-                <Link href="/register">
+                <Link href="/checkout?plan=weekly">
                   <Button
                     variant="wine"
                     size="sm"
@@ -416,7 +416,7 @@ export function Navbar() {
                     </Button>
                   </Link>
 
-                  <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/checkout?plan=weekly" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="wine" className="w-full justify-center rounded-xl shadow-md">
                       Register Now
                     </Button>

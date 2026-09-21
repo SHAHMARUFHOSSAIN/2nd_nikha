@@ -55,7 +55,7 @@ export function Footer() {
             <h4 className="font-serif font-bold text-white text-base">Member Portal</h4>
             <ul className="space-y-2 text-xs text-stone-400">
               <li><Link href="/login" className="hover:text-rose-400">Member Login</Link></li>
-              <li><Link href="/register" className="hover:text-rose-400">Register Profile</Link></li>
+              <li><Link href="/checkout?plan=weekly" className="hover:text-rose-400">Register Profile</Link></li>
               <li><Link href="/member" className="hover:text-rose-400">Member Dashboard</Link></li>
               <li><Link href="/member/interests" className="hover:text-rose-400">Interests & Matches</Link></li>
               <li><Link href="/member/subscription" className="hover:text-rose-400">Manage Subscription</Link></li>

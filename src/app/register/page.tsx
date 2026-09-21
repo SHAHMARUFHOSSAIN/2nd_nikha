@@ -25,14 +25,28 @@ import {
   Users,
   Sparkles,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 
 export default function RegistrationWizardPage() {
   const router = useRouter();
   const { login, userRole } = useAuth();
+  const [isGateReady, setIsGateReady] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Pay-before-register guard: the registration form may only be entered after a
+  // successful payment (arrives here via /payment/success → /register?paid=true).
+  // Direct visits without the paid flag are pushed to checkout so users pay first.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('paid') !== 'true') {
+      router.replace('/checkout?plan=weekly');
+      return;
+    }
+    setIsGateReady(true);
+  }, [router]);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -384,6 +398,12 @@ export default function RegistrationWizardPage() {
 
   return (
     <div className="min-h-screen py-8 md:py-12 bg-gradient-to-b from-rose-50/40 via-white to-pink-50/30">
+      {!isGateReady && (
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
+        </div>
+      )}
+      {isGateReady && (
       <Container size="md">
         <div className="space-y-6">
           {/* Header */}
@@ -1023,6 +1043,7 @@ export default function RegistrationWizardPage() {
           </div>
         </div>
       </Container>
+      )}
     </div>
   );
 }

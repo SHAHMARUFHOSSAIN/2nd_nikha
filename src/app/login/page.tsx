@@ -219,8 +219,8 @@ export default function LoginPage() {
           {/* Register Link Footer */}
           <div className="text-center pt-2 text-xs text-stone-600">
             Don't have an account yet?{' '}
-            <Link href="/register" className="font-bold text-rose-700 hover:underline">
-              Register Free Profile
+            <Link href="/checkout?plan=weekly" className="font-bold text-rose-700 hover:underline">
+              Create New Profile (Pay First)
             </Link>
           </div>
 
