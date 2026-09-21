@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { createSessionToken, setSessionCookie, SessionUser } from '@/lib/auth';
+import { claimPaymentsByEmail } from '@/lib/payment/persist-payment';
 import { isValidEmail, isValidName, isValidPassword, isValidPhone, sanitizeString, sanitizeText, toInt } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Pay-before-register gate: registration is only allowed after a successful
+    // (verified) subscription payment has been made for this exact email.
+    const paid = await db.payment.findFirst({
+      where: { email, status: 'SUCCESS' },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!paid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Payment required.',
+          code: 'PAYMENT_REQUIRED',
+          message: 'Subscriptions must be purchased before creating an account. Please choose a plan and pay first.',
+        },
+        { status: 402 }
+      );
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
 
     const user = await db.user.create({
@@ -65,7 +84,7 @@ export async function POST(req: NextRequest) {
         email,
         phone,
         passwordHash,
-        userRole: 'FREE',
+        userRole: 'PREMIUM',
         country,
         countryFlag,
         isVerified: false,
@@ -97,6 +116,9 @@ export async function POST(req: NextRequest) {
         createdAt: true,
       },
     });
+
+    // Link the guest payment to this account and activate the subscription.
+    await claimPaymentsByEmail(email, user.id).catch((e) => console.error('[Register] claimPaymentsByEmail failed:', e));
 
     const sessionUser: SessionUser = {
       id: user.id,

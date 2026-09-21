@@ -270,28 +270,42 @@ export default function RegistrationWizardPage() {
         .then(async (res) => {
           const data = await res.json();
           if (!res.ok || !data.success) {
-            setStepError(data.error || 'Registration failed. Please try again.');
-            setIsSubmitting(false);
+            if (data.code === 'PAYMENT_REQUIRED') {
+              setStepError(data.message || 'Payment required before registration. Redirecting to checkout...');
+              setIsSubmitting(false);
+              try {
+                localStorage.setItem('2ndchance_checkout_customer', JSON.stringify({
+                  fullName: formData.fullName,
+                  email: formData.email,
+                  phone: formData.phone,
+                }));
+              } catch (e) {}
+              setTimeout(() => router.push(`/checkout?plan=weekly&email=${encodeURIComponent(formData.email)}`), 1800);
+            } else {
+              setStepError(data.error || 'Registration failed. Please try again.');
+              setIsSubmitting(false);
+            }
             return;
           }
           const u = data.user;
+          const roleFromServer = u.userRole || u.role || 'PREMIUM';
           login(
             {
               id: u.id,
               fullName: u.fullName,
               email: u.email,
               phone: u.phone,
-              userRole: 'FREE',
+              userRole: roleFromServer,
               photoUrl: avatarUrl,
               avatar: avatarUrl,
-              membershipTier: 'Free',
+              membershipTier: roleFromServer === 'PREMIUM' ? 'Premium' : 'Free',
               subscriptionExpiresAt: null,
             },
-            'FREE'
+            roleFromServer
           );
           setIsCompleted(true);
           setIsSubmitting(false);
-          router.push('/membership');
+          router.push(roleFromServer === 'PREMIUM' ? '/member' : '/membership');
         })
         .catch(() => {
           setStepError('Unable to reach the registration service. Please try again.');

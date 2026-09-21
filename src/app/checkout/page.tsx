@@ -25,6 +25,7 @@ function CheckoutContent() {
   // Read URL query params or default to monthly plan
   const planIdParam = searchParams.get('plan') || 'monthly';
   const priceUSDParam = searchParams.get('priceUSD');
+  const prefillEmail = searchParams.get('email') || '';
   
   // Match plan from live Admin Context state
   const targetPlan = membershipPlans?.find((p) => p.id === planIdParam || p.billingPeriod?.toLowerCase().includes(planIdParam.toLowerCase())) 
@@ -37,11 +38,15 @@ function CheckoutContent() {
   const currentPriceFormatted = formatAmount(bdtPrice, usdPrice);
   const numericAmountToCharge = getNumericAmount(bdtPrice, usdPrice);
 
-  const [customerInfo, setCustomerInfo] = useState({
-    fullName: 'Anika Rahman',
-    email: 'anika.rahman@example.com',
-    phone: '01712345678',
-  });
+  const [customerInfo, setCustomerInfo] = useState(
+    prefillEmail
+      ? { fullName: '', email: prefillEmail, phone: '' }
+      : {
+          fullName: '',
+          email: '',
+          phone: '',
+        }
+  );
 
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +66,8 @@ function CheckoutContent() {
 
     const amountToCharge = currency === 'USD' ? usdPrice : bdtPrice;
 
-    // Use the real signed-in user id; force login before checkout otherwise.
+    // Pay-before-register: guests may pay using email only; no login required.
+    // If signed in, pass the user id so benefits apply immediately on success.
     let userId = currentUser?.id || '';
     if (!userId) {
       try {
@@ -71,12 +77,6 @@ function CheckoutContent() {
           userId = meData.user.id;
         }
       } catch (e) {}
-    }
-
-    if (!userId) {
-      setIsHandoffOpen(false);
-      router.push('/login?redirect=checkout');
-      return;
     }
 
     const session = await PaymentService.initiatePayment({

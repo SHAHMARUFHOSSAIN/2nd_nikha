@@ -35,8 +35,8 @@ export async function persistSuccessfulPayment(params: PersistPaymentParams) {
     email,
   } = params;
 
-  if (!userId) {
-    console.warn(`[Payment] No userId for transaction ${transactionId}; payment not persisted.`);
+  if (!userId && !email) {
+    console.warn(`[Payment] No userId/email for transaction ${transactionId}; payment not persisted.`);
     return null;
   }
 
@@ -48,7 +48,7 @@ export async function persistSuccessfulPayment(params: PersistPaymentParams) {
 
     const payment = await db.payment.create({
       data: {
-        userId,
+        userId: userId ?? null,
         planId: planId ?? (purpose === 'subscription' ? 'monthly' : null),
         purpose,
         amount,
@@ -62,7 +62,7 @@ export async function persistSuccessfulPayment(params: PersistPaymentParams) {
       },
     });
 
-    if (purpose === 'subscription' && status === 'SUCCESS') {
+    if (purpose === 'subscription' && status === 'SUCCESS' && userId) {
       const days = getPlanDurationDays(planId || 'monthly');
       const profile = await db.profile.findUnique({ where: { userId } });
 
@@ -91,4 +91,64 @@ export async function persistSuccessfulPayment(params: PersistPaymentParams) {
     console.error('[Payment] persistSuccessfulPayment failed:', error);
     return null;
   }
+}
+
+/**
+ * Claim pre-registration payments by email for a newly created user account.
+ * Only payments with no userId (guest checkout) are linked, then the
+ * subscription benefit is applied from the most recent successful payment.
+ */
+export async function claimPaymentsByEmail(email: string, userId: string) {
+  const emailLower = (email || '').toLowerCase();
+  if (!emailLower || !userId) return null;
+
+  const payments = await db.payment.findMany({
+    where: { email: emailLower, userId: null },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  if (payments.length === 0) return null;
+
+  await db.payment.updateMany({
+    where: { email: emailLower, userId: null },
+    data: { userId },
+  });
+
+  const latest = payments[payments.length - 1];
+  if (latest.status === 'SUCCESS') {
+    const days = getPlanDurationDays(latest.planId || 'monthly');
+    const newExpiry = effectiveExpiry(null, days);
+
+    await db.profile.update({
+      where: { userId },
+      data: {
+        subscriptionExpiresAt: newExpiry,
+        isSubscriptionActive: true,
+        subscriptionPlan: latest.planId || 'monthly',
+      },
+    });
+
+    await db.user.update({
+      where: { id: userId },
+      data: { userRole: 'PREMIUM' },
+    });
+
+    await db.subscription.create({
+      data: {
+        userId,
+        planId: latest.planId || 'monthly',
+        planName: latest.planId === 'weekly' ? 'Weekly Pass' : 'Monthly Pass',
+        amount: latest.amount,
+        currency: latest.currency || 'BDT',
+        status: 'ACTIVE',
+        packageType: latest.planId === 'weekly' ? 'WEEKLY' : 'MONTHLY',
+        startsAt: new Date(),
+        expiresAt: newExpiry,
+        paymentId: latest.id,
+        transactionId: latest.transactionId,
+      },
+    }).catch(() => null);
+  }
+
+  return payments;
 }
